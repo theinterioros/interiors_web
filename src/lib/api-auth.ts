@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Role } from "@/generated/prisma";
+import { Role } from "@/lib/types";
 import { getSessionUser } from "@/lib/session";
 
 export async function requireApiUser() {

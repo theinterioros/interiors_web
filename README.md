@@ -5,7 +5,7 @@ Interior OS is a web-first platform for customers to discover verified interior 
 ## Tech Stack
 
 - Next.js (App Router)
-- Neon PostgreSQL + Prisma ORM
+- Neon PostgreSQL (SQL client)
 - Vercel Blob for file storage
 - Tailwind CSS + Framer Motion
 - Nodemailer (SMTP configurable by admin)
@@ -34,14 +34,31 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_token"
 
 ## Database
 
-Run Prisma migrations once you have a Neon database:
+Apply the schema in `sql/schema.sql` to your Neon database (via Neon SQL editor or `psql`).
+
+### One-command setup (Node)
 
 ```bash
-npx prisma migrate dev --name init
-npx prisma generate
+npm run db:setup
+```
+
+Uses `DATABASE_URL_UNPOOLED` when available (recommended for schema setup).
+
+### Optional: psql setup
+
+```bash
+npm run db:setup:psql
 ```
 
 The first admin user is seeded on app boot using `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` if no admin exists.
+
+### Demo Seed
+
+```bash
+npm run seed:demo
+```
+
+The demo seed inserts sample users, a designer profile, a project, milestones, and sample Blob URLs.
 
 ## Admin Settings
 

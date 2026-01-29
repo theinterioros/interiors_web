@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { sql } from "@/lib/db";
 
 type EstimateInput = {
   city: string;
@@ -10,13 +10,14 @@ type EstimateInput = {
 
 export async function estimateCost(input: EstimateInput) {
   const { city, pincode, squareFeet, propertyType, rooms } = input;
-  const rate = await prisma.cityPincodeRate.findFirst({
-    where: {
-      city: city.trim(),
-      pincode: pincode.trim(),
-      isActive: true,
-    },
-  });
+  const [rate] = await sql<{ rate_per_sq_ft: number }>`
+    select rate_per_sq_ft
+    from city_pincode_rates
+    where city = ${city.trim()}
+      and pincode = ${pincode.trim()}
+      and is_active = true
+    limit 1
+  `;
 
   if (!rate) {
     return {
@@ -25,7 +26,7 @@ export async function estimateCost(input: EstimateInput) {
     };
   }
 
-  const base = squareFeet * rate.ratePerSqFt;
+  const base = squareFeet * rate.rate_per_sq_ft;
   const propertyMultiplier = propertyType === "villa" ? 1.08 : 1;
   const roomModifier = rooms > 3 ? 1.05 : 1;
 
@@ -40,7 +41,7 @@ export async function estimateCost(input: EstimateInput) {
       max,
       currency: "INR",
       breakdown: {
-        ratePerSqFt: rate.ratePerSqFt,
+        ratePerSqFt: rate.rate_per_sq_ft,
         squareFeet,
         propertyMultiplier,
         roomModifier,

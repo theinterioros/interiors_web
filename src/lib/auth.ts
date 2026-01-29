@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Role } from "@/generated/prisma";
+import { Role } from "@/lib/types";
 import { getSessionUser } from "@/lib/session";
 
 export async function getCurrentUser() {
@@ -26,8 +26,8 @@ export function roleLabel(role: Role) {
   switch (role) {
     case "ADMIN":
       return "Admin";
-    case "DESIGNER":
-      return "Designer";
+    case "FIRM":
+      return "Firm";
     case "CUSTOMER":
       return "Customer";
     default:

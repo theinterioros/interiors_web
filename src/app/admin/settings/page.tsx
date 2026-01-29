@@ -6,6 +6,8 @@ import {
 } from "@/app/actions/admin";
 import { getAdminSettings } from "@/lib/settings";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminSettingsPage() {
   const settings = await getAdminSettings();
 
@@ -38,7 +40,7 @@ export default async function AdminSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Designer yearly fee</label>
+              <label className="text-sm font-medium text-neutral-700">Firm yearly fee</label>
               <input
                 type="number"
                 name="designerYearlyFee"
@@ -162,7 +164,7 @@ export default async function AdminSettingsPage() {
               <label className="text-sm font-medium text-neutral-700">Label</label>
               <input
                 name="label"
-                placeholder="Designers"
+                placeholder="Firms"
                 className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               />
             </div>

@@ -1,27 +1,46 @@
 import Link from "next/link";
+import { FolderKanban, LayoutDashboard, Users } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { sql } from "@/lib/db";
 
-export default async function DesignerDashboardPage() {
+export const dynamic = "force-dynamic";
+
+export default async function FirmDashboardPage() {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const pendingRequests = await prisma.project.findMany({
-    where: { designerId: user.id, status: "REQUESTED" },
-    include: { customer: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const pendingRequests = await sql<{
+    id: string;
+    title: string;
+    customer_name: string | null;
+    customer_email: string;
+  }>`
+    select p.id, p.title, u.name as customer_name, u.email as customer_email
+    from projects p
+    join users u on u.id = p.customer_id
+    where p.firm_id = ${user.id} and p.status = 'REQUESTED'
+    order by p.created_at desc
+  `;
 
-  const activeProjects = await prisma.project.findMany({
-    where: { designerId: user.id, status: { in: ["ACCEPTED", "ACTIVE"] } },
-    orderBy: { createdAt: "desc" },
-  });
+  const activeProjects = await sql<{
+    id: string;
+    title: string;
+    status: string;
+  }>`
+    select id, title, status
+    from projects
+    where firm_id = ${user.id} and status in ('ACCEPTED', 'ACTIVE')
+    order by created_at desc
+  `;
 
   return (
-    <div className="min-h-screen bg-white px-6 py-16">
+    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
       <div className="mx-auto max-w-5xl space-y-8">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Designer Dashboard</p>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
+            <LayoutDashboard className="h-4 w-4 text-amber-600" />
+            Firm Dashboard
+          </div>
           <h1 className="text-3xl font-semibold text-neutral-900">Your workstream</h1>
           <p className="text-sm text-neutral-500">
             Manage incoming requests, milestones, and approvals.
@@ -30,8 +49,11 @@ export default async function DesignerDashboardPage() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-neutral-900">Incoming requests</h2>
-            <Link href="/designer/leads" className="text-sm text-neutral-600 underline">
+            <div className="flex items-center gap-2 text-lg font-semibold text-neutral-900">
+              <Users className="h-5 w-5 text-amber-600" />
+              Incoming requests
+            </div>
+            <Link href="/firm/leads" className="text-sm text-neutral-600 underline">
               View all leads
             </Link>
           </div>
@@ -43,7 +65,7 @@ export default async function DesignerDashboardPage() {
                 <div key={project.id} className="rounded-2xl border border-neutral-200 p-6">
                   <p className="text-sm font-semibold text-neutral-900">{project.title}</p>
                   <p className="text-xs text-neutral-500">
-                    Requested by {project.customer.name ?? project.customer.email}
+                    Requested by {project.customer_name ?? project.customer_email}
                   </p>
                 </div>
               ))}
@@ -52,7 +74,10 @@ export default async function DesignerDashboardPage() {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-neutral-900">Active projects</h2>
+          <div className="flex items-center gap-2 text-lg font-semibold text-neutral-900">
+            <FolderKanban className="h-5 w-5 text-amber-600" />
+            Active projects
+          </div>
           {activeProjects.length === 0 ? (
             <p className="text-sm text-neutral-500">No active projects yet.</p>
           ) : (
@@ -60,7 +85,7 @@ export default async function DesignerDashboardPage() {
               {activeProjects.map((project) => (
                 <Link
                   key={project.id}
-                  href={`/designer/projects/${project.id}`}
+                  href={`/firm/projects/${project.id}`}
                   className="rounded-2xl border border-neutral-200 p-6 hover:border-neutral-400"
                 >
                   <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">

@@ -1,16 +1,31 @@
-import { prisma } from "@/lib/prisma";
+import { FolderKanban } from "lucide-react";
+import { sql } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminProjectsPage() {
-  const projects = await prisma.project.findMany({
-    include: { customer: true, designer: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const projects = await sql<{
+    id: string;
+    title: string;
+    status: string;
+    customer_email: string;
+    firm_email: string;
+  }>`
+    select p.id, p.title, p.status, cu.email as customer_email, fu.email as firm_email
+    from projects p
+    join users cu on cu.id = p.customer_id
+    join users fu on fu.id = p.firm_id
+    order by p.created_at desc
+  `;
 
   return (
-    <div className="min-h-screen bg-white px-6 py-16">
+    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
       <div className="mx-auto max-w-5xl space-y-8">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Projects</p>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
+            <FolderKanban className="h-4 w-4 text-amber-600" />
+            Projects
+          </div>
           <h1 className="text-3xl font-semibold text-neutral-900">All projects</h1>
           <p className="text-sm text-neutral-500">Track overall project status.</p>
         </div>
@@ -25,7 +40,7 @@ export default async function AdminProjectsPage() {
                   <div>
                     <p className="text-sm font-semibold text-neutral-900">{project.title}</p>
                     <p className="text-xs text-neutral-500">
-                      {project.customer.email} → {project.designer.email}
+                      {project.customer_email} → {project.firm_email}
                     </p>
                   </div>
                   <span className="text-xs uppercase tracking-[0.3em] text-neutral-400">

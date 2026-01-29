@@ -1,6 +1,8 @@
 import { addRateAction, toggleRateAction } from "@/app/actions/admin";
 import { getAdminSettings } from "@/lib/settings";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPricingPage() {
   const settings = await getAdminSettings();
 

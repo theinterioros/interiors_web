@@ -1,11 +1,21 @@
 import { holdPaymentAction, releasePaymentAction } from "@/app/actions/admin";
-import { prisma } from "@/lib/prisma";
+import { sql } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminPaymentsPage() {
-  const payments = await prisma.paymentLedger.findMany({
-    include: { project: true, milestone: true, customer: true, designer: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const payments = await sql<{
+    id: string;
+    type: string;
+    status: string;
+    amount: number;
+    project_title: string | null;
+  }>`
+    select p.id, p.type, p.status, p.amount, pr.title as project_title
+    from payment_ledger p
+    left join projects pr on pr.id = p.project_id
+    order by p.created_at desc
+  `;
 
   return (
     <div className="min-h-screen bg-white px-6 py-16">
@@ -31,7 +41,7 @@ export default async function AdminPaymentsPage() {
                     </p>
                     <p className="text-lg font-semibold text-neutral-900">₹{payment.amount}</p>
                     <p className="text-xs text-neutral-500">
-                      {payment.project?.title ?? "General ledger"} • Status: {payment.status}
+                      {payment.project_title ?? "General ledger"} • Status: {payment.status}
                     </p>
                   </div>
                   <div className="flex gap-2">

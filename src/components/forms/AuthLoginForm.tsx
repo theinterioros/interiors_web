@@ -1,8 +1,8 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { loginAction, requestOtpAction, verifyOtpAction } from "@/app/actions/auth";
-import { useEffect, useState } from "react";
 
 const initialState = { ok: false as boolean, error: "" };
 
@@ -12,7 +12,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
+      className="w-full rounded-full bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-neutral-800 disabled:opacity-50"
     >
       {pending ? "Please wait..." : label}
     </button>
@@ -20,25 +20,28 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
-  const [state, formAction] = useFormState(loginAction, initialState);
-  const [otpState, otpAction] = useFormState(requestOtpAction, initialState);
-  const [verifyState, verifyAction] = useFormState(verifyOtpAction, initialState);
-  const [otpRequested, setOtpRequested] = useState(false);
-
-  useEffect(() => {
-    if (otpState.ok) {
-      setOtpRequested(true);
-    }
-  }, [otpState.ok]);
+  const [state, formAction] = useActionState<{ ok: boolean; error: string }>(
+    loginAction as any,
+    initialState
+  );
+  const [otpState, otpAction] = useActionState<{ ok: boolean; error: string }>(
+    requestOtpAction as any,
+    initialState
+  );
+  const [verifyState, verifyAction] = useActionState<{ ok: boolean; error: string }>(
+    verifyOtpAction as any,
+    initialState
+  );
+  const otpRequested = otpState.ok;
 
   return (
     <div className="space-y-6">
       <form action={formAction} className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-neutral-700">Email</label>
+          <label className="text-sm font-medium text-neutral-700">Email or Mobile</label>
           <input
-            type="email"
-            name="email"
+            type="text"
+            name="identifier"
             required
             className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
           />
@@ -57,7 +60,7 @@ export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
       </form>
 
       {otpEnabled && (
-        <div className="rounded-lg border border-neutral-200 p-4">
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
           <h3 className="text-sm font-semibold text-neutral-800">Login with OTP</h3>
           <p className="text-xs text-neutral-500">
             OTP login is enabled by the admin. Request a code to sign in.
