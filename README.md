@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Interior OS
 
-## Getting Started
+Interior OS is a web-first platform for customers to discover verified interior designers, track milestones, simulate escrow payments, and manage a digital twin of their home documents. Built for India, optimized for a calm, premium experience.
 
-First, run the development server:
+## Tech Stack
+
+- Next.js (App Router)
+- Neon PostgreSQL + Prisma ORM
+- Vercel Blob for file storage
+- Tailwind CSS + Framer Motion
+- Nodemailer (SMTP configurable by admin)
+
+## Local Setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `.env`:
 
-## Learn More
+```
+DATABASE_URL="postgresql://..."
+ADMIN_SEED_EMAIL="admin@interioros.com"
+ADMIN_SEED_PASSWORD="change-me"
+ADMIN_SEED_NAME="Interior OS Admin"
+APP_URL="http://localhost:3000"
+BLOB_READ_WRITE_TOKEN="vercel_blob_token"
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Run Prisma migrations once you have a Neon database:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npx prisma migrate dev --name init
+npx prisma generate
+```
 
-## Deploy on Vercel
+The first admin user is seeded on app boot using `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` if no admin exists.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Admin Settings
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Configure the following in the admin dashboard:
+
+- OTP enable/disable
+- SMTP credentials
+- Pricing fees and digital twin fee
+- City & pincode rates
+- Social + marketing links visibility
+
+## Vercel Deployment
+
+1. Create a Neon Postgres database and set `DATABASE_URL`.
+2. Create a Vercel Blob store and set `BLOB_READ_WRITE_TOKEN`.
+3. Add `ADMIN_SEED_*` and `APP_URL` env vars in Vercel.
+4. Deploy to Vercel.
+
+## Notes
+
+- Payments are mocked using an internal ledger. No payment providers are integrated.
+- AI/AR functionality is represented as "Coming Soon" placeholders with TODO hooks.
