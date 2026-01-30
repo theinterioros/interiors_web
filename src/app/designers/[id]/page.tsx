@@ -13,8 +13,9 @@ export const dynamic = "force-dynamic";
 export default async function FirmProfilePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const [firm] = await sql<{
     id: string;
     user_id: string;
@@ -30,7 +31,7 @@ export default async function FirmProfilePage({
   }>`
     select id, user_id, name, firm_name, owner_name, experience_years, city, pincode, about, status, verified_at
     from firm_profiles
-    where id = ${params.id}
+    where id = ${id}
     limit 1
   `;
 

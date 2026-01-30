@@ -57,6 +57,7 @@ export async function updateSettingsAction(formData: FormData) {
     where id = ${settings.id}
   `;
 
+  revalidatePath("/admin/settings");
   return;
 }
 

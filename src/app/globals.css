@@ -356,10 +356,11 @@ a {
   color: var(--text-subtle);
 }
 
-/* Selects: space for dropdown arrow so it's not at the corner */
+/* Selects: space for dropdown arrow so text stays visible */
 select.input {
-  padding-right: 2.25rem;
+  padding-right: 2.5rem;
   appearance: auto;
+  min-width: 0; /* allow flex shrink; pair with enough padding so text doesn't sit under arrow */
 }
 
 .input-premium {

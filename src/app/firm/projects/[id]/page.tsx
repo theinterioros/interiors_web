@@ -15,8 +15,9 @@ export const dynamic = "force-dynamic";
 export default async function FirmProjectPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const user = await requireFirmPaid();
 
   const [project] = await sql<{
@@ -28,7 +29,7 @@ export default async function FirmProjectPage({
     select p.id, p.title, u.name as customer_name, u.email as customer_email
     from projects p
     join users u on u.id = p.customer_id
-    where p.id = ${params.id} and p.firm_id = ${user.id}
+    where p.id = ${id} and p.firm_id = ${user.id}
     limit 1
   `;
 

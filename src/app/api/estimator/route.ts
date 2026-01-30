@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { estimateCost } from "@/lib/estimator";
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
   const city = String(body.city ?? "");
   const pincode = String(body.pincode ?? "");
   const squareFeet = Number(body.squareFeet ?? 0);

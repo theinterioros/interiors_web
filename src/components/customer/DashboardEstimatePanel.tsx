@@ -119,7 +119,7 @@ export default function DashboardEstimatePanel() {
                   className="input w-full min-w-0"
                 />
               </div>
-              <div className="w-[6rem] shrink-0">
+              <div className="w-[7.5rem] shrink-0">
                 <select
                   name="areaUnit"
                   className="input h-full w-full min-w-0 bg-[var(--surface-subtle)] font-medium"
