@@ -1,4 +1,5 @@
 import { approveFirmAction, rejectFirmAction } from "@/app/actions/admin";
+import { BadgeCheck } from "lucide-react";
 import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +20,13 @@ export default async function AdminDesignersPage() {
   `;
 
   return (
-    <div className="min-h-screen bg-white px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Firm Approvals</p>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
+            <BadgeCheck className="h-4 w-4 text-amber-600" />
+            Firm Approvals
+          </div>
           <h1 className="text-3xl font-semibold text-neutral-900">Review applications</h1>
           <p className="text-sm text-neutral-500">Approve firms to show publicly.</p>
         </div>
@@ -32,7 +36,7 @@ export default async function AdminDesignersPage() {
         ) : (
           <div className="space-y-4">
             {pending.map((profile) => (
-              <div key={profile.id} className="rounded-2xl border border-neutral-200 p-6">
+              <div key={profile.id} className="card">
                 <div className="space-y-1">
                   <p className="text-lg font-semibold text-neutral-900">{profile.name}</p>
                   <p className="text-sm text-neutral-500">
@@ -56,7 +60,7 @@ export default async function AdminDesignersPage() {
                 <div className="mt-4 flex gap-3">
                   <form action={approveFirmAction}>
                     <input type="hidden" name="profileId" value={profile.id} />
-                    <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+                    <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
                       Approve
                     </button>
                   </form>

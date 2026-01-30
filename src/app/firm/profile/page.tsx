@@ -1,4 +1,5 @@
 import { updateFirmProfileAction, uploadFirmPortfolioAction } from "@/app/actions/designer";
+import { Building2 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
@@ -57,20 +58,20 @@ export default async function FirmProfilePage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-white px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Firm Profile</p>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
+            <Building2 className="h-4 w-4 text-amber-600" />
+            Firm Profile
+          </div>
           <h1 className="text-3xl font-semibold text-neutral-900">Manage your profile</h1>
           <p className="text-sm text-neutral-500">
             Update your details and upload portfolio documents for review.
           </p>
         </div>
 
-        <form
-          action={updateFirmProfileAction}
-          className="space-y-4 rounded-2xl border border-neutral-200 p-6"
-        >
+        <form action={updateFirmProfileAction} className="card space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-700">Firm name</label>
@@ -196,7 +197,7 @@ export default async function FirmProfilePage() {
               className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
             />
           </div>
-          <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+          <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
             Save profile
           </button>
         </form>
@@ -204,7 +205,7 @@ export default async function FirmProfilePage() {
         <form
           action={uploadFirmPortfolioAction}
           encType="multipart/form-data"
-          className="space-y-4 rounded-2xl border border-neutral-200 p-6"
+          className="card space-y-4"
         >
           <h2 className="text-lg font-semibold text-neutral-900">Portfolio uploads</h2>
           <input type="file" name="file" required className="text-sm" />

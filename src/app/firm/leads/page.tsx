@@ -24,8 +24,8 @@ export default async function FirmLeadsPage() {
   `;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
             <Inbox className="h-4 w-4 text-amber-600" />
@@ -40,7 +40,7 @@ export default async function FirmLeadsPage() {
         ) : (
           <div className="space-y-4">
             {leads.map((project) => (
-              <div key={project.id} className="rounded-2xl border border-neutral-200 p-6">
+              <div key={project.id} className="card">
                 <div className="space-y-2">
                   <p className="text-lg font-semibold text-neutral-900">{project.title}</p>
                   <p className="text-sm text-neutral-500">
@@ -52,7 +52,7 @@ export default async function FirmLeadsPage() {
                   <form action={respondProjectRequestAction}>
                     <input type="hidden" name="projectId" value={project.id} />
                     <input type="hidden" name="decision" value="accept" />
-                    <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+                    <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
                       Accept
                     </button>
                   </form>

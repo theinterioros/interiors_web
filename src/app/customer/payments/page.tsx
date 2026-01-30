@@ -8,8 +8,8 @@ export default async function CustomerPaymentsPage() {
   await requireRole([RoleValues.CUSTOMER]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-      <div className="mx-auto max-w-6xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-500">
             <CreditCard className="h-4 w-4 text-amber-600" />
@@ -28,10 +28,7 @@ export default async function CustomerPaymentsPage() {
               { title: "Manufacturing", amount: "₹3.4L", status: "In progress" },
               { title: "Site Execution", amount: "₹4.1L", status: "Upcoming" },
             ].map((milestone) => (
-              <div
-                key={milestone.title}
-                className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm"
-              >
+              <div key={milestone.title} className="card">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-neutral-900">{milestone.title}</p>
@@ -51,7 +48,7 @@ export default async function CustomerPaymentsPage() {
             ))}
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="card">
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-neutral-400">
               <ShieldCheck className="h-4 w-4 text-amber-600" />
               Payment history

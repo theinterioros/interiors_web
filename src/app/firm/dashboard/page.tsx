@@ -34,8 +34,8 @@ export default async function FirmDashboardPage() {
   `;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
             <LayoutDashboard className="h-4 w-4 text-amber-600" />
@@ -62,7 +62,7 @@ export default async function FirmDashboardPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {pendingRequests.map((project) => (
-                <div key={project.id} className="rounded-2xl border border-neutral-200 p-6">
+                <div key={project.id} className="card">
                   <p className="text-sm font-semibold text-neutral-900">{project.title}</p>
                   <p className="text-xs text-neutral-500">
                     Requested by {project.customer_name ?? project.customer_email}
@@ -86,7 +86,7 @@ export default async function FirmDashboardPage() {
                 <Link
                   key={project.id}
                   href={`/firm/projects/${project.id}`}
-                  className="rounded-2xl border border-neutral-200 p-6 hover:border-neutral-400"
+                  className="card hover:border-neutral-300"
                 >
                   <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
                     {project.status}

@@ -1,4 +1,5 @@
 import { addRateAction, toggleRateAction } from "@/app/actions/admin";
+import { MapPin } from "lucide-react";
 import { getAdminSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -7,17 +8,20 @@ export default async function AdminPricingPage() {
   const settings = await getAdminSettings();
 
   return (
-    <div className="min-h-screen bg-white px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Pricing Configuration</p>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
+            <MapPin className="h-4 w-4 text-amber-600" />
+            Pricing Configuration
+          </div>
           <h1 className="text-3xl font-semibold text-neutral-900">City & pincode rates</h1>
           <p className="text-sm text-neutral-500">
             Maintain ₹ per sq ft pricing for the estimator.
           </p>
         </div>
 
-        <form action={addRateAction} className="space-y-4 rounded-2xl border border-neutral-200 p-6">
+        <form action={addRateAction} className="card space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-700">City</label>
@@ -46,7 +50,7 @@ export default async function AdminPricingPage() {
               />
             </div>
           </div>
-          <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+          <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
             Add rate
           </button>
         </form>
@@ -56,9 +60,9 @@ export default async function AdminPricingPage() {
           {settings.rates.length === 0 ? (
             <p className="text-sm text-neutral-500">No rates configured yet.</p>
           ) : (
-            <div className="space-y-3">
+        <div className="space-y-3">
               {settings.rates.map((rate) => (
-                <div key={rate.id} className="flex items-center justify-between rounded-2xl border border-neutral-200 p-4">
+            <div key={rate.id} className="card flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-neutral-900">
                       {rate.city} • {rate.pincode}

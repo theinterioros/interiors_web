@@ -1,4 +1,5 @@
 import { holdPaymentAction, releasePaymentAction } from "@/app/actions/admin";
+import { CreditCard } from "lucide-react";
 import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -18,10 +19,13 @@ export default async function AdminPaymentsPage() {
   `;
 
   return (
-    <div className="min-h-screen bg-white px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Payment Control</p>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
+            <CreditCard className="h-4 w-4 text-amber-600" />
+            Payment Control
+          </div>
           <h1 className="text-3xl font-semibold text-neutral-900">Escrow ledger</h1>
           <p className="text-sm text-neutral-500">
             Mock payments only. Hold or release to simulate escrow workflows.
@@ -33,7 +37,7 @@ export default async function AdminPaymentsPage() {
         ) : (
           <div className="space-y-4">
             {payments.map((payment) => (
-              <div key={payment.id} className="rounded-2xl border border-neutral-200 p-6">
+              <div key={payment.id} className="card">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
@@ -53,7 +57,7 @@ export default async function AdminPaymentsPage() {
                     </form>
                     <form action={releasePaymentAction}>
                       <input type="hidden" name="paymentId" value={payment.id} />
-                      <button className="rounded-md bg-black px-3 py-2 text-xs text-white">
+                      <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-2 text-xs text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
                         Release
                       </button>
                     </form>

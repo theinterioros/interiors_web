@@ -19,8 +19,8 @@ export default async function AdminProjectsPage() {
   `;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
             <FolderKanban className="h-4 w-4 text-amber-600" />
@@ -35,7 +35,7 @@ export default async function AdminProjectsPage() {
         ) : (
           <div className="space-y-3">
             {projects.map((project) => (
-              <div key={project.id} className="rounded-2xl border border-neutral-200 p-4">
+              <div key={project.id} className="card">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-neutral-900">{project.title}</p>

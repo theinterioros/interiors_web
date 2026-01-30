@@ -37,8 +37,8 @@ export default async function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
             <LayoutDashboard className="h-4 w-4 text-amber-600" />
@@ -49,25 +49,25 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-neutral-200 p-6">
+          <div className="card">
             <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Users</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">{users.count}</p>
           </div>
-          <div className="rounded-2xl border border-neutral-200 p-6">
+          <div className="card">
             <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Firm approvals</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">{pendingFirms.count}</p>
           </div>
-          <div className="rounded-2xl border border-neutral-200 p-6">
+          <div className="card">
             <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Projects</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">{projects.count}</p>
           </div>
-          <div className="rounded-2xl border border-neutral-200 p-6">
+          <div className="card">
             <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Held payments</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">{payments.count}</p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 p-6">
+        <div className="card">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Blob Storage</p>
@@ -104,27 +104,27 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Link href="/admin/users" className="rounded-2xl border border-neutral-200 p-6 hover:border-neutral-400">
+          <Link href="/admin/users" className="card hover:border-neutral-300">
             <h3 className="text-lg font-semibold text-neutral-900">Users</h3>
             <p className="text-sm text-neutral-500">Browse all users and roles.</p>
           </Link>
-          <Link href="/admin/designers" className="rounded-2xl border border-neutral-200 p-6 hover:border-neutral-400">
+          <Link href="/admin/designers" className="card hover:border-neutral-300">
             <h3 className="text-lg font-semibold text-neutral-900">Firm approvals</h3>
             <p className="text-sm text-neutral-500">Review and approve firm profiles.</p>
           </Link>
-          <Link href="/admin/payments" className="rounded-2xl border border-neutral-200 p-6 hover:border-neutral-400">
+          <Link href="/admin/payments" className="card hover:border-neutral-300">
             <h3 className="text-lg font-semibold text-neutral-900">Payment control</h3>
             <p className="text-sm text-neutral-500">Hold or release milestone payments.</p>
           </Link>
-          <Link href="/admin/projects" className="rounded-2xl border border-neutral-200 p-6 hover:border-neutral-400">
+          <Link href="/admin/projects" className="card hover:border-neutral-300">
             <h3 className="text-lg font-semibold text-neutral-900">Projects</h3>
             <p className="text-sm text-neutral-500">View all project activity.</p>
           </Link>
-          <Link href="/admin/pricing" className="rounded-2xl border border-neutral-200 p-6 hover:border-neutral-400">
+          <Link href="/admin/pricing" className="card hover:border-neutral-300">
             <h3 className="text-lg font-semibold text-neutral-900">Pricing configuration</h3>
             <p className="text-sm text-neutral-500">Manage rates by city and pincode.</p>
           </Link>
-          <Link href="/admin/settings" className="rounded-2xl border border-neutral-200 p-6 hover:border-neutral-400">
+          <Link href="/admin/settings" className="card hover:border-neutral-300">
             <h3 className="text-lg font-semibold text-neutral-900">Admin settings</h3>
             <p className="text-sm text-neutral-500">OTP, SMTP, and social links.</p>
           </Link>

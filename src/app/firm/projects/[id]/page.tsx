@@ -32,8 +32,10 @@ export default async function FirmProjectPage({
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-        <div className="mx-auto max-w-3xl text-sm text-neutral-500">Project not found.</div>
+      <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+        <div className="page-inner">
+          <div className="text-sm text-neutral-500">Project not found.</div>
+        </div>
       </div>
     );
   }
@@ -73,8 +75,8 @@ export default async function FirmProjectPage({
   }, {});
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
             <ClipboardList className="h-4 w-4 text-amber-600" />
@@ -86,10 +88,7 @@ export default async function FirmProjectPage({
           </p>
         </div>
 
-        <form
-          action={createMilestoneAction}
-          className="space-y-4 rounded-2xl border border-neutral-200 p-6"
-        >
+        <form action={createMilestoneAction} className="card space-y-4">
           <input type="hidden" name="projectId" value={project.id} />
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -119,7 +118,7 @@ export default async function FirmProjectPage({
               className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
             />
           </div>
-          <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+          <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
             Add milestone
           </button>
         </form>
@@ -131,7 +130,7 @@ export default async function FirmProjectPage({
           ) : (
             <div className="space-y-4">
               {milestones.map((milestone) => (
-                <div key={milestone.id} className="rounded-2xl border border-neutral-200 p-6">
+                <div key={milestone.id} className="card">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
@@ -169,7 +168,7 @@ export default async function FirmProjectPage({
                     {milestone.status === "PENDING" && (
                       <form action={submitMilestoneAction}>
                         <input type="hidden" name="milestoneId" value={milestone.id} />
-                        <button className="rounded-md bg-black px-3 py-2 text-xs font-medium text-white">
+                        <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-2 text-xs font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
                           Request approval
                         </button>
                       </form>
@@ -182,7 +181,7 @@ export default async function FirmProjectPage({
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <form className="space-y-4 rounded-2xl border border-neutral-200 p-6">
+          <form className="card space-y-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Design Revision</p>
               <h2 className="text-lg font-semibold text-neutral-900">Upload design updates</h2>
@@ -195,12 +194,12 @@ export default async function FirmProjectPage({
               placeholder="Notes for the customer"
               className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
             />
-            <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
               Send for approval
             </button>
           </form>
 
-          <form className="space-y-4 rounded-2xl border border-neutral-200 p-6">
+          <form className="card space-y-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Quotation Upload</p>
               <h2 className="text-lg font-semibold text-neutral-900">Submit milestone breakup</h2>
@@ -220,14 +219,14 @@ export default async function FirmProjectPage({
             <button className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700">
               Add milestone row
             </button>
-            <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
               Submit quotation
             </button>
           </form>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <form className="space-y-4 rounded-2xl border border-neutral-200 p-6">
+          <form className="card space-y-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Execution Tracker</p>
               <h2 className="text-lg font-semibold text-neutral-900">Upload site progress</h2>
@@ -240,12 +239,12 @@ export default async function FirmProjectPage({
               <option>Completed</option>
               <option>Needs approval</option>
             </select>
-            <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
               Request payment release
             </button>
           </form>
 
-          <form className="space-y-4 rounded-2xl border border-neutral-200 p-6">
+          <form className="card space-y-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Digital Twin Upload</p>
               <h2 className="text-lg font-semibold text-neutral-900">Upload final documents</h2>

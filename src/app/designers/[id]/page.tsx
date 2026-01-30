@@ -32,9 +32,9 @@ export default async function FirmProfilePage({
 
   if (!firm || firm.status !== "APPROVED") {
     return (
-      <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-        <div className="mx-auto max-w-3xl text-sm text-neutral-500">
-          Firm not found or not approved yet.
+      <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+        <div className="page-inner">
+          <div className="text-sm text-neutral-500">Firm not found or not approved yet.</div>
         </div>
       </div>
     );
@@ -55,8 +55,8 @@ export default async function FirmProfilePage({
   const canRequest = user?.role === RoleValues.CUSTOMER;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-10">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
             <Building2 className="h-4 w-4 text-amber-600" />
@@ -85,7 +85,7 @@ export default async function FirmProfilePage({
           <p className="text-sm text-neutral-600">{firm.about}</p>
         </div>
 
-        <div className="space-y-3">
+        <div className="section-stack">
           <h2 className="text-lg font-semibold text-neutral-900">Portfolio</h2>
           {portfolio.length === 0 ? (
             <p className="text-sm text-neutral-500">Portfolio uploads coming soon.</p>
@@ -97,7 +97,7 @@ export default async function FirmProfilePage({
                   href={file.blob_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-lg border border-neutral-200 p-4 text-sm text-neutral-600 hover:border-neutral-400"
+                  className="card text-sm text-neutral-600 hover:border-neutral-300"
                 >
                   {file.file_name}
                 </a>
@@ -106,14 +106,11 @@ export default async function FirmProfilePage({
           )}
         </div>
 
-        <div className="space-y-3">
+        <div className="section-stack">
           <h2 className="text-lg font-semibold text-neutral-900">Past projects</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {["Modern 3BHK", "Villa refresh", "Compact studio"].map((label) => (
-              <div
-                key={label}
-                className="rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-600"
-              >
+              <div key={label} className="card text-sm text-neutral-600">
                 <div className="h-24 rounded-lg bg-gradient-to-br from-amber-100 via-white to-rose-100" />
                 <p className="mt-3 font-semibold text-neutral-800">{label}</p>
                 <p className="text-xs text-neutral-500">Bengaluru • Residential</p>
@@ -123,7 +120,7 @@ export default async function FirmProfilePage({
         </div>
 
         {canRequest ? (
-          <form action={requestProjectAction} className="space-y-4 rounded-2xl border border-neutral-200 p-6">
+          <form action={requestProjectAction} className="card space-y-4">
             <input type="hidden" name="firmId" value={firm.user_id} />
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-700">Project title</label>
@@ -142,7 +139,7 @@ export default async function FirmProfilePage({
               />
             </div>
             <div className="flex flex-wrap gap-3">
-              <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+              <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
                 Request Project
               </button>
               <button className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700">

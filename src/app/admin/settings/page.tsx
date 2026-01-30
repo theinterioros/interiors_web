@@ -4,6 +4,7 @@ import {
   deleteLinkAction,
   updateSettingsAction,
 } from "@/app/actions/admin";
+import { Settings } from "lucide-react";
 import { getAdminSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -12,15 +13,18 @@ export default async function AdminSettingsPage() {
   const settings = await getAdminSettings();
 
   return (
-    <div className="min-h-screen bg-white px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-10">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Admin Settings</p>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
+            <Settings className="h-4 w-4 text-amber-600" />
+            Admin Settings
+          </div>
           <h1 className="text-3xl font-semibold text-neutral-900">Configuration</h1>
           <p className="text-sm text-neutral-500">Manage OTP, SMTP, fees, and links.</p>
         </div>
 
-        <form action={updateSettingsAction} className="space-y-6 rounded-2xl border border-neutral-200 p-6">
+        <form action={updateSettingsAction} className="card space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-neutral-700">Enable email OTP login</label>
             <div className="flex items-center gap-2 text-sm text-neutral-600">
@@ -103,13 +107,13 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
-          <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+          <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
             Save settings
           </button>
         </form>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <form action={addSocialLinkAction} className="space-y-4 rounded-2xl border border-neutral-200 p-6">
+          <form action={addSocialLinkAction} className="card space-y-4">
             <h2 className="text-lg font-semibold text-neutral-900">Social links</h2>
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-700">Platform</label>
@@ -141,7 +145,7 @@ export default async function AdminSettingsPage() {
                 Landing
               </label>
             </div>
-            <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
               Add social link
             </button>
             <div className="space-y-2 text-sm text-neutral-600">
@@ -158,7 +162,7 @@ export default async function AdminSettingsPage() {
             </div>
           </form>
 
-          <form action={addMarketingLinkAction} className="space-y-4 rounded-2xl border border-neutral-200 p-6">
+          <form action={addMarketingLinkAction} className="card space-y-4">
             <h2 className="text-lg font-semibold text-neutral-900">Header/Footer links</h2>
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-700">Label</label>
@@ -190,7 +194,7 @@ export default async function AdminSettingsPage() {
                 Landing
               </label>
             </div>
-            <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
               Add link
             </button>
             <div className="space-y-2 text-sm text-neutral-600">

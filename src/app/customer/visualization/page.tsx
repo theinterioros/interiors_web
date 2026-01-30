@@ -9,8 +9,8 @@ export default async function VisualizationPage() {
   await requireRole([RoleValues.CUSTOMER]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-      <div className="mx-auto max-w-6xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-500">
@@ -29,7 +29,7 @@ export default async function VisualizationPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="card">
             <h2 className="text-lg font-semibold text-neutral-900">Unlock visualization</h2>
             <p className="mt-2 text-sm text-neutral-600">
               Pay ₹999 to activate room visualization and save your design previews.
@@ -62,7 +62,7 @@ export default async function VisualizationPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="card">
             <h2 className="text-lg font-semibold text-neutral-900">3D viewer</h2>
             <div className="mt-4 flex h-64 items-center justify-center rounded-xl border border-dashed border-neutral-200 bg-white/80 text-sm text-neutral-500">
               3D preview surface (rotate / zoom)

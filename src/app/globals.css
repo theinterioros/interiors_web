@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f0f0f;
+  --background: #f9f6f1;
+  --foreground: #1f1a17;
 }
 
 @theme inline {
@@ -22,8 +22,87 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 a {
   color: inherit;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 5rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding: 6rem 1.5rem;
+  }
+}
+
+.page-inner {
+  margin: 0 auto;
+  max-width: 76rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.section-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.card {
+  border-radius: 1.75rem;
+  border: 1px solid #efe7dc;
+  background: #fffdf8;
+  padding: 2rem;
+  box-shadow: 0 12px 30px rgba(31, 26, 23, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.card-soft {
+  background: rgba(255, 248, 240, 0.88);
+  border-color: #f5e9d8;
+}
+
+.card-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.panel-dark {
+  border-radius: 2rem;
+  border: 1px solid #2a241f;
+  background: #151312;
+  color: #f8f5f1;
+  padding: 3rem;
+  box-shadow: 0 24px 60px rgba(10, 8, 7, 0.4);
+}
+
+@media (min-width: 768px) {
+  .panel-dark {
+    padding: 3.5rem;
+  }
+}
+
+.panel-muted {
+  color: #cfc4b8;
+}
+
+.panel-card {
+  border-radius: 1.5rem;
+  border: 1px solid #2a241f;
+  background: #1d1916;
+  padding: 1.25rem;
+}
+
+.panel-pill {
+  border-radius: 999px;
+  border: 1px solid #2a241f;
+  background: #1d1916;
+  padding: 0.75rem 1rem;
 }

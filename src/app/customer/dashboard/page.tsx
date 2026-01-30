@@ -23,8 +23,8 @@ export default async function CustomerDashboardPage() {
   `;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)] px-6 py-16">
-      <div className="mx-auto max-w-6xl space-y-10">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-500">
             <BarChart3 className="h-4 w-4 text-amber-600" />
@@ -54,7 +54,7 @@ export default async function CustomerDashboardPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-lg">
+          <div className="card card-soft">
             <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Input panel</p>
             <h2 className="mt-2 text-xl font-semibold text-neutral-900">Property details</h2>
             <form className="mt-6 space-y-4">
@@ -101,7 +101,7 @@ export default async function CustomerDashboardPage() {
             </form>
           </div>
 
-          <div className="rounded-2xl border border-white/70 bg-white/90 p-6 shadow-lg">
+          <div className="card card-soft">
             <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Output panel</p>
             <h2 className="mt-2 text-xl font-semibold text-neutral-900">Estimated cost breakup</h2>
             <div className="mt-4 space-y-3 text-sm text-neutral-600">
@@ -137,7 +137,7 @@ export default async function CustomerDashboardPage() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-neutral-900">Active projects</h2>
           {projects.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/70 bg-white/80 p-8 text-sm text-neutral-500">
+            <div className="card card-soft text-sm text-neutral-500">
               No projects yet. Browse verified firms to get started.
             </div>
           ) : (
@@ -146,7 +146,7 @@ export default async function CustomerDashboardPage() {
                 <Link
                   key={project.id}
                   href={`/customer/projects/${project.id}`}
-                  className="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-md hover:border-neutral-300"
+                  className="card card-soft hover:border-neutral-300"
                 >
                   <div className="space-y-2">
                     <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">

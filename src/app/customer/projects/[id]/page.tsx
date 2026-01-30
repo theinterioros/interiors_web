@@ -1,4 +1,5 @@
 import { approveMilestoneAction } from "@/app/actions/project";
+import { ClipboardList } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
@@ -27,8 +28,10 @@ export default async function CustomerProjectPage({
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-white px-6 py-16">
-        <div className="mx-auto max-w-3xl text-sm text-neutral-500">Project not found.</div>
+      <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+        <div className="page-inner">
+          <div className="text-sm text-neutral-500">Project not found.</div>
+        </div>
       </div>
     );
   }
@@ -73,17 +76,20 @@ export default async function CustomerProjectPage({
   const nextMilestone = milestones.find((milestone) => milestone.status !== "APPROVED");
 
   return (
-    <div className="min-h-screen bg-white px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page-inner">
         <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Project View</p>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
+            <ClipboardList className="h-4 w-4 text-amber-600" />
+            Project View
+          </div>
           <h1 className="text-3xl font-semibold text-neutral-900">{project.title}</h1>
           <p className="text-sm text-neutral-500">
             Firm: {project.firm_name ?? "Interior firm"} • Status: {project.status}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 p-6">
+        <div className="card">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Overall progress</p>
@@ -111,7 +117,7 @@ export default async function CustomerProjectPage({
           ) : (
             <div className="space-y-4">
               {milestones.map((milestone) => (
-                <div key={milestone.id} className="rounded-2xl border border-neutral-200 p-6">
+                <div key={milestone.id} className="card">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
@@ -141,7 +147,7 @@ export default async function CustomerProjectPage({
                     <div className="mt-4 flex flex-wrap gap-3">
                       <form action={approveMilestoneAction}>
                         <input type="hidden" name="milestoneId" value={milestone.id} />
-                        <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+                        <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
                           Approve milestone
                         </button>
                       </form>

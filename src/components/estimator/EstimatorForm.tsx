@@ -73,10 +73,7 @@ export default function EstimatorForm() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm"
-      >
+      <form onSubmit={handleSubmit} className="card space-y-6">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Property essentials</p>
           <div className="grid gap-4 md:grid-cols-3">
@@ -148,7 +145,7 @@ export default function EstimatorForm() {
         </button>
       </form>
 
-      <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+      <div className="card">
         <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Estimated range</p>
         {result ? (
           <div className="mt-4 space-y-3 text-sm text-neutral-600">
