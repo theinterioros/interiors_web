@@ -141,7 +141,7 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
 
 export async function logoutAction() {
   await clearSession();
-  return { ok: true };
+  redirect("/");
 }
 
 export async function requestOtpAction(_prevState: unknown, formData: FormData) {

@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9f6f1;
-  --foreground: #1f1a17;
+  --background: #ffffff;
+  --foreground: #0a2540;
+  --text-muted: #6b7280;
+  --text-subtle: #9ca3af;
+  --border: #e6ebf1;
+  --border-strong: #cbd5e1;
+  --surface: #ffffff;
+  --surface-subtle: #f8fafc;
+  --brand: #635bff;
+  --brand-hover: #5851ea;
+  --brand-light: #f0f0ff;
 }
 
 @theme inline {
@@ -14,95 +23,315 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 96px;
+  scroll-padding-top: 80px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
-  scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  line-height: 1.6;
 }
 
 a {
   color: inherit;
+  text-decoration: none;
 }
 
+/* Layout */
 .page {
   min-height: 100vh;
-  padding: 5rem 1.5rem;
+  padding: 4rem 1.5rem;
 }
 
 @media (min-width: 768px) {
   .page {
-    padding: 6rem 1.5rem;
+    padding: 5rem 2rem;
   }
 }
 
 .page-inner {
   margin: 0 auto;
-  max-width: 76rem;
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
+  max-width: 1200px;
 }
 
-.section-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+/* Typography */
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
+.heading-hero {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--foreground);
+}
+
+.heading-xl {
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+.heading-lg {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+
+.heading-md {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--foreground);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-subtle {
+  color: var(--text-subtle);
+}
+
+/* Buttons - Stripe style */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--brand-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 20px 40px rgba(99, 91, 255, 0.35);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-subtle);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--foreground);
+}
+
+.btn-ghost:hover {
+  background: var(--surface-subtle);
+}
+
+/* Cards - Minimal Stripe style */
 .card {
-  border-radius: 1.75rem;
-  border: 1px solid #efe7dc;
-  background: #fffdf8;
-  padding: 2rem;
-  box-shadow: 0 12px 30px rgba(31, 26, 23, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease;
 }
 
-.card-soft {
-  background: rgba(255, 248, 240, 0.88);
-  border-color: #f5e9d8;
+.card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-.card-grid {
-  display: grid;
-  gap: 1.5rem;
+.card-subtle {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease;
 }
 
-.panel-dark {
-  border-radius: 2rem;
-  border: 1px solid #2a241f;
-  background: #151312;
-  color: #f8f5f1;
-  padding: 3rem;
-  box-shadow: 0 24px 60px rgba(10, 8, 7, 0.4);
+.card-subtle:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* Sections - full viewport height, content vertically centered */
+.section {
+  min-height: 100vh;
+  padding: 5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 @media (min-width: 768px) {
-  .panel-dark {
-    padding: 3.5rem;
+  .section {
+    padding: 6rem 2rem;
   }
 }
 
-.panel-muted {
-  color: #cfc4b8;
+@media (min-width: 1024px) {
+  .section {
+    padding: 7rem 2rem;
+  }
 }
 
-.panel-card {
-  border-radius: 1.5rem;
-  border: 1px solid #2a241f;
-  background: #1d1916;
-  padding: 1.25rem;
+.section-alt {
+  background: var(--surface-subtle);
 }
 
-.panel-pill {
-  border-radius: 999px;
-  border: 1px solid #2a241f;
-  background: #1d1916;
+/* Subtle section background pattern (dots) */
+.section-bg-pattern {
+  background-image: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+
+.section-alt.section-bg-pattern {
+  background-color: var(--surface-subtle);
+  background-image: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
+}
+
+/* Very subtle pattern for white sections */
+.section-bg-pattern-light {
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.06) 1px, transparent 0);
+  background-size: 28px 28px;
+  background-position: 0 0;
+}
+
+/* Hero - exactly one viewport, centered */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .hero {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Section with constrained content width for readability */
+.section-tight .page-inner {
+  max-width: 960px;
+}
+
+/* Compact section — no min-height, for strips and short blocks */
+.section-compact {
+  min-height: 0;
+  padding: 4rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .section-compact {
+    padding: 5rem 2rem;
+  }
+}
+
+.section-divider {
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+/* Forms */
+.input {
+  width: 100%;
   padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.1);
+}
+
+.input::placeholder {
+  color: var(--text-subtle);
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--brand-light);
+  color: var(--brand);
+}
+
+/* Table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Utilities */
+.divider {
+  height: 1px;
+  background: var(--border);
+  border: none;
+  margin: 2rem 0;
 }

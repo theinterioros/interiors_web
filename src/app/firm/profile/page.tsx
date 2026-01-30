@@ -2,6 +2,7 @@ import { updateFirmProfileAction, uploadFirmPortfolioAction } from "@/app/action
 import { Building2 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import FadeIn from "@/components/animations/FadeIn";
 
 export const dynamic = "force-dynamic";
 
@@ -58,168 +59,128 @@ export default async function FirmProfilePage() {
     : [];
 
   return (
-    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+    <div className="page bg-white">
       <div className="page-inner">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
-            <Building2 className="h-4 w-4 text-amber-600" />
-            Firm Profile
+        <FadeIn className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Building2 className="h-4 w-4 text-[var(--brand)]" />
+            <p className="eyebrow">Firm Profile</p>
           </div>
-          <h1 className="text-3xl font-semibold text-neutral-900">Manage your profile</h1>
-          <p className="text-sm text-neutral-500">
+          <h1 className="heading-lg mb-3">Manage your profile</h1>
+          <p className="text-[var(--text-muted)]">
             Update your details and upload portfolio documents for review.
           </p>
-        </div>
+        </FadeIn>
 
-        <form action={updateFirmProfileAction} className="card space-y-4">
+        <FadeIn delay={0.2}>
+          <form action={updateFirmProfileAction} className="card space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Firm name</label>
-              <input
-                name="firmName"
-                defaultValue={profile?.firm_name ?? ""}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium text-[var(--foreground)]">Firm name</label>
+              <input name="firmName" defaultValue={profile?.firm_name ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Owner name</label>
-              <input
-                name="ownerName"
-                defaultValue={profile?.owner_name ?? ""}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium text-[var(--foreground)]">Owner name</label>
+              <input name="ownerName" defaultValue={profile?.owner_name ?? ""} className="input" />
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Name</label>
-              <input
-                name="name"
-                defaultValue={profile?.name ?? ""}
-                required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium text-[var(--foreground)]">Name</label>
+              <input name="name" defaultValue={profile?.name ?? ""} required className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Experience (years)</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Experience (years)</label>
               <input
                 name="experienceYears"
                 type="number"
                 min={0}
                 defaultValue={profile?.experience_years ?? 0}
                 required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">City</label>
-              <input
-                name="city"
-                defaultValue={profile?.city ?? ""}
-                required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium text-[var(--foreground)]">City</label>
+              <input name="city" defaultValue={profile?.city ?? ""} required className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Pincode</label>
-              <input
-                name="pincode"
-                defaultValue={profile?.pincode ?? ""}
-                required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium text-[var(--foreground)]">Pincode</label>
+              <input name="pincode" defaultValue={profile?.pincode ?? ""} required className="input" />
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-700">Office address</label>
-            <input
-              name="officeAddress"
-              defaultValue={profile?.office_address ?? ""}
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            />
+            <label className="text-sm font-medium text-[var(--foreground)]">Office address</label>
+            <input name="officeAddress" defaultValue={profile?.office_address ?? ""} className="input" />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">GST</label>
-              <input
-                name="gst"
-                defaultValue={profile?.gst ?? ""}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium text-[var(--foreground)]">GST</label>
+              <input name="gst" defaultValue={profile?.gst ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Business type</label>
-              <input
-                name="businessType"
-                defaultValue={profile?.business_type ?? ""}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium text-[var(--foreground)]">Business type</label>
+              <input name="businessType" defaultValue={profile?.business_type ?? ""} className="input" />
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Ticket size</label>
-              <input
-                name="ticketSize"
-                defaultValue={profile?.ticket_size ?? ""}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium text-[var(--foreground)]">Ticket size</label>
+              <input name="ticketSize" defaultValue={profile?.ticket_size ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Designers count</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Designers count</label>
               <input
                 name="designersCount"
                 type="number"
                 min={0}
                 defaultValue={profile?.designers_count ?? 0}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-700">About</label>
-            <textarea
-              name="about"
-              rows={4}
-              defaultValue={profile?.about ?? ""}
-              required
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            />
+            <label className="text-sm font-medium text-[var(--foreground)]">About</label>
+            <textarea name="about" rows={4} defaultValue={profile?.about ?? ""} required className="input" />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-700">Comments</label>
-            <textarea
-              name="comments"
-              rows={3}
-              defaultValue={profile?.comments ?? ""}
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            />
+            <label className="text-sm font-medium text-[var(--foreground)]">Comments</label>
+            <textarea name="comments" rows={3} defaultValue={profile?.comments ?? ""} className="input" />
           </div>
-          <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
+          <button type="submit" className="btn btn-primary">
             Save profile
           </button>
-        </form>
+          </form>
+        </FadeIn>
 
-        <form
-          action={uploadFirmPortfolioAction}
-          encType="multipart/form-data"
-          className="card space-y-4"
-        >
-          <h2 className="text-lg font-semibold text-neutral-900">Portfolio uploads</h2>
-          <input type="file" name="file" required className="text-sm" />
-          <button className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-800">
-            Upload portfolio file
-          </button>
-          <div className="space-y-2 text-sm text-neutral-600">
-            {portfolio.map((file) => (
-              <a key={file.id} href={file.blob_url} target="_blank" rel="noreferrer" className="block underline">
-                {file.file_name}
-              </a>
-            ))}
-          </div>
-        </form>
+        <FadeIn delay={0.3}>
+          <form
+            action={uploadFirmPortfolioAction}
+            encType="multipart/form-data"
+            className="card space-y-4"
+          >
+            <h2 className="heading-md mb-4">Portfolio uploads</h2>
+            <input type="file" name="file" required className="input" />
+            <button type="submit" className="btn btn-secondary">
+              Upload portfolio file
+            </button>
+            <div className="space-y-2 text-sm">
+              {portfolio.map((file) => (
+                <a
+                  key={file.id}
+                  href={file.blob_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block text-[var(--brand)] hover:underline"
+                >
+                  {file.file_name}
+                </a>
+              ))}
+            </div>
+          </form>
+        </FadeIn>
       </div>
     </div>
   );

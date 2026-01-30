@@ -12,7 +12,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:from-amber-400 hover:to-amber-500 disabled:opacity-50"
+      className="btn btn-primary w-full disabled:opacity-50"
     >
       {pending ? "Please wait..." : label}
     </button>
@@ -38,21 +38,21 @@ export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
     <div className="space-y-6">
       <form action={formAction} className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-neutral-700">Email or Mobile</label>
+          <label className="text-sm font-medium text-[var(--foreground)]">Email or Mobile</label>
           <input
             type="text"
             name="identifier"
             required
-            className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+            className="input"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-neutral-700">Password</label>
+          <label className="text-sm font-medium text-[var(--foreground)]">Password</label>
           <input
             type="password"
             name="password"
             required
-            className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+            className="input"
           />
         </div>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
@@ -60,38 +60,38 @@ export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
       </form>
 
       {otpEnabled && (
-        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-          <h3 className="text-sm font-semibold text-neutral-800">Login with OTP</h3>
-          <p className="text-xs text-neutral-500">
+        <div className="card-subtle">
+          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-2">Login with OTP</h3>
+          <p className="text-xs text-[var(--text-muted)] mb-4">
             OTP login is enabled by the admin. Request a code to sign in.
           </p>
           {!otpRequested ? (
-            <form action={otpAction} className="mt-3 space-y-3">
+            <form action={otpAction} className="space-y-3">
               <input
                 type="email"
                 name="email"
                 required
                 placeholder="Email"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
               {otpState.error && <p className="text-sm text-red-600">{otpState.error}</p>}
               <SubmitButton label="Send OTP" />
             </form>
           ) : (
-            <form action={verifyAction} className="mt-3 space-y-3">
+            <form action={verifyAction} className="space-y-3">
               <input
                 type="email"
                 name="email"
                 required
                 placeholder="Email"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
               <input
                 type="text"
                 name="code"
                 required
                 placeholder="6-digit code"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
               {verifyState.error && <p className="text-sm text-red-600">{verifyState.error}</p>}
               <SubmitButton label="Verify & Sign in" />

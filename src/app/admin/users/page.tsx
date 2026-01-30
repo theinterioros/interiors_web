@@ -1,5 +1,8 @@
 import { Users } from "lucide-react";
 import { sql } from "@/lib/db";
+import FadeIn from "@/components/animations/FadeIn";
+import StaggerChildren from "@/components/animations/StaggerChildren";
+import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
@@ -16,30 +19,32 @@ export default async function AdminUsersPage() {
   `;
 
   return (
-    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+    <div className="page bg-white">
       <div className="page-inner">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
-            <Users className="h-4 w-4 text-amber-600" />
-            Users
+        <FadeIn className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="h-4 w-4 text-[var(--brand)]" />
+            <p className="eyebrow">Users</p>
           </div>
-          <h1 className="text-3xl font-semibold text-neutral-900">All users</h1>
-          <p className="text-sm text-neutral-500">Customers, firms, and admins.</p>
-        </div>
+          <h1 className="heading-lg mb-3">All users</h1>
+          <p className="text-[var(--text-muted)]">Customers, firms, and admins.</p>
+        </FadeIn>
 
-        <div className="space-y-3">
+        <StaggerChildren className="space-y-3">
           {users.map((user) => (
-            <div key={user.id} className="card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-neutral-900">{user.name ?? "User"}</p>
-                  <p className="text-xs text-neutral-500">{user.email}</p>
+            <FadeInItem key={user.id}>
+              <div className="card">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--foreground)]">{user.name ?? "User"}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{user.email}</p>
+                  </div>
+                  <span className="badge">{user.role}</span>
                 </div>
-                <span className="text-xs uppercase tracking-[0.3em] text-neutral-400">{user.role}</span>
               </div>
-            </div>
+            </FadeInItem>
           ))}
-        </div>
+        </StaggerChildren>
       </div>
     </div>
   );

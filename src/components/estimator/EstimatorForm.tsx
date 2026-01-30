@@ -74,34 +74,18 @@ export default function EstimatorForm() {
   return (
     <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
       <form onSubmit={handleSubmit} className="card space-y-6">
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Property essentials</p>
+        <div className="space-y-4">
+          <p className="eyebrow">Property essentials</p>
           <div className="grid gap-4 md:grid-cols-3">
-            <input
-              name="city"
-              required
-              placeholder="City"
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            />
-            <input
-              name="pincode"
-              required
-              placeholder="Pincode"
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            />
-            <select
-              name="propertyType"
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            >
+            <input name="city" required placeholder="City" className="input" />
+            <input name="pincode" required placeholder="Pincode" className="input" />
+            <select name="propertyType" className="input">
               <option value="apartment">Residential</option>
               <option value="villa">Villa / Independent</option>
             </select>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <select
-              name="configuration"
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            >
+            <select name="configuration" className="input">
               <option value="1BHK">1 BHK</option>
               <option value="2BHK">2 BHK</option>
               <option value="3BHK">3 BHK</option>
@@ -115,60 +99,68 @@ export default function EstimatorForm() {
                 min={100}
                 required
                 placeholder="Carpet area"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
-              <select
-                name="areaUnit"
-                className="rounded-md border border-neutral-200 px-2 py-2 text-sm"
-              >
+              <select name="areaUnit" className="input">
                 <option value="SFT">SFT</option>
                 <option value="SQM">SQ.M</option>
                 <option value="SQYD">SQ.YD</option>
               </select>
             </div>
-            <div className="rounded-md border border-dashed border-neutral-200 px-3 py-2 text-xs text-neutral-500">
+            <div className="card-subtle text-xs text-[var(--text-muted)]">
               We use these details to calculate your estimate.
             </div>
           </div>
         </div>
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-[var(--text-muted)]">
           Estimate uses city, property type, configuration, and carpet area. You can refine later.
         </p>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:from-amber-400 hover:to-amber-500 disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading} className="btn btn-primary w-full disabled:opacity-50">
           {loading ? "Estimating..." : "Estimate Cost"}
         </button>
       </form>
 
       <div className="card">
-        <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Estimated range</p>
+        <p className="eyebrow mb-4">Estimated range</p>
         {result ? (
-          <div className="mt-4 space-y-3 text-sm text-neutral-600">
-            <p className="text-3xl font-semibold text-neutral-900">
+          <div className="space-y-4">
+            <p className="text-3xl font-semibold text-[var(--foreground)]">
               ₹{result.min.toLocaleString()} - ₹{result.max.toLocaleString()}
             </p>
-            <div className="rounded-lg bg-gradient-to-br from-amber-50 to-amber-100/60 p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Breakdown</p>
-              <div className="mt-3 space-y-1 text-sm">
-                <p>Rate per sq ft: ₹{result.breakdown.ratePerSqFt}</p>
-                <p>Square feet: {result.breakdown.squareFeet}</p>
-                <p>Property modifier: {result.breakdown.propertyMultiplier}x</p>
-                <p>Room modifier: {result.breakdown.roomModifier}x</p>
-                <p>Adjusted estimate: ₹{result.breakdown.adjusted.toLocaleString()}</p>
+            <div className="card-subtle">
+              <p className="eyebrow mb-3">Breakdown</p>
+              <div className="space-y-2 text-sm text-[var(--text-muted)]">
+                <div className="flex justify-between">
+                  <span>Rate per sq ft:</span>
+                  <span className="font-semibold text-[var(--foreground)]">₹{result.breakdown.ratePerSqFt}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Square feet:</span>
+                  <span className="font-semibold text-[var(--foreground)]">{result.breakdown.squareFeet}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Property modifier:</span>
+                  <span className="font-semibold text-[var(--foreground)]">{result.breakdown.propertyMultiplier}x</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Room modifier:</span>
+                  <span className="font-semibold text-[var(--foreground)]">{result.breakdown.roomModifier}x</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-[var(--border)]">
+                  <span>Adjusted estimate:</span>
+                  <span className="font-semibold text-[var(--brand)]">₹{result.breakdown.adjusted.toLocaleString()}</span>
+                </div>
               </div>
             </div>
-            <p className="text-xs text-neutral-500">{result.disclaimer}</p>
-            <button className="rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
+            <p className="text-xs text-[var(--text-muted)]">{result.disclaimer}</p>
+            <button className="btn btn-primary w-full">
               Email my estimate
             </button>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-neutral-500">
+          <p className="text-sm text-[var(--text-muted)]">
             Enter your details to receive a transparent estimate.
           </p>
         )}

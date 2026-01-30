@@ -1,6 +1,9 @@
 import { holdPaymentAction, releasePaymentAction } from "@/app/actions/admin";
 import { CreditCard } from "lucide-react";
 import { sql } from "@/lib/db";
+import FadeIn from "@/components/animations/FadeIn";
+import StaggerChildren from "@/components/animations/StaggerChildren";
+import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
@@ -19,53 +22,55 @@ export default async function AdminPaymentsPage() {
   `;
 
   return (
-    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+    <div className="page bg-white">
       <div className="page-inner">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
-            <CreditCard className="h-4 w-4 text-amber-600" />
-            Payment Control
+        <FadeIn className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <CreditCard className="h-4 w-4 text-[var(--brand)]" />
+            <p className="eyebrow">Payment Control</p>
           </div>
-          <h1 className="text-3xl font-semibold text-neutral-900">Escrow ledger</h1>
-          <p className="text-sm text-neutral-500">
+          <h1 className="heading-lg mb-3">Escrow ledger</h1>
+          <p className="text-[var(--text-muted)]">
             Mock payments only. Hold or release to simulate escrow workflows.
           </p>
-        </div>
+        </FadeIn>
 
         {payments.length === 0 ? (
-          <p className="text-sm text-neutral-500">No payments recorded yet.</p>
+          <FadeIn>
+            <p className="text-sm text-[var(--text-muted)]">No payments recorded yet.</p>
+          </FadeIn>
         ) : (
-          <div className="space-y-4">
+          <StaggerChildren className="space-y-4">
             {payments.map((payment) => (
-              <div key={payment.id} className="card">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
-                      {payment.type}
-                    </p>
-                    <p className="text-lg font-semibold text-neutral-900">₹{payment.amount}</p>
-                    <p className="text-xs text-neutral-500">
-                      {payment.project_title ?? "General ledger"} • Status: {payment.status}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <form action={holdPaymentAction}>
-                      <input type="hidden" name="paymentId" value={payment.id} />
-                      <button className="rounded-md border border-neutral-200 px-3 py-2 text-xs text-neutral-700">
-                        Hold
-                      </button>
-                    </form>
-                    <form action={releasePaymentAction}>
-                      <input type="hidden" name="paymentId" value={payment.id} />
-                      <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-2 text-xs text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-                        Release
-                      </button>
-                    </form>
+              <FadeInItem key={payment.id}>
+                <div className="card">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="eyebrow mb-1">{payment.type}</p>
+                      <p className="heading-md mb-1">₹{payment.amount.toLocaleString()}</p>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        {payment.project_title ?? "General ledger"} • Status: {payment.status}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <form action={holdPaymentAction}>
+                        <input type="hidden" name="paymentId" value={payment.id} />
+                        <button type="submit" className="btn btn-secondary text-xs">
+                          Hold
+                        </button>
+                      </form>
+                      <form action={releasePaymentAction}>
+                        <input type="hidden" name="paymentId" value={payment.id} />
+                        <button type="submit" className="btn btn-primary text-xs">
+                          Release
+                        </button>
+                      </form>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </FadeInItem>
             ))}
-          </div>
+          </StaggerChildren>
         )}
       </div>
     </div>

@@ -2,6 +2,9 @@ import { respondProjectRequestAction } from "@/app/actions/project";
 import { Inbox } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import FadeIn from "@/components/animations/FadeIn";
+import StaggerChildren from "@/components/animations/StaggerChildren";
+import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
@@ -24,49 +27,55 @@ export default async function FirmLeadsPage() {
   `;
 
   return (
-    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+    <div className="page bg-white">
       <div className="page-inner">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
-            <Inbox className="h-4 w-4 text-amber-600" />
-            Firm Leads
+        <FadeIn className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Inbox className="h-4 w-4 text-[var(--brand)]" />
+            <p className="eyebrow">Firm Leads</p>
           </div>
-          <h1 className="text-3xl font-semibold text-neutral-900">Incoming project requests</h1>
-          <p className="text-sm text-neutral-500">Accept or reject customer requests.</p>
-        </div>
+          <h1 className="heading-lg mb-3">Incoming project requests</h1>
+          <p className="text-[var(--text-muted)]">Accept or reject customer requests.</p>
+        </FadeIn>
 
         {leads.length === 0 ? (
-          <p className="text-sm text-neutral-500">No pending requests.</p>
+          <FadeIn>
+            <p className="text-sm text-[var(--text-muted)]">No pending requests.</p>
+          </FadeIn>
         ) : (
-          <div className="space-y-4">
+          <StaggerChildren className="space-y-4">
             {leads.map((project) => (
-              <div key={project.id} className="card">
-                <div className="space-y-2">
-                  <p className="text-lg font-semibold text-neutral-900">{project.title}</p>
-                  <p className="text-sm text-neutral-500">
-                    {project.customer_name ?? project.customer_email}
-                  </p>
-                  <p className="text-sm text-neutral-600">{project.description}</p>
+              <FadeInItem key={project.id}>
+                <div className="card">
+                  <div className="space-y-2 mb-4">
+                    <h3 className="heading-md">{project.title}</h3>
+                    <p className="text-sm text-[var(--text-muted)]">
+                      {project.customer_name ?? project.customer_email}
+                    </p>
+                    {project.description && (
+                      <p className="text-sm text-[var(--text-muted)]">{project.description}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <form action={respondProjectRequestAction}>
+                      <input type="hidden" name="projectId" value={project.id} />
+                      <input type="hidden" name="decision" value="accept" />
+                      <button type="submit" className="btn btn-primary">
+                        Accept
+                      </button>
+                    </form>
+                    <form action={respondProjectRequestAction}>
+                      <input type="hidden" name="projectId" value={project.id} />
+                      <input type="hidden" name="decision" value="reject" />
+                      <button type="submit" className="btn btn-secondary">
+                        Reject
+                      </button>
+                    </form>
+                  </div>
                 </div>
-                <div className="mt-4 flex gap-3">
-                  <form action={respondProjectRequestAction}>
-                    <input type="hidden" name="projectId" value={project.id} />
-                    <input type="hidden" name="decision" value="accept" />
-                    <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-                      Accept
-                    </button>
-                  </form>
-                  <form action={respondProjectRequestAction}>
-                    <input type="hidden" name="projectId" value={project.id} />
-                    <input type="hidden" name="decision" value="reject" />
-                    <button className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-800">
-                      Reject
-                    </button>
-                  </form>
-                </div>
-              </div>
+              </FadeInItem>
             ))}
-          </div>
+          </StaggerChildren>
         )}
       </div>
     </div>

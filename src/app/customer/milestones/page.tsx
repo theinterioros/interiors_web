@@ -2,6 +2,9 @@ import { approveMilestoneAction } from "@/app/actions/project";
 import { ClipboardList } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import FadeIn from "@/components/animations/FadeIn";
+import StaggerChildren from "@/components/animations/StaggerChildren";
+import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
@@ -24,38 +27,42 @@ export default async function CustomerMilestonesPage() {
   `;
 
   return (
-    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+    <div className="page bg-white">
       <div className="page-inner">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
-            <ClipboardList className="h-4 w-4 text-amber-600" />
-            Milestone Approval
+        <FadeIn className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardList className="h-4 w-4 text-[var(--brand)]" />
+            <p className="eyebrow">Milestone Approval</p>
           </div>
-          <h1 className="text-3xl font-semibold text-neutral-900">Review submissions</h1>
-          <p className="text-sm text-neutral-500">Approve milestones to release payment.</p>
-        </div>
+          <h1 className="heading-lg mb-3">Review submissions</h1>
+          <p className="text-[var(--text-muted)]">Approve milestones to release payment.</p>
+        </FadeIn>
 
         {milestones.length === 0 ? (
-          <p className="text-sm text-neutral-500">No milestones awaiting approval.</p>
+          <FadeIn>
+            <p className="text-sm text-[var(--text-muted)]">No milestones awaiting approval.</p>
+          </FadeIn>
         ) : (
-          <div className="space-y-4">
+          <StaggerChildren className="space-y-4">
             {milestones.map((milestone) => (
-              <div key={milestone.id} className="card">
-                <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">
-                  {milestone.project_title}
-                </p>
-                <h3 className="text-lg font-semibold text-neutral-900">{milestone.title}</h3>
-                <p className="text-sm text-neutral-500">{milestone.description}</p>
-                <p className="mt-2 text-sm font-semibold text-neutral-900">₹{milestone.amount}</p>
-                <form action={approveMilestoneAction} className="mt-4">
-                  <input type="hidden" name="milestoneId" value={milestone.id} />
-                  <button className="rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-                    Approve milestone
-                  </button>
-                </form>
-              </div>
+              <FadeInItem key={milestone.id}>
+                <div className="card">
+                  <p className="eyebrow mb-2">{milestone.project_title}</p>
+                  <h3 className="heading-md mb-2">{milestone.title}</h3>
+                  <p className="text-[var(--text-muted)] mb-3">{milestone.description}</p>
+                  <p className="text-sm font-semibold text-[var(--foreground)] mb-4">
+                    ₹{milestone.amount.toLocaleString()}
+                  </p>
+                  <form action={approveMilestoneAction}>
+                    <input type="hidden" name="milestoneId" value={milestone.id} />
+                    <button type="submit" className="btn btn-primary">
+                      Approve milestone
+                    </button>
+                  </form>
+                </div>
+              </FadeInItem>
             ))}
-          </div>
+          </StaggerChildren>
         )}
       </div>
     </div>

@@ -13,7 +13,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:from-amber-400 hover:to-amber-500 disabled:opacity-50"
+      className="btn btn-primary w-full disabled:opacity-50"
     >
       {pending ? "Please wait..." : label}
     </button>
@@ -31,51 +31,51 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
   return (
     <form action={formAction} className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium text-neutral-700">
+        <label className="text-sm font-medium text-[var(--foreground)]">
           {role === "FIRM" ? "Contact person name" : "Name"}
         </label>
         <input
           type="text"
           name="name"
           required
-          className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+          className="input"
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium text-neutral-700">Mobile number</label>
+        <label className="text-sm font-medium text-[var(--foreground)]">Mobile number</label>
         <input
           type="tel"
           name="phone"
           required
-          className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+          className="input"
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium text-neutral-700">Email</label>
+        <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
         <input
           type="email"
           name="email"
           required
-          className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+          className="input"
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium text-neutral-700">Password</label>
+        <label className="text-sm font-medium text-[var(--foreground)]">Password</label>
         <input
           type="password"
           name="password"
           required
-          className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+          className="input"
         />
       </div>
       {role === "CUSTOMER" && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-neutral-700">OTP (email)</label>
+          <label className="text-sm font-medium text-[var(--foreground)]">OTP (email)</label>
           <input
             type="text"
             name="otp"
             placeholder="Optional — verify after signup"
-            className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+            className="input"
           />
         </div>
       )}
@@ -83,12 +83,12 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
         <input type="hidden" name="role" value={fixedRole} />
       ) : (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-neutral-700">Role</label>
+          <label className="text-sm font-medium text-[var(--foreground)]">Role</label>
           <select
             name="role"
             value={role}
             onChange={(event) => setRole(event.target.value as "CUSTOMER" | "FIRM")}
-            className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+            className="input"
           >
             <option value="CUSTOMER">Customer</option>
             <option value="FIRM">Interior firm</option>
@@ -97,7 +97,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
       )}
 
       {role === "FIRM" && (
-        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-4">
+        <div className="card-subtle space-y-4">
           <p className="text-xs text-neutral-500">
             Firms are reviewed by admin before appearing publicly.
           </p>
@@ -107,7 +107,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
               type="text"
               name="firmName"
               required
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+              className="input"
             />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -117,7 +117,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
                 type="text"
                 name="ownerName"
                 required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
             <div className="space-y-2">
@@ -125,7 +125,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
               <input
                 type="tel"
                 name="altPhone"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
           </div>
@@ -136,7 +136,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
                 type="text"
                 name="city"
                 required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
             <div className="space-y-2">
@@ -145,7 +145,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
                 type="text"
                 name="pincode"
                 required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
           </div>
@@ -155,7 +155,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
               type="text"
               name="officeAddress"
               required
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+              className="input"
             />
           </div>
           <div className="space-y-2">
@@ -163,7 +163,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
             <input
               type="file"
               name="portfolio"
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+              className="input"
             />
             <p className="text-xs text-neutral-500">
               You can upload additional documents after signup in your dashboard.
@@ -175,14 +175,14 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
               <input
                 type="text"
                 name="gst"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-700">Business type</label>
               <select
                 name="businessType"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               >
                 <option value="Residential">Residential</option>
                 <option value="Commercial">Commercial</option>
@@ -197,7 +197,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
               name="experienceYears"
               min={0}
               required
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+              className="input"
             />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -205,7 +205,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
               <label className="text-sm font-medium text-neutral-700">Ticket size</label>
               <select
                 name="ticketSize"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               >
                 <option value="0-5 lakhs">0-5 lakhs</option>
                 <option value="5-10 lakhs">5-10 lakhs</option>
@@ -222,7 +222,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
                 type="number"
                 name="designersCount"
                 min={0}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="input"
               />
             </div>
           </div>
@@ -232,7 +232,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
               name="about"
               required
               rows={4}
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+              className="input"
             />
           </div>
           <div className="space-y-2">
@@ -240,7 +240,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
             <textarea
               name="comments"
               rows={3}
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+              className="input"
             />
           </div>
         </div>

@@ -6,6 +6,9 @@ import {
 import { ClipboardList } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import FadeIn from "@/components/animations/FadeIn";
+import StaggerChildren from "@/components/animations/StaggerChildren";
+import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +35,9 @@ export default async function FirmProjectPage({
 
   if (!project) {
     return (
-      <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page bg-white">
         <div className="page-inner">
-          <div className="text-sm text-neutral-500">Project not found.</div>
+          <div className="text-sm text-[var(--text-muted)]">Project not found.</div>
         </div>
       </div>
     );
@@ -75,186 +78,178 @@ export default async function FirmProjectPage({
   }, {});
 
   return (
-    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+    <div className="page bg-white">
       <div className="page-inner">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
-            <ClipboardList className="h-4 w-4 text-amber-600" />
-            Project Management
+        <FadeIn className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardList className="h-4 w-4 text-[var(--brand)]" />
+            <p className="eyebrow">Project Management</p>
           </div>
-          <h1 className="text-3xl font-semibold text-neutral-900">{project.title}</h1>
-          <p className="text-sm text-neutral-500">
+          <h1 className="heading-lg mb-3">{project.title}</h1>
+          <p className="text-[var(--text-muted)]">
             Customer: {project.customer_name ?? project.customer_email}
           </p>
-        </div>
+        </FadeIn>
 
-        <form action={createMilestoneAction} className="card space-y-4">
-          <input type="hidden" name="projectId" value={project.id} />
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Milestone title</label>
-              <input
-                name="title"
-                required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+        <FadeIn delay={0.2} className="mb-8">
+          <form action={createMilestoneAction} className="card space-y-4">
+            <input type="hidden" name="projectId" value={project.id} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-[var(--foreground)]">Milestone title</label>
+                <input name="title" required className="input" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-[var(--foreground)]">Amount (INR)</label>
+                <input name="amount" type="number" min={0} required className="input" />
+              </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Amount (INR)</label>
-              <input
-                name="amount"
-                type="number"
-                min={0}
-                required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
+              <label className="text-sm font-medium text-[var(--foreground)]">Description</label>
+              <textarea name="description" rows={3} className="input" />
             </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-700">Description</label>
-            <textarea
-              name="description"
-              rows={3}
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            />
-          </div>
-          <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-            Add milestone
-          </button>
-        </form>
+            <button type="submit" className="btn btn-primary">
+              Add milestone
+            </button>
+          </form>
+        </FadeIn>
 
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-neutral-900">Milestones</h2>
+        <FadeIn delay={0.3} className="mb-8">
+          <h2 className="heading-md mb-6">Milestones</h2>
           {milestones.length === 0 ? (
-            <p className="text-sm text-neutral-500">No milestones created yet.</p>
+            <p className="text-sm text-[var(--text-muted)]">No milestones created yet.</p>
           ) : (
-            <div className="space-y-4">
+            <StaggerChildren className="space-y-4">
               {milestones.map((milestone) => (
-                <div key={milestone.id} className="card">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
-                        {milestone.status}
+                <FadeInItem key={milestone.id}>
+                  <div className="card">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="eyebrow mb-1">{milestone.status}</p>
+                        <h3 className="heading-md">{milestone.title}</h3>
+                      </div>
+                      <p className="text-sm font-semibold text-[var(--foreground)]">
+                        ₹{milestone.amount.toLocaleString()}
                       </p>
-                      <h3 className="text-lg font-semibold text-neutral-900">{milestone.title}</h3>
                     </div>
-                    <p className="text-sm font-semibold text-neutral-900">₹{milestone.amount}</p>
-                  </div>
-                  <p className="mt-2 text-sm text-neutral-500">{milestone.description}</p>
-                  {imagesByMilestone[milestone.id]?.length ? (
-                    <div className="mt-3 grid gap-2 md:grid-cols-2">
-                      {imagesByMilestone[milestone.id].map((image) => (
-                        <a
-                          key={image.id}
-                          href={image.blob_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-lg border border-neutral-200 p-3 text-xs text-neutral-600"
-                        >
-                          {image.file_name}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
+                    <p className="text-[var(--text-muted)] mb-4">{milestone.description}</p>
+                    {imagesByMilestone[milestone.id]?.length ? (
+                      <div className="grid gap-2 md:grid-cols-2 mb-4">
+                        {imagesByMilestone[milestone.id].map((image) => (
+                          <a
+                            key={image.id}
+                            href={image.blob_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="card-subtle text-xs text-[var(--text-muted)] hover:border-[var(--border-strong)] transition-colors"
+                          >
+                            {image.file_name}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
 
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <form action={uploadMilestoneImageAction} encType="multipart/form-data">
-                      <input type="hidden" name="milestoneId" value={milestone.id} />
-                      <input type="file" name="file" required className="text-sm" />
-                      <button className="ml-2 rounded-md border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-800">
-                        Upload image
-                      </button>
-                    </form>
-                    {milestone.status === "PENDING" && (
-                      <form action={submitMilestoneAction}>
+                    <div className="flex flex-wrap gap-3">
+                      <form action={uploadMilestoneImageAction} encType="multipart/form-data" className="flex gap-2">
                         <input type="hidden" name="milestoneId" value={milestone.id} />
-                        <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-2 text-xs font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-                          Request approval
+                        <input type="file" name="file" required className="input text-xs" />
+                        <button type="submit" className="btn btn-secondary text-xs">
+                          Upload image
                         </button>
                       </form>
-                    )}
+                      {milestone.status === "PENDING" && (
+                        <form action={submitMilestoneAction}>
+                          <input type="hidden" name="milestoneId" value={milestone.id} />
+                          <button type="submit" className="btn btn-primary text-xs">
+                            Request approval
+                          </button>
+                        </form>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </FadeInItem>
               ))}
-            </div>
+            </StaggerChildren>
           )}
-        </div>
+        </FadeIn>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <form className="card space-y-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Design Revision</p>
-              <h2 className="text-lg font-semibold text-neutral-900">Upload design updates</h2>
-              <p className="text-xs text-neutral-500">Send for customer approval in tracker.</p>
-            </div>
-            <input type="file" name="designFile" className="text-sm" />
-            <textarea
-              name="designNotes"
-              rows={3}
-              placeholder="Notes for the customer"
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            />
-            <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-              Send for approval
-            </button>
-          </form>
+          <FadeIn delay={0.4}>
+            <form className="card space-y-4">
+              <div>
+                <p className="eyebrow mb-2">Design Revision</p>
+                <h2 className="heading-md mb-2">Upload design updates</h2>
+                <p className="text-xs text-[var(--text-muted)]">Send for customer approval in tracker.</p>
+              </div>
+              <input type="file" name="designFile" className="input" />
+              <textarea
+                name="designNotes"
+                rows={3}
+                placeholder="Notes for the customer"
+                className="input"
+              />
+              <button type="button" className="btn btn-primary">
+                Send for approval
+              </button>
+            </form>
+          </FadeIn>
 
-          <form className="card space-y-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Quotation Upload</p>
-              <h2 className="text-lg font-semibold text-neutral-900">Submit milestone breakup</h2>
-              <p className="text-xs text-neutral-500">Attach quotation and milestone structure.</p>
-            </div>
-            <input type="file" name="quotationFile" className="text-sm" />
-            <div className="grid gap-3 md:grid-cols-2">
-              <input
-                placeholder="Milestone title"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
-              <input
-                placeholder="Amount (INR)"
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
-            </div>
-            <button className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700">
-              Add milestone row
-            </button>
-            <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-              Submit quotation
-            </button>
-          </form>
+          <FadeIn delay={0.5}>
+            <form className="card space-y-4">
+              <div>
+                <p className="eyebrow mb-2">Quotation Upload</p>
+                <h2 className="heading-md mb-2">Submit milestone breakup</h2>
+                <p className="text-xs text-[var(--text-muted)]">Attach quotation and milestone structure.</p>
+              </div>
+              <input type="file" name="quotationFile" className="input" />
+              <div className="grid gap-3 md:grid-cols-2">
+                <input placeholder="Milestone title" className="input" />
+                <input placeholder="Amount (INR)" className="input" />
+              </div>
+              <button type="button" className="btn btn-secondary">
+                Add milestone row
+              </button>
+              <button type="button" className="btn btn-primary">
+                Submit quotation
+              </button>
+            </form>
+          </FadeIn>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <form className="card space-y-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Execution Tracker</p>
-              <h2 className="text-lg font-semibold text-neutral-900">Upload site progress</h2>
-              <p className="text-xs text-neutral-500">Share photos, videos, and status updates.</p>
-            </div>
-            <input type="file" name="executionMedia" multiple className="text-sm" />
-            <select className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm">
-              <option>Update milestone status</option>
-              <option>In progress</option>
-              <option>Completed</option>
-              <option>Needs approval</option>
-            </select>
-            <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-              Request payment release
-            </button>
-          </form>
+        <div className="grid gap-6 lg:grid-cols-2 mt-8">
+          <FadeIn delay={0.6}>
+            <form className="card space-y-4">
+              <div>
+                <p className="eyebrow mb-2">Execution Tracker</p>
+                <h2 className="heading-md mb-2">Upload site progress</h2>
+                <p className="text-xs text-[var(--text-muted)]">Share photos, videos, and status updates.</p>
+              </div>
+              <input type="file" name="executionMedia" multiple className="input" />
+              <select className="input">
+                <option>Update milestone status</option>
+                <option>In progress</option>
+                <option>Completed</option>
+                <option>Needs approval</option>
+              </select>
+              <button type="button" className="btn btn-primary">
+                Request payment release
+              </button>
+            </form>
+          </FadeIn>
 
-          <form className="card space-y-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Digital Twin Upload</p>
-              <h2 className="text-lg font-semibold text-neutral-900">Upload final documents</h2>
-              <p className="text-xs text-neutral-500">Drawings, 3D files, manuals, warranties.</p>
-            </div>
-            <input type="file" name="twinFiles" multiple className="text-sm" />
-            <button className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700">
-              Upload to vault
-            </button>
-          </form>
+          <FadeIn delay={0.7}>
+            <form className="card space-y-4">
+              <div>
+                <p className="eyebrow mb-2">Digital Twin Upload</p>
+                <h2 className="heading-md mb-2">Upload final documents</h2>
+                <p className="text-xs text-[var(--text-muted)]">Drawings, 3D files, manuals, warranties.</p>
+              </div>
+              <input type="file" name="twinFiles" multiple className="input" />
+              <button type="button" className="btn btn-secondary">
+                Upload to vault
+              </button>
+            </form>
+          </FadeIn>
         </div>
       </div>
     </div>

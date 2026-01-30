@@ -2,6 +2,9 @@ import { approveMilestoneAction } from "@/app/actions/project";
 import { ClipboardList } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import FadeIn from "@/components/animations/FadeIn";
+import StaggerChildren from "@/components/animations/StaggerChildren";
+import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +31,9 @@ export default async function CustomerProjectPage({
 
   if (!project) {
     return (
-      <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+      <div className="page bg-white">
         <div className="page-inner">
-          <div className="text-sm text-neutral-500">Project not found.</div>
+          <div className="text-sm text-[var(--text-muted)]">Project not found.</div>
         </div>
       </div>
     );
@@ -76,94 +79,98 @@ export default async function CustomerProjectPage({
   const nextMilestone = milestones.find((milestone) => milestone.status !== "APPROVED");
 
   return (
-    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+    <div className="page bg-white">
       <div className="page-inner">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
-            <ClipboardList className="h-4 w-4 text-amber-600" />
-            Project View
+        <FadeIn className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardList className="h-4 w-4 text-[var(--brand)]" />
+            <p className="eyebrow">Project View</p>
           </div>
-          <h1 className="text-3xl font-semibold text-neutral-900">{project.title}</h1>
-          <p className="text-sm text-neutral-500">
+          <h1 className="heading-lg mb-3">{project.title}</h1>
+          <p className="text-[var(--text-muted)]">
             Firm: {project.firm_name ?? "Interior firm"} • Status: {project.status}
           </p>
-        </div>
+        </FadeIn>
 
-        <div className="card">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Overall progress</p>
-              <p className="text-lg font-semibold text-neutral-900">{progressPercent}% complete</p>
-              <p className="text-xs text-neutral-500">
-                Current phase: {nextMilestone?.title ?? "All milestones approved"}
-              </p>
+        <FadeIn delay={0.2} className="mb-8">
+          <div className="card">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <div>
+                <p className="eyebrow mb-1">Overall progress</p>
+                <p className="heading-md mb-1">{progressPercent}% complete</p>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Current phase: {nextMilestone?.title ?? "All milestones approved"}
+                </p>
+              </div>
+              <div className="text-right text-xs text-[var(--text-muted)]">
+                Next payment milestone: {nextMilestone?.title ?? "None pending"}
+              </div>
             </div>
-            <div className="text-right text-xs text-neutral-500">
-              Next payment milestone: {nextMilestone?.title ?? "None pending"}
+            <div className="h-2 w-full rounded-full bg-[var(--border)]">
+              <div
+                className="h-2 rounded-full bg-[var(--brand)] transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
             </div>
           </div>
-          <div className="mt-4 h-2 w-full rounded-full bg-neutral-100">
-            <div
-              className="h-2 rounded-full bg-gradient-to-r from-rose-500 to-amber-500"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
+        </FadeIn>
 
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-neutral-900">Milestones</h2>
+        <FadeIn delay={0.3}>
+          <h2 className="heading-md mb-6">Milestones</h2>
           {milestones.length === 0 ? (
-            <p className="text-sm text-neutral-500">No milestones yet.</p>
+            <p className="text-sm text-[var(--text-muted)]">No milestones yet.</p>
           ) : (
-            <div className="space-y-4">
+            <StaggerChildren className="space-y-4">
               {milestones.map((milestone) => (
-                <div key={milestone.id} className="card">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
-                        {milestone.status}
+                <FadeInItem key={milestone.id}>
+                  <div className="card">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="eyebrow mb-1">{milestone.status}</p>
+                        <h3 className="heading-md">{milestone.title}</h3>
+                      </div>
+                      <p className="text-sm font-semibold text-[var(--foreground)]">
+                        ₹{milestone.amount.toLocaleString()}
                       </p>
-                      <h3 className="text-lg font-semibold text-neutral-900">{milestone.title}</h3>
                     </div>
-                    <p className="text-sm font-semibold text-neutral-900">₹{milestone.amount}</p>
-                  </div>
-                  <p className="mt-2 text-sm text-neutral-500">{milestone.description}</p>
-                  {imagesByMilestone[milestone.id]?.length ? (
-                    <div className="mt-4 grid gap-2 md:grid-cols-2">
-                      {imagesByMilestone[milestone.id].map((image) => (
-                        <a
-                          key={image.id}
-                          href={image.blob_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-lg border border-neutral-200 p-3 text-xs text-neutral-600"
-                        >
-                          {image.file_name}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
-                  {milestone.status === "SUBMITTED" && (
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <form action={approveMilestoneAction}>
-                        <input type="hidden" name="milestoneId" value={milestone.id} />
-                        <button className="rounded-md bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-                          Approve milestone
+                    <p className="text-[var(--text-muted)] mb-4">{milestone.description}</p>
+                    {imagesByMilestone[milestone.id]?.length ? (
+                      <div className="grid gap-2 md:grid-cols-2 mb-4">
+                        {imagesByMilestone[milestone.id].map((image) => (
+                          <a
+                            key={image.id}
+                            href={image.blob_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="card-subtle text-xs text-[var(--text-muted)] hover:border-[var(--border-strong)] transition-colors"
+                          >
+                            {image.file_name}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
+                    {milestone.status === "SUBMITTED" && (
+                      <div className="flex flex-wrap gap-3 mb-4">
+                        <form action={approveMilestoneAction}>
+                          <input type="hidden" name="milestoneId" value={milestone.id} />
+                          <button type="submit" className="btn btn-primary">
+                            Approve milestone
+                          </button>
+                        </form>
+                        <button type="button" className="btn btn-secondary">
+                          Raise issue
                         </button>
-                      </form>
-                      <button className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700">
-                        Raise issue
-                      </button>
+                      </div>
+                    )}
+                    <div className="card-subtle text-xs text-[var(--text-muted)]">
+                      Comments area (customer + firm)
                     </div>
-                  )}
-                  <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-500">
-                    Comments area (customer + firm)
                   </div>
-                </div>
+                </FadeInItem>
               ))}
-            </div>
+            </StaggerChildren>
           )}
-        </div>
+        </FadeIn>
       </div>
     </div>
   );

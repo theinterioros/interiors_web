@@ -1,6 +1,9 @@
 import { CreditCard, ShieldCheck } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { RoleValues } from "@/lib/types";
+import FadeIn from "@/components/animations/FadeIn";
+import StaggerChildren from "@/components/animations/StaggerChildren";
+import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
@@ -8,63 +11,70 @@ export default async function CustomerPaymentsPage() {
   await requireRole([RoleValues.CUSTOMER]);
 
   return (
-    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+    <div className="page bg-white">
       <div className="page-inner">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-500">
-            <CreditCard className="h-4 w-4 text-amber-600" />
-            Payments & Escrow
+        <FadeIn className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <CreditCard className="h-4 w-4 text-[var(--brand)]" />
+            <p className="eyebrow">Payments & Escrow</p>
           </div>
-          <h1 className="text-3xl font-semibold text-neutral-900">Milestone-based payments</h1>
-          <p className="text-sm text-neutral-600">
+          <h1 className="heading-lg mb-3">Milestone-based payments</h1>
+          <p className="text-[var(--text-muted)]">
             Release payments only after milestone approvals. This is a mock escrow ledger.
           </p>
-        </div>
+        </FadeIn>
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-4">
+          <StaggerChildren className="space-y-4">
             {[
               { title: "Design Finalization", amount: "₹1.2L", status: "Pending approval" },
               { title: "Manufacturing", amount: "₹3.4L", status: "In progress" },
               { title: "Site Execution", amount: "₹4.1L", status: "Upcoming" },
             ].map((milestone) => (
-              <div key={milestone.title} className="card">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-neutral-900">{milestone.title}</p>
-                    <p className="text-xs text-neutral-500">{milestone.status}</p>
+              <FadeInItem key={milestone.title}>
+                <div className="card">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--foreground)]">{milestone.title}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{milestone.status}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-[var(--foreground)]">{milestone.amount}</p>
                   </div>
-                  <p className="text-sm font-semibold text-neutral-900">{milestone.amount}</p>
+                  <div className="flex gap-3">
+                    <button className="btn btn-secondary text-xs">Approve</button>
+                    <button className="btn btn-primary text-xs">Pay now</button>
+                  </div>
                 </div>
-                <div className="mt-4 flex gap-3">
-                  <button className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-700">
-                    Approve
-                  </button>
-                  <button className="rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:from-amber-400 hover:to-amber-500">
-                    Pay now
-                  </button>
-                </div>
-              </div>
+              </FadeInItem>
             ))}
-          </div>
+          </StaggerChildren>
 
-          <div className="card">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-neutral-400">
-              <ShieldCheck className="h-4 w-4 text-amber-600" />
-              Payment history
+          <FadeIn delay={0.3}>
+            <div className="card">
+              <div className="flex items-center gap-2 mb-4">
+                <ShieldCheck className="h-4 w-4 text-[var(--brand)]" />
+                <p className="eyebrow">Payment history</p>
+              </div>
+              <div className="space-y-3 text-sm">
+                {[
+                  { amount: "₹50k", desc: "Advance paid", date: "12 Jan" },
+                  { amount: "₹1.2L", desc: "Design approved", date: "18 Jan" },
+                  { amount: "₹0", desc: "Escrow hold", date: "25 Jan" },
+                ].map((item) => (
+                  <div
+                    key={item.date}
+                    className="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0"
+                  >
+                    <div>
+                      <p className="text-[var(--foreground)] font-semibold">{item.amount}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{item.desc}</p>
+                    </div>
+                    <p className="text-xs text-[var(--text-muted)]">{item.date}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="mt-4 space-y-3 text-sm text-neutral-600">
-              <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
-                ₹50k • Advance paid • 12 Jan
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
-                ₹1.2L • Design approved • 18 Jan
-              </div>
-              <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
-                ₹0 • Escrow hold • 25 Jan
-              </div>
-            </div>
-          </div>
+          </FadeIn>
         </div>
       </div>
     </div>

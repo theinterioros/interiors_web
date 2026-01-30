@@ -2,6 +2,9 @@ import Link from "next/link";
 import { FolderKanban, LayoutDashboard, Users } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import FadeIn from "@/components/animations/FadeIn";
+import StaggerChildren from "@/components/animations/StaggerChildren";
+import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
@@ -34,69 +37,72 @@ export default async function FirmDashboardPage() {
   `;
 
   return (
-    <div className="page bg-[radial-gradient(900px_circle_at_top_left,_#fff4e5,_#fefcf9_60%,_#ffffff_100%)]">
+    <div className="page bg-white">
       <div className="page-inner">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-neutral-400">
-            <LayoutDashboard className="h-4 w-4 text-amber-600" />
-            Firm Dashboard
+        <FadeIn className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <LayoutDashboard className="h-4 w-4 text-[var(--brand)]" />
+            <p className="eyebrow">Firm Dashboard</p>
           </div>
-          <h1 className="text-3xl font-semibold text-neutral-900">Your workstream</h1>
-          <p className="text-sm text-neutral-500">
+          <h1 className="heading-lg mb-3">Your workstream</h1>
+          <p className="text-[var(--text-muted)]">
             Manage incoming requests, milestones, and approvals.
           </p>
-        </div>
+        </FadeIn>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-lg font-semibold text-neutral-900">
-              <Users className="h-5 w-5 text-amber-600" />
-              Incoming requests
+        <FadeIn delay={0.2} className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-[var(--brand)]" />
+              <h2 className="heading-md">Incoming requests</h2>
             </div>
-            <Link href="/firm/leads" className="text-sm text-neutral-600 underline">
+            <Link href="/firm/leads" className="text-sm text-[var(--brand)] hover:underline">
               View all leads
             </Link>
           </div>
           {pendingRequests.length === 0 ? (
-            <p className="text-sm text-neutral-500">No pending requests.</p>
+            <p className="text-sm text-[var(--text-muted)]">No pending requests.</p>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <StaggerChildren className="grid gap-4 md:grid-cols-2">
               {pendingRequests.map((project) => (
-                <div key={project.id} className="card">
-                  <p className="text-sm font-semibold text-neutral-900">{project.title}</p>
-                  <p className="text-xs text-neutral-500">
-                    Requested by {project.customer_name ?? project.customer_email}
-                  </p>
-                </div>
+                <FadeInItem key={project.id}>
+                  <div className="card">
+                    <p className="text-sm font-semibold text-[var(--foreground)] mb-1">
+                      {project.title}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Requested by {project.customer_name ?? project.customer_email}
+                    </p>
+                  </div>
+                </FadeInItem>
               ))}
-            </div>
+            </StaggerChildren>
           )}
-        </div>
+        </FadeIn>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-lg font-semibold text-neutral-900">
-            <FolderKanban className="h-5 w-5 text-amber-600" />
-            Active projects
+        <FadeIn delay={0.3}>
+          <div className="flex items-center gap-2 mb-4">
+            <FolderKanban className="h-5 w-5 text-[var(--brand)]" />
+            <h2 className="heading-md">Active projects</h2>
           </div>
           {activeProjects.length === 0 ? (
-            <p className="text-sm text-neutral-500">No active projects yet.</p>
+            <p className="text-sm text-[var(--text-muted)]">No active projects yet.</p>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <StaggerChildren className="grid gap-4 md:grid-cols-2">
               {activeProjects.map((project) => (
-                <Link
-                  key={project.id}
-                  href={`/firm/projects/${project.id}`}
-                  className="card hover:border-neutral-300"
-                >
-                  <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
-                    {project.status}
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900">{project.title}</p>
-                </Link>
+                <FadeInItem key={project.id}>
+                  <Link
+                    href={`/firm/projects/${project.id}`}
+                    className="card hover:border-[var(--border-strong)] transition-colors"
+                  >
+                    <p className="eyebrow mb-2">{project.status}</p>
+                    <p className="heading-md">{project.title}</p>
+                  </Link>
+                </FadeInItem>
               ))}
-            </div>
+            </StaggerChildren>
           )}
-        </div>
+        </FadeIn>
       </div>
     </div>
   );
