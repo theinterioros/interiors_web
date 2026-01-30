@@ -13,7 +13,7 @@ export default function EstimatorPage() {
           </div>
           <h1 className="heading-lg mb-3">Know your interior budget early</h1>
           <p className="text-[var(--text-muted)]">
-            Admin-maintained ₹/sqft rates with a simple, deterministic model. AI enhancements coming soon.
+            Get an AI-powered cost range based on your property, location, and preferences. Enter your details below for an instant estimate.
           </p>
         </FadeIn>
         <FadeIn delay={0.2}>

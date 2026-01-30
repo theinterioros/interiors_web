@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { sql } from "@/lib/db";
 import { BadgeCheck, Building2, Star } from "lucide-react";
-import { getCurrentUser, requireUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { RoleValues } from "@/lib/types";
 import { requestProjectAction } from "@/app/actions/project";
 import FadeIn from "@/components/animations/FadeIn";
@@ -14,7 +15,6 @@ export default async function FirmProfilePage({
 }: {
   params: { id: string };
 }) {
-  await requireUser();
   const [firm] = await sql<{
     id: string;
     user_id: string;
@@ -144,9 +144,12 @@ export default async function FirmProfilePage({
           </FadeIn>
         ) : (
           <FadeIn delay={0.4}>
-            <p className="text-sm text-[var(--text-muted)]">
+            <p className="text-sm text-[var(--text-muted)] mb-2">
               Sign in as a customer to request a project with this firm.
             </p>
+            <Link href="/login?role=customer" className="btn btn-primary">
+              Sign in
+            </Link>
           </FadeIn>
         )}
       </div>

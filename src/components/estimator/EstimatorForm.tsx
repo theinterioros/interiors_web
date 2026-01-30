@@ -155,9 +155,9 @@ export default function EstimatorForm() {
               </div>
             </div>
             <p className="text-xs text-[var(--text-muted)]">{result.disclaimer}</p>
-            <button className="btn btn-primary w-full">
-              Email my estimate
-            </button>
+            <a href="/login?redirect=/estimator" className="btn btn-secondary w-full text-center">
+              Sign in to email estimate
+            </a>
           </div>
         ) : (
           <p className="text-sm text-[var(--text-muted)]">

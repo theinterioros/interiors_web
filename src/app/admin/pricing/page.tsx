@@ -20,7 +20,7 @@ export default async function AdminPricingPage() {
           </div>
           <h1 className="heading-lg mb-3">City & pincode rates</h1>
           <p className="text-[var(--text-muted)]">
-            Maintain ₹ per sq ft pricing for the estimator.
+            Maintain ₹ per sq ft pricing for the AI Cost Estimator.
           </p>
         </FadeIn>
 

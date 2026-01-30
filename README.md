@@ -52,13 +52,15 @@ npm run db:setup:psql
 
 The first admin user is seeded on app boot using `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` if no admin exists.
 
+**Admin login:** Go to `/login?role=admin` and sign in with `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD`.
+
 ### Demo Seed
 
 ```bash
 npm run seed:demo
 ```
 
-The demo seed inserts sample users, a designer profile, a project, milestones, and sample Blob URLs.
+Creates demo **customer** and **firm** accounts with password `Demo123!` (see [DEMO.md](./DEMO.md) for emails and investor-demo usage).
 
 ## Admin Settings
 

@@ -21,8 +21,8 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER" | "FIRM" }) {
-  const [state, formAction] = useActionState<{ ok: boolean; error: string }>(
-    registerAction as any,
+  const [state, formAction] = useActionState<{ ok: boolean; error: string }, FormData>(
+    registerAction as (prev: { ok: boolean; error: string }, formData: FormData) => Promise<{ ok: boolean; error: string }>,
     initialState
   );
   const [role, setRole] = useState(fixedRole ?? "CUSTOMER");

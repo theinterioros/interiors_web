@@ -9,8 +9,11 @@ export async function POST(request: Request) {
   const propertyType = body.propertyType === "villa" ? "villa" : "apartment";
   const rooms = Number(body.rooms ?? 0);
 
-  if (!city || !pincode || !squareFeet) {
-    return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+  if (!city || !pincode) {
+    return NextResponse.json({ error: "Missing required fields (city, pincode)." }, { status: 400 });
+  }
+  if (typeof squareFeet !== "number" || squareFeet <= 0) {
+    return NextResponse.json({ error: "Square feet must be a positive number." }, { status: 400 });
   }
 
   const result = await estimateCost({

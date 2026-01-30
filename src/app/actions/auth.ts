@@ -66,7 +66,6 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
     const ticketSize = String(formData.get("ticketSize") ?? "").trim();
     const designersCount = Number(formData.get("designersCount") ?? 0) || null;
     const comments = String(formData.get("comments") ?? "").trim();
-    const altPhone = String(formData.get("altPhone") ?? "").trim();
 
     await sql`
       insert into firm_profiles (

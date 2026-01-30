@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { BadgeCheck, Building2, Star } from "lucide-react";
-import { requireUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
@@ -9,7 +8,6 @@ import FadeInItem from "@/components/animations/FadeInItem";
 export const dynamic = "force-dynamic";
 
 export default async function FirmsPage() {
-  await requireUser();
   const firms = await sql<{
     id: string;
     name: string;

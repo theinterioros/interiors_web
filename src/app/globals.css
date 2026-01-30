@@ -2,16 +2,23 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0a2540;
-  --text-muted: #6b7280;
-  --text-subtle: #9ca3af;
-  --border: #e6ebf1;
+  --foreground: #334155;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --border: #e2e8f0;
   --border-strong: #cbd5e1;
   --surface: #ffffff;
   --surface-subtle: #f8fafc;
-  --brand: #635bff;
-  --brand-hover: #5851ea;
-  --brand-light: #f0f0ff;
+  --brand: #F59E0B;
+  --brand-hover: #D97706;
+  --brand-light: #FFFBEB;
+  /* Secondary accents for variety */
+  --accent-teal: #0d9488;
+  --accent-teal-light: #ccfbf1;
+  --accent-amber: #D97706;
+  --accent-amber-light: #FEF3C7;
+  --accent-emerald: #059669;
+  --accent-emerald-light: #d1fae5;
 }
 
 @theme inline {
@@ -55,6 +62,25 @@ a {
 .page-inner {
   margin: 0 auto;
   max-width: 1200px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .page-inner {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .page-inner {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
 /* Typography */
@@ -127,7 +153,7 @@ a {
 .btn-primary:hover {
   background: var(--brand-hover);
   transform: translateY(-1px);
-  box-shadow: 0 20px 40px rgba(99, 91, 255, 0.35);
+  box-shadow: 0 20px 40px rgba(245, 158, 11, 0.35);
 }
 
 .btn-secondary {
@@ -181,24 +207,32 @@ a {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-/* Sections - full viewport height, content vertically centered */
+/* Sections - full viewport height on larger screens, content vertically centered */
 .section {
-  min-height: 100vh;
-  padding: 5rem 1.5rem;
+  min-height: 50vh;
+  padding: 3rem 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
+@media (min-width: 640px) {
+  .section {
+    min-height: 70vh;
+    padding: 4rem 0;
+  }
+}
+
 @media (min-width: 768px) {
   .section {
-    padding: 6rem 2rem;
+    min-height: 100vh;
+    padding: 6rem 0;
   }
 }
 
 @media (min-width: 1024px) {
   .section {
-    padding: 7rem 2rem;
+    padding: 7rem 0;
   }
 }
 
@@ -225,16 +259,45 @@ a {
   background-position: 0 0;
 }
 
-/* Hero - exactly one viewport, centered */
+/* Subtle section gradients — elegant depth without hurting readability */
+.section-bg-gradient-light {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, transparent 20%),
+    radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.06) 1px, transparent 0);
+  background-size: 100% 100%, 28px 28px;
+  background-position: 0 0, 0 0;
+}
+
+.section-bg-gradient-alt {
+  background-image:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, var(--surface-subtle) 25%, var(--surface-subtle) 100%);
+}
+
+.section-alt.section-bg-pattern.section-bg-gradient-alt {
+  background-image:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, var(--surface-subtle) 20%, var(--surface-subtle) 100%),
+    radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
+  background-size: 100% 100%, 24px 24px;
+  background-position: 0 0, 0 0;
+}
+
+/* Hero - one viewport on larger screens, responsive padding */
 .hero {
-  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding-top: 4rem;
-  padding-bottom: 4rem;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .hero {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
 }
 
 @media (min-width: 768px) {
@@ -254,12 +317,12 @@ a {
 /* Compact section — no min-height, for strips and short blocks */
 .section-compact {
   min-height: 0;
-  padding: 4rem 1.5rem;
+  padding: 3rem 0;
 }
 
 @media (min-width: 768px) {
   .section-compact {
-    padding: 5rem 2rem;
+    padding: 5rem 0;
   }
 }
 
@@ -283,11 +346,22 @@ a {
 .input:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 
 .input::placeholder {
   color: var(--text-subtle);
+}
+
+.input-premium {
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  border-color: var(--border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-premium:focus {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
 }
 
 /* Badge */

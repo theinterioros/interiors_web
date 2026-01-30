@@ -20,16 +20,16 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
-  const [state, formAction] = useActionState<{ ok: boolean; error: string }>(
-    loginAction as any,
+  const [state, formAction] = useActionState<{ ok: boolean; error: string }, FormData>(
+    loginAction as (prev: { ok: boolean; error: string }, formData: FormData) => Promise<{ ok: boolean; error: string }>,
     initialState
   );
-  const [otpState, otpAction] = useActionState<{ ok: boolean; error: string }>(
-    requestOtpAction as any,
+  const [otpState, otpAction] = useActionState<{ ok: boolean; error: string }, FormData>(
+    requestOtpAction as (prev: { ok: boolean; error: string }, formData: FormData) => Promise<{ ok: boolean; error: string }>,
     initialState
   );
-  const [verifyState, verifyAction] = useActionState<{ ok: boolean; error: string }>(
-    verifyOtpAction as any,
+  const [verifyState, verifyAction] = useActionState<{ ok: boolean; error: string }, FormData>(
+    verifyOtpAction as (prev: { ok: boolean; error: string }, formData: FormData) => Promise<{ ok: boolean; error: string }>,
     initialState
   );
   const otpRequested = otpState.ok;
