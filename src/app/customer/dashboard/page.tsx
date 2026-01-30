@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { BarChart3, CreditCard, Layers, ArrowRight } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { BarChart3, CreditCard, Layers } from "lucide-react";
+import { requireCustomerPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
+import DashboardEstimatePanel from "@/components/customer/DashboardEstimatePanel";
 
 export const dynamic = "force-dynamic";
 
 export default async function CustomerDashboardPage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const user = await requireCustomerPaid();
 
   const projects = await sql<{
     id: string;
@@ -49,87 +49,8 @@ export default async function CustomerDashboardPage() {
           </Link>
         </div>
 
-        {/* Main Content */}
-        <div className="grid gap-8 lg:grid-cols-2 mb-12">
-          {/* Input Panel */}
-          <div className="card">
-            <p className="eyebrow mb-3">Input panel</p>
-            <h2 className="heading-md mb-6">Property details</h2>
-            <form className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[var(--foreground)]">City</label>
-                  <input className="input" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[var(--foreground)]">Property type</label>
-                  <select className="input">
-                    <option>Apartment</option>
-                    <option>Villa</option>
-                    <option>Individual home</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[var(--foreground)]">Carpet area</label>
-                  <input className="input" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[var(--foreground)]">Rooms</label>
-                  <select className="input">
-                    <option>1 BHK</option>
-                    <option>2 BHK</option>
-                    <option>3 BHK</option>
-                    <option>4 BHK</option>
-                    <option>5+ BHK</option>
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--foreground)]">Budget range</label>
-                <select className="input">
-                  <option>0–5 lakhs</option>
-                  <option>5–10 lakhs</option>
-                  <option>10–20 lakhs</option>
-                  <option>20–35 lakhs</option>
-                  <option>35+ lakhs</option>
-                </select>
-              </div>
-            </form>
-          </div>
-
-          {/* Output Panel */}
-          <div className="card-subtle">
-            <p className="eyebrow mb-3">Output panel</p>
-            <h2 className="heading-md mb-6">Estimated cost breakup</h2>
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center justify-between py-2 border-b border-[var(--border)]">
-                <span className="text-sm text-[var(--text-muted)]">Design & planning</span>
-                <span className="text-sm font-semibold text-[var(--foreground)]">₹1.2L</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-[var(--border)]">
-                <span className="text-sm text-[var(--text-muted)]">Carpentry & storage</span>
-                <span className="text-sm font-semibold text-[var(--foreground)]">₹4.6L</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-[var(--border)]">
-                <span className="text-sm text-[var(--text-muted)]">Kitchen & utility</span>
-                <span className="text-sm font-semibold text-[var(--foreground)]">₹3.4L</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-[var(--text-muted)]">Lighting & fixtures</span>
-                <span className="text-sm font-semibold text-[var(--foreground)]">₹1.1L</span>
-              </div>
-            </div>
-            <p className="text-xs text-[var(--text-subtle)] mb-6">
-              Disclaimer: Estimates are approximate and vary by scope, materials, and site conditions.
-            </p>
-            <Link href="/customer/visualization" className="btn btn-primary w-full">
-              Proceed to Visualization
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </div>
-        </div>
+        {/* Input + Output panels — estimate shown only after customer enters details */}
+        <DashboardEstimatePanel />
 
         {/* Active Projects */}
         <div>

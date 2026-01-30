@@ -2,6 +2,7 @@
 
 import { getAdminSettings } from "@/lib/settings";
 import { sendEmail } from "@/lib/email";
+import { isValidEmail, isValidIndianMobile } from "@/lib/validation";
 
 export type ContactState = { ok: boolean; error: string };
 
@@ -13,6 +14,12 @@ export async function contactAction(_prevState: ContactState, formData: FormData
 
   if (!name || !email || !phone) {
     return { ok: false, error: "Name, email, and phone are required." };
+  }
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Please enter a valid email address." };
+  }
+  if (!isValidIndianMobile(phone)) {
+    return { ok: false, error: "Please enter a valid 10-digit Indian mobile number." };
   }
 
   const settings = await getAdminSettings();

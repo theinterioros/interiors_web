@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ensureAdminSeed } from "@/lib/seedAdmin";
+import { ensureDemoAccounts } from "@/lib/seedDemo";
 import { getCurrentUser } from "@/lib/auth";
 import SiteHeader from "@/components/layout/SiteHeader";
 
@@ -26,6 +27,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   await ensureAdminSeed();
+  await ensureDemoAccounts();
   const user = await getCurrentUser();
 
   return (
@@ -34,7 +36,9 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SiteHeader user={user} />
-        {children}
+        <main id="main-content">
+          {children}
+        </main>
       </body>
     </html>
   );

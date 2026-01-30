@@ -44,6 +44,9 @@ export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
             name="identifier"
             required
             className="input"
+            autoComplete="username"
+            placeholder="Email or 10-digit mobile"
+            title="Enter your email or 10-digit Indian mobile number"
           />
         </div>
         <div className="space-y-2">

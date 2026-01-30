@@ -1,6 +1,6 @@
 import { approveMilestoneAction } from "@/app/actions/project";
 import { ClipboardList } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { requireCustomerPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
@@ -9,8 +9,7 @@ import FadeInItem from "@/components/animations/FadeInItem";
 export const dynamic = "force-dynamic";
 
 export default async function CustomerMilestonesPage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const user = await requireCustomerPaid();
 
   const milestones = await sql<{
     id: string;

@@ -40,12 +40,12 @@ export default function ContactForm() {
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Email</label>
-          <input type="email" name="email" required placeholder="you@example.com" className="input input-premium text-sm py-2.5" />
+          <input type="email" name="email" required placeholder="you@example.com" className="input input-premium text-sm py-2.5" autoComplete="email" title="Enter a valid email address" />
         </div>
       </div>
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Phone</label>
-        <input type="tel" name="phone" required placeholder="+91 00000 00000" className="input input-premium text-sm py-2.5" />
+        <input type="tel" name="phone" required placeholder="10-digit mobile" className="input input-premium text-sm py-2.5" inputMode="numeric" minLength={10} maxLength={14} title="Enter 10-digit Indian mobile number" />
       </div>
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Message</label>

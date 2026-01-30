@@ -7,16 +7,37 @@ import { sql } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { createSession, clearSession } from "@/lib/session";
 import { requestOtp, verifyOtp } from "@/lib/otp";
+import { hasFirmPaidRegistration } from "@/lib/registrationPayments";
+import { FIRM_REGISTRATION_AMOUNT } from "@/lib/registrationPayments";
+import { getSessionUser } from "@/lib/session";
+import { isValidEmail, isValidIndianMobile, isEmailLike, normalizeIndianMobile } from "@/lib/validation";
 
 export async function registerAction(_prevState: unknown, formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const phone = String(formData.get("phone") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
   const role = String(formData.get("role") ?? "CUSTOMER") as Role;
   const name = String(formData.get("name") ?? "").trim();
 
-  if (!email || !password || !phone) {
-    return { ok: false, error: "Name, email, phone, and password are required." };
+  if (!email || !password) {
+    return { ok: false, error: "Email and password are required." };
+  }
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Please enter a valid email address." };
+  }
+  if (password !== confirmPassword) {
+    return { ok: false, error: "Passwords do not match." };
+  }
+  if (role === RoleValues.FIRM && !phone) {
+    return { ok: false, error: "Phone is required for firm registration." };
+  }
+  if (phone && !isValidIndianMobile(phone)) {
+    return { ok: false, error: "Please enter a valid 10-digit Indian mobile number." };
+  }
+  const phoneForDb = phone ? normalizeIndianMobile(phone) : null;
+  if (role === RoleValues.CUSTOMER && !name) {
+    return { ok: false, error: "Name is required." };
   }
 
   if (!Roles.includes(role)) {
@@ -43,10 +64,10 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
   }
 
   const [existing] = await sql<{ id: string }>`
-    select id from users where email = ${email} or phone = ${phone} limit 1
+    select id from users where email = ${email} or (${phoneForDb} is not null and phone = ${phoneForDb}) limit 1
   `;
   if (existing) {
-    return { ok: false, error: "Email is already registered." };
+    return { ok: false, error: "Email or phone is already registered." };
   }
 
   const passwordHash = await hashPassword(password);
@@ -54,7 +75,7 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
   const userId = crypto.randomUUID();
   await sql`
     insert into users (id, email, phone, password_hash, role, name)
-    values (${userId}, ${email}, ${phone}, ${passwordHash}, ${role}, ${name || null})
+    values (${userId}, ${email}, ${phoneForDb}, ${passwordHash}, ${role}, ${name || null})
   `;
 
   if (role === RoleValues.FIRM) {
@@ -106,25 +127,42 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
   }
 
   await createSession(userId);
+  if (role === RoleValues.FIRM) {
+    redirect("/firm/register/pay");
+  }
+  if (role === RoleValues.CUSTOMER) {
+    redirect("/customer/dashboard");
+  }
   return redirectByRole(role);
 }
 
 export async function loginAction(_prevState: unknown, formData: FormData) {
-  const identifier = String(formData.get("identifier") ?? formData.get("email") ?? "")
-    .trim()
-    .toLowerCase();
+  const identifier = String(formData.get("identifier") ?? formData.get("email") ?? "").trim();
+  const identifierLower = identifier.toLowerCase();
   const password = String(formData.get("password") ?? "");
 
-  const [user] = await sql<{
-    id: string;
-    password_hash: string;
-    role: Role;
-  }>`
-    select id, password_hash, role
-    from users
-    where email = ${identifier} or phone = ${identifier}
-    limit 1
-  `;
+  if (!identifier) {
+    return { ok: false, error: "Email or mobile number is required." };
+  }
+  if (isEmailLike(identifier)) {
+    if (!isValidEmail(identifier)) {
+      return { ok: false, error: "Please enter a valid email address." };
+    }
+  } else {
+    if (!isValidIndianMobile(identifier)) {
+      return { ok: false, error: "Please enter a valid 10-digit Indian mobile number." };
+    }
+  }
+
+  const lookupEmail = isEmailLike(identifier) ? identifierLower : null;
+  const lookupPhone = !isEmailLike(identifier) ? normalizeIndianMobile(identifier) : null;
+  const [user] = lookupEmail
+    ? await sql<{ id: string; password_hash: string; role: Role }>`
+        select id, password_hash, role from users where email = ${lookupEmail} limit 1
+      `
+    : await sql<{ id: string; password_hash: string; role: Role }>`
+        select id, password_hash, role from users where phone = ${lookupPhone} limit 1
+      `;
   if (!user) {
     return { ok: false, error: "Invalid credentials." };
   }
@@ -135,7 +173,55 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
   }
 
   await createSession(user.id);
+  if (user.role === RoleValues.FIRM) {
+    const paid = await hasFirmPaidRegistration(user.id);
+    if (!paid) {
+      redirect("/firm/register/pay");
+    }
+  }
+  if (user.role === RoleValues.CUSTOMER) {
+    const { hasCustomerPaidSubscription } = await import("@/lib/registrationPayments");
+    const paid = await hasCustomerPaidSubscription(user.id);
+    if (!paid) {
+      redirect("/customer/subscribe");
+    }
+  }
   return redirectByRole(user.role);
+}
+
+export async function payFirmRegistrationAction() {
+  const user = await getSessionUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    redirect("/login?role=firm");
+  }
+  const paid = await hasFirmPaidRegistration(user.id);
+  if (paid) {
+    redirect("/firm/dashboard");
+  }
+  const id = crypto.randomUUID();
+  await sql`
+    insert into payment_ledger (id, type, status, amount, currency, firm_id)
+    values (${id}, 'FIRM_REGISTRATION_FEE', 'RELEASED', ${FIRM_REGISTRATION_AMOUNT}, 'INR', ${user.id})
+  `;
+  redirect("/firm/dashboard");
+}
+
+export async function payCustomerSubscriptionAction() {
+  const user = await getSessionUser();
+  if (!user || user.role !== RoleValues.CUSTOMER) {
+    redirect("/login?role=customer");
+  }
+  const { hasCustomerPaidSubscription, CUSTOMER_SUBSCRIPTION_AMOUNT } = await import("@/lib/registrationPayments");
+  const paid = await hasCustomerPaidSubscription(user.id);
+  if (paid) {
+    redirect("/customer/dashboard");
+  }
+  const id = crypto.randomUUID();
+  await sql`
+    insert into payment_ledger (id, type, status, amount, currency, customer_id)
+    values (${id}, 'CUSTOMER_REGISTRATION_FEE', 'RELEASED', ${CUSTOMER_SUBSCRIPTION_AMOUNT}, 'INR', ${user.id})
+  `;
+  redirect("/customer/dashboard");
 }
 
 export async function logoutAction() {
@@ -147,6 +233,9 @@ export async function requestOtpAction(_prevState: unknown, formData: FormData) 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!email) {
     return { ok: false, error: "Email is required." };
+  }
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Please enter a valid email address." };
   }
 
   try {
@@ -164,6 +253,9 @@ export async function verifyOtpAction(_prevState: unknown, formData: FormData) {
 
   if (!email || !code) {
     return { ok: false, error: "Email and code are required." };
+  }
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Please enter a valid email address." };
   }
 
   try {

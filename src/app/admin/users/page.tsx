@@ -19,8 +19,7 @@ export default async function AdminUsersPage() {
   `;
 
   return (
-    <div className="page bg-white">
-      <div className="page-inner">
+    <div>
         <FadeIn className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Users className="h-4 w-4 text-[var(--brand)]" />
@@ -45,7 +44,6 @@ export default async function AdminUsersPage() {
             </FadeInItem>
           ))}
         </StaggerChildren>
-      </div>
     </div>
   );
 }

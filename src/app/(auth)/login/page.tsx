@@ -24,7 +24,7 @@ export default async function LoginPage({
   const isAdmin = role === "admin";
 
   return (
-    <div className={`min-h-screen ${isCustomer ? "bg-gradient-to-br from-[var(--brand-light)]/30 to-white" : isFirm ? "bg-gradient-to-br from-slate-50 to-white" : "bg-white"}`}>
+    <div className={`min-h-screen -mt-[var(--header-height)] pt-[var(--header-height)] ${isCustomer ? "bg-gradient-to-br from-[var(--brand-light)]/30 to-white" : isFirm ? "bg-gradient-to-br from-slate-50 to-white" : "bg-white"}`}>
       <main className="page">
         <div className="page-inner">
           <div className="mx-auto max-w-5xl">

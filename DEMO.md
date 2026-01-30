@@ -32,13 +32,12 @@ After running the demo seed, you can log in as a **customer** or a **firm** with
    npm run seed:demo
    ```
 
-The script creates or updates the customer and firm users with the password above. You can run `npm run seed:demo` again to reset their passwords to `Demo123!` or to add demo data (projects, milestones, etc.) if it’s missing.
+Demo accounts are created on first app load or by running the seed script. Demo accounts are also created automatically on first app load (registration/subscription marked paid). Run `npm run seed:demo` to add extra sample data or reset passwords to `Demo123!` if it’s missing.
 
 ### What the demo includes
 
 - **Customer:** Aarav Sharma — can use the customer dashboard, view projects, milestones, digital twin.
 - **Firm:** Mira Kapoor / Studio Nirmaan — approved firm profile; can use the firm dashboard, leads, and project management.
-- Sample project linking the customer and firm, with a milestone and payment ledger entry.
-- Sample digital twin file for the customer.
+- 2 sample projects (one ACTIVE, one REQUESTED) with milestones (Concept Design – SUBMITTED, Carpentry & finishing – PENDING). Running `npm run seed:demo` adds more (digital twin file, notifications).
 
 Use these accounts to walk through the product (AI Cost Estimator, designers, project tracking, payments, digital twin) for demos.

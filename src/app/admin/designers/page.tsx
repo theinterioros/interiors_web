@@ -23,8 +23,7 @@ export default async function AdminDesignersPage() {
   `;
 
   return (
-    <div className="page bg-white">
-      <div className="page-inner">
+    <div>
         <FadeIn className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <BadgeCheck className="h-4 w-4 text-[var(--brand)]" />
@@ -61,9 +60,13 @@ export default async function AdminDesignersPage() {
                       <span>City coverage</span>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <form action={approveFirmAction}>
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <form action={approveFirmAction} className="flex flex-wrap gap-2 items-center">
                       <input type="hidden" name="profileId" value={profile.id} />
+                      <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+                        <input type="checkbox" name="addVerifiedBadge" className="rounded border-[var(--border)]" />
+                        Add verified badge
+                      </label>
                       <button type="submit" className="btn btn-primary">
                         Approve
                       </button>
@@ -83,7 +86,6 @@ export default async function AdminDesignersPage() {
             ))}
           </StaggerChildren>
         )}
-      </div>
     </div>
   );
 }

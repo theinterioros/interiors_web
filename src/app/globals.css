@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --header-height: 5rem; /* sticky header height for main padding and scroll */
   --background: #ffffff;
   --foreground: #334155;
   --text-muted: #64748b;
@@ -30,7 +31,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 80px;
+  scroll-padding-top: var(--header-height);
 }
 
 body {
@@ -47,15 +48,15 @@ a {
   text-decoration: none;
 }
 
-/* Layout */
+/* Layout: no extra top padding — header is in flow; avoid white bar under nav */
 .page {
   min-height: 100vh;
-  padding: 4rem 1.5rem;
+  padding: 1.5rem 1.5rem 4rem;
 }
 
 @media (min-width: 768px) {
   .page {
-    padding: 5rem 2rem;
+    padding: 2rem 2rem 5rem;
   }
 }
 
@@ -180,6 +181,7 @@ a {
 
 /* Cards - Minimal Stripe style */
 .card {
+  min-width: 0; /* allow shrink in grid/flex to prevent overlap */
   background: white;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -194,6 +196,7 @@ a {
 }
 
 .card-subtle {
+  min-width: 0;
   background: var(--surface-subtle);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -351,6 +354,12 @@ a {
 
 .input::placeholder {
   color: var(--text-subtle);
+}
+
+/* Selects: space for dropdown arrow so it's not at the corner */
+select.input {
+  padding-right: 2.25rem;
+  appearance: auto;
 }
 
 .input-premium {

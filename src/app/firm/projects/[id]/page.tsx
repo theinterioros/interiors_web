@@ -4,7 +4,7 @@ import {
   uploadMilestoneImageAction,
 } from "@/app/actions/project";
 import { ClipboardList } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
@@ -17,8 +17,7 @@ export default async function FirmProjectPage({
 }: {
   params: { id: string };
 }) {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const user = await requireFirmPaid();
 
   const [project] = await sql<{
     id: string;

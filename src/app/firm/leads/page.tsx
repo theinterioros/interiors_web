@@ -1,6 +1,6 @@
 import { respondProjectRequestAction } from "@/app/actions/project";
 import { Inbox } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
@@ -9,8 +9,7 @@ import FadeInItem from "@/components/animations/FadeInItem";
 export const dynamic = "force-dynamic";
 
 export default async function FirmLeadsPage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const user = await requireFirmPaid();
 
   const leads = await sql<{
     id: string;

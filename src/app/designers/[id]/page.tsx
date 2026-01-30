@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { sql } from "@/lib/db";
-import { BadgeCheck, Building2, Star } from "lucide-react";
+import { BadgeCheck, Building2, Star, ShieldAlert } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { RoleValues } from "@/lib/types";
 import { requestProjectAction } from "@/app/actions/project";
@@ -26,18 +26,19 @@ export default async function FirmProfilePage({
     pincode: string;
     about: string;
     status: string;
+    verified_at: Date | null;
   }>`
-    select id, user_id, name, firm_name, owner_name, experience_years, city, pincode, about, status
+    select id, user_id, name, firm_name, owner_name, experience_years, city, pincode, about, status, verified_at
     from firm_profiles
     where id = ${params.id}
     limit 1
   `;
 
-  if (!firm || firm.status !== "APPROVED") {
+  if (!firm) {
     return (
       <div className="page bg-white">
         <div className="page-inner">
-          <div className="text-sm text-[var(--text-muted)]">Firm not found or not approved yet.</div>
+          <div className="text-sm text-[var(--text-muted)]">Firm not found.</div>
         </div>
       </div>
     );
@@ -63,17 +64,24 @@ export default async function FirmProfilePage({
         <FadeIn className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Building2 className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">Verified Firm</p>
+            <p className="eyebrow">{firm.verified_at && firm.status === "APPROVED" ? "Verified Firm" : "Firm"}</p>
           </div>
           <h1 className="heading-lg mb-3">{firm.firm_name ?? firm.name}</h1>
           <p className="text-[var(--text-muted)] mb-2">
             {firm.city} • {firm.pincode} • {firm.experience_years}+ years
           </p>
           <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] mb-3">
-            <span className="flex items-center gap-1">
-              <BadgeCheck className="h-3.5 w-3.5 text-[var(--brand)]" />
-              Verified
-            </span>
+            {firm.verified_at && firm.status === "APPROVED" ? (
+              <span className="flex items-center gap-1">
+                <BadgeCheck className="h-3.5 w-3.5 text-[var(--brand)]" />
+                Verified
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-amber-600">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                Unverified
+              </span>
+            )}
             <span className="flex items-center gap-1">
               <Star className="h-3.5 w-3.5 text-[var(--brand)]" />
               4.8/5

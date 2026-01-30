@@ -22,9 +22,8 @@ export default async function AdminProjectsPage() {
   `;
 
   return (
-    <div className="page bg-white">
-      <div className="page-inner">
-        <FadeIn className="mb-8">
+    <div>
+      <FadeIn className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <FolderKanban className="h-4 w-4 text-[var(--brand)]" />
             <p className="eyebrow">Projects</p>
@@ -56,7 +55,6 @@ export default async function AdminProjectsPage() {
             ))}
           </StaggerChildren>
         )}
-      </div>
     </div>
   );
 }

@@ -91,7 +91,7 @@ export default async function Home() {
   ];
 
   return (
-    <div className="bg-white relative overflow-x-hidden min-w-0 w-full">
+    <div className="bg-white relative overflow-x-hidden min-w-0 w-full -mt-[var(--header-height)] pt-[var(--header-height)]">
       {/* Flowing abstract background — parallax blobs */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
         <div data-parallax-blob className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-[var(--brand)]/8 blur-3xl transition-transform" />

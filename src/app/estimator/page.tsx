@@ -4,8 +4,8 @@ import FadeIn from "@/components/animations/FadeIn";
 
 export default function EstimatorPage() {
   return (
-    <div className="page bg-white">
-      <div className="page-inner">
+    <div className="page bg-white min-w-0">
+      <div className="page-inner min-w-0">
         <FadeIn className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="h-4 w-4 text-[var(--brand)]" />

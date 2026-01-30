@@ -8,11 +8,18 @@ import FadeInItem from "@/components/animations/FadeInItem";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const [[users], [pendingFirms], [projects], [payments]] = await Promise.all([
+  const [[users], [pendingFirms], [projects], [payments], [firmsPendingPayment]] = await Promise.all([
     sql<{ count: number }>`select count(*)::int as count from users`,
     sql<{ count: number }>`select count(*)::int as count from firm_profiles where status = 'PENDING'`,
     sql<{ count: number }>`select count(*)::int as count from projects`,
     sql<{ count: number }>`select count(*)::int as count from payment_ledger where status = 'HELD'`,
+    sql<{ count: number }>`
+      select count(*)::int as count from users u
+      where u.role = 'FIRM' and not exists (
+        select 1 from payment_ledger p
+        where p.firm_id = u.id and p.type = 'FIRM_REGISTRATION_FEE' and p.status = 'RELEASED'
+      )
+    `,
   ]);
 
   const [[portfolio], [milestones], [digitalTwin]] = await Promise.all([
@@ -40,18 +47,17 @@ export default async function AdminDashboardPage() {
   };
 
   return (
-    <div className="page bg-white">
-      <div className="page-inner">
-        <FadeIn className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <LayoutDashboard className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">Admin Dashboard</p>
-          </div>
-          <h1 className="heading-lg mb-3">Control center</h1>
-          <p className="text-[var(--text-muted)]">Monitor users, approvals, and payments.</p>
-        </FadeIn>
+    <div>
+      <FadeIn className="mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <LayoutDashboard className="h-4 w-4 text-[var(--brand)]" />
+          <p className="eyebrow">Admin Dashboard</p>
+        </div>
+        <h1 className="heading-lg mb-3">Control center</h1>
+        <p className="text-[var(--text-muted)]">Monitor users, approvals, and payments.</p>
+      </FadeIn>
 
-        <StaggerChildren className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <StaggerChildren className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8 [&>*]:min-w-0">
           <FadeInItem>
             <div className="card">
               <p className="eyebrow mb-2">Users</p>
@@ -93,7 +99,7 @@ export default async function AdminDashboardPage() {
                 <p className="text-2xl font-semibold text-[var(--foreground)]">{formatBytes(totalBytes)}</p>
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3 [&>*]:min-w-0">
               <div className="card-subtle">
                 <p className="eyebrow mb-2">Portfolio</p>
                 <p className="text-lg font-semibold text-[var(--foreground)]">
@@ -116,45 +122,50 @@ export default async function AdminDashboardPage() {
           </div>
         </FadeIn>
 
-        <StaggerChildren className="grid gap-4 md:grid-cols-2">
+        <StaggerChildren className="grid gap-4 md:grid-cols-2 [&>*]:min-w-0">
           <FadeInItem>
-            <Link href="/admin/users" className="card hover:border-[var(--border-strong)] transition-colors">
+            <Link href="/admin/users" className="block w-full card hover:border-[var(--border-strong)] transition-colors">
               <h3 className="heading-md mb-2">Users</h3>
               <p className="text-sm text-[var(--text-muted)]">Browse all users and roles.</p>
             </Link>
           </FadeInItem>
           <FadeInItem>
-            <Link href="/admin/designers" className="card hover:border-[var(--border-strong)] transition-colors">
+            <Link href="/admin/designers" className="block w-full card hover:border-[var(--border-strong)] transition-colors">
               <h3 className="heading-md mb-2">Firm approvals</h3>
               <p className="text-sm text-[var(--text-muted)]">Review and approve firm profiles.</p>
             </Link>
           </FadeInItem>
           <FadeInItem>
-            <Link href="/admin/payments" className="card hover:border-[var(--border-strong)] transition-colors">
+            <Link href="/admin/payments" className="block w-full card hover:border-[var(--border-strong)] transition-colors">
               <h3 className="heading-md mb-2">Payment control</h3>
               <p className="text-sm text-[var(--text-muted)]">Hold or release milestone payments.</p>
             </Link>
           </FadeInItem>
           <FadeInItem>
-            <Link href="/admin/projects" className="card hover:border-[var(--border-strong)] transition-colors">
+            <Link href="/admin/projects" className="block w-full card hover:border-[var(--border-strong)] transition-colors">
               <h3 className="heading-md mb-2">Projects</h3>
               <p className="text-sm text-[var(--text-muted)]">View all project activity.</p>
             </Link>
           </FadeInItem>
           <FadeInItem>
-            <Link href="/admin/pricing" className="card hover:border-[var(--border-strong)] transition-colors">
-              <h3 className="heading-md mb-2">Pricing configuration</h3>
-              <p className="text-sm text-[var(--text-muted)]">Manage rates by city and pincode.</p>
+            <Link href="/admin/firms-pending-payment" className="block w-full card hover:border-[var(--border-strong)] transition-colors">
+              <h3 className="heading-md mb-2">Firms pending payment</h3>
+              <p className="text-sm text-[var(--text-muted)]">{firmsPendingPayment.count} firm(s) haven’t paid registration fee. Nudge by email.</p>
             </Link>
           </FadeInItem>
           <FadeInItem>
-            <Link href="/admin/settings" className="card hover:border-[var(--border-strong)] transition-colors">
+            <Link href="/admin/pricing" className="block w-full card hover:border-[var(--border-strong)] transition-colors">
+              <h3 className="heading-md mb-2">AI Estimator pricing</h3>
+              <p className="text-sm text-[var(--text-muted)]">Default rate and city/pincode overrides.</p>
+            </Link>
+          </FadeInItem>
+          <FadeInItem>
+            <Link href="/admin/settings" className="block w-full card hover:border-[var(--border-strong)] transition-colors">
               <h3 className="heading-md mb-2">Admin settings</h3>
               <p className="text-sm text-[var(--text-muted)]">OTP, SMTP, and social links.</p>
             </Link>
           </FadeInItem>
-        </StaggerChildren>
-      </div>
+      </StaggerChildren>
     </div>
   );
 }

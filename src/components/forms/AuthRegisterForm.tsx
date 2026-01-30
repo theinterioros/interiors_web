@@ -42,12 +42,19 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium text-[var(--foreground)]">Mobile number</label>
+        <label className="text-sm font-medium text-[var(--foreground)]">
+          Mobile number {role === "FIRM" ? "(required)" : "(optional)"}
+        </label>
         <input
           type="tel"
           name="phone"
-          required
+          required={role === "FIRM"}
           className="input"
+          inputMode="numeric"
+          minLength={10}
+          maxLength={14}
+          placeholder="10-digit mobile"
+          title="Enter 10-digit Indian mobile number (e.g. 9876543210)"
         />
       </div>
       <div className="space-y-2">
@@ -57,6 +64,9 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
           name="email"
           required
           className="input"
+          autoComplete="email"
+          placeholder="you@example.com"
+          title="Enter a valid email address"
         />
       </div>
       <div className="space-y-2">
@@ -65,20 +75,20 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
           type="password"
           name="password"
           required
+          autoComplete="new-password"
           className="input"
         />
       </div>
-      {role === "CUSTOMER" && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-[var(--foreground)]">OTP (email)</label>
-          <input
-            type="text"
-            name="otp"
-            placeholder="Optional — verify after signup"
-            className="input"
-          />
-        </div>
-      )}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-[var(--foreground)]">Confirm password</label>
+        <input
+          type="password"
+          name="confirmPassword"
+          required
+          autoComplete="new-password"
+          className="input"
+        />
+      </div>
       {fixedRole ? (
         <input type="hidden" name="role" value={fixedRole} />
       ) : (

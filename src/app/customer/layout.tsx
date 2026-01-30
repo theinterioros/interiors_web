@@ -4,5 +4,9 @@ import { requireRole } from "@/lib/auth";
 
 export default async function CustomerLayout({ children }: { children: ReactNode }) {
   await requireRole([RoleValues.CUSTOMER]);
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen bg-[var(--surface-subtle)] -mt-[var(--header-height)] pt-[var(--header-height)]">
+      {children}
+    </div>
+  );
 }

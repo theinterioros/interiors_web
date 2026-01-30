@@ -39,6 +39,7 @@ export async function getAdminSettings() {
         updatedAt: new Date(0),
         socialLinks: [],
         marketingLinks: [],
+        defaultRate: null,
         rates: [],
       };
     }
@@ -81,7 +82,11 @@ export async function getAdminSettings() {
     pincode: string;
     rate_per_sq_ft: number;
     is_active: boolean;
-  }>`select * from city_pincode_rates where settings_id = ${settings.id} order by created_at desc`;
+  }>`select * from city_pincode_rates where settings_id = ${settings.id} order by city, pincode`;
+
+  const defaultRateRow = rates.find((r) => r.city === "DEFAULT" && r.pincode === "*");
+  const defaultRate = defaultRateRow?.rate_per_sq_ft ?? null;
+  const overrideRates = rates.filter((r) => !(r.city === "DEFAULT" && r.pincode === "*"));
 
   return {
     id: settings.id,
@@ -114,7 +119,8 @@ export async function getAdminSettings() {
       showInFooter: link.show_in_footer,
       showInLanding: link.show_in_landing,
     })),
-    rates: rates.map((rate) => ({
+    defaultRate,
+    rates: overrideRates.map((rate) => ({
       id: rate.id,
       settingsId: rate.settings_id,
       city: rate.city,

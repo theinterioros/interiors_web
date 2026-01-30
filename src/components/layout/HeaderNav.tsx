@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Menu, X, LayoutGrid, Building2, Calculator, Box, LogIn, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, X, LayoutGrid, Building2, Calculator, Box, LogIn, LogOut, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User } from "lucide-react";
 
 type SessionUser = {
   id: string;
@@ -18,11 +18,35 @@ type HeaderNavProps = {
   logoutAction: () => Promise<void>;
 };
 
+/** Public nav — when not logged in */
 const navItems = [
   { href: "/#how-it-works", label: "How it works", icon: LayoutGrid },
   { href: "/designers", label: "Firms", icon: Building2 },
   { href: "/estimator", label: "AI Cost Estimator", icon: Calculator },
   { href: "/digital-twin", label: "Digital Twin", icon: Box },
+] as const;
+
+const adminNavItems = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/designers", label: "Firm Approvals", icon: BadgeCheck },
+  { href: "/admin/firms-pending-payment", label: "Firms Pending Payment", icon: IndianRupee },
+  { href: "/admin/pricing", label: "AI Estimator Pricing", icon: MapPin },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
+] as const;
+
+/** Customer portal nav — only customer-persona features (/customer/*) */
+const customerNavItems = [
+  { href: "/customer/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/customer/digital-twin", label: "Digital Twin", icon: Layers },
+  { href: "/customer/payments", label: "Payments", icon: CreditCard },
+] as const;
+
+/** Firm portal nav — only firm-persona features (/firm/*) */
+const firmNavItems = [
+  { href: "/firm/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/firm/leads", label: "Leads", icon: FolderKanban },
+  { href: "/firm/profile", label: "Profile", icon: User },
 ] as const;
 
 export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderNavProps) {
@@ -51,32 +75,37 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, close]);
 
+  const isAdmin = user?.role === "ADMIN";
+  const isCustomer = user?.role === "CUSTOMER";
+  const isFirm = user?.role === "FIRM";
+
+  const desktopLinks = isAdmin
+    ? adminNavItems
+    : isCustomer
+      ? customerNavItems
+      : isFirm
+        ? firmNavItems
+        : navItems;
+
   return (
     <>
       {/* Desktop nav — hidden on mobile */}
-      <nav className="hidden md:flex items-center gap-4 lg:gap-6">
-        {navItems.map(({ href, label }) => (
+      <nav className="hidden md:flex items-center gap-3 lg:gap-4">
+        {desktopLinks.map(({ href, label }) => (
           <Link
             key={href}
             href={href}
-            className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
+            className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors whitespace-nowrap"
           >
             {label}
           </Link>
         ))}
         {user ? (
-          <>
-            {dashboardHref && (
-              <Link href={dashboardHref} className="btn btn-secondary text-sm">
-                Dashboard
-              </Link>
-            )}
-            <form action={logoutAction} className="inline-block">
-              <button type="submit" className="btn btn-ghost text-sm">
-                Sign out
-              </button>
-            </form>
-          </>
+          <form action={logoutAction} className="inline-block">
+            <button type="submit" className="btn btn-ghost text-sm">
+              Sign out
+            </button>
+          </form>
         ) : (
           <>
             <Link href="/login?role=customer" className="btn btn-secondary text-sm">
@@ -132,7 +161,7 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
                 </button>
               </div>
               <nav className="flex-1 overflow-y-auto p-4 flex flex-col gap-1 min-h-0">
-                {navItems.map(({ href, label, icon: Icon }) => (
+                {desktopLinks.map(({ href, label, icon: Icon }) => (
                   <Link
                     key={href}
                     href={href}
@@ -147,20 +176,7 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
                 ))}
                 <div className="my-4 h-px bg-[#e6ebf1]" />
                 {user ? (
-                  <>
-                    {dashboardHref && (
-                      <Link
-                        href={dashboardHref}
-                        onClick={close}
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-[#334155] hover:bg-[#f8fafc] transition-colors"
-                      >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#f8fafc] text-[#F59E0B]">
-                          <LayoutDashboard className="h-4 w-4" />
-                        </span>
-                        <span className="font-medium">Dashboard</span>
-                      </Link>
-                    )}
-                    <form action={logoutAction} className="block">
+                  <form action={logoutAction} className="block">
                       <button
                         type="submit"
                         className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[#6b7280] hover:bg-[#f8fafc] hover:text-[#334155] transition-colors"
@@ -171,7 +187,6 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
                         <span className="font-medium">Sign out</span>
                       </button>
                     </form>
-                  </>
                 ) : (
                   <>
                     <Link

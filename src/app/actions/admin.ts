@@ -1,6 +1,7 @@
 "use server";
 
 import crypto from "crypto";
+import { revalidatePath } from "next/cache";
 import { RoleValues, DesignerStatusValues, PaymentStatusValues } from "@/lib/types";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
@@ -59,6 +60,50 @@ export async function updateSettingsAction(formData: FormData) {
   return;
 }
 
+const DEFAULT_CITY = "DEFAULT";
+const DEFAULT_PINCODE = "*";
+
+export async function setDefaultRateAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) {
+    throw new Error("Unauthorized.");
+  }
+
+  let [settings] = await sql<{ id: string }>`select id from admin_settings limit 1`;
+  if (!settings) {
+    const id = crypto.randomUUID();
+    await sql`insert into admin_settings (id) values (${id})`;
+    settings = { id };
+  }
+
+  const ratePerSqFt = Number(formData.get("ratePerSqFt") ?? 0);
+  if (!ratePerSqFt || ratePerSqFt < 1) {
+    throw new Error("Default rate must be at least 1 ₹/sq ft.");
+  }
+
+  const [existing] = await sql<{ id: string }>`
+    select id from city_pincode_rates
+    where settings_id = ${settings.id} and city = ${DEFAULT_CITY} and pincode = ${DEFAULT_PINCODE}
+    limit 1
+  `;
+
+  if (existing) {
+    await sql`
+      update city_pincode_rates
+      set rate_per_sq_ft = ${ratePerSqFt}, is_active = true
+      where id = ${existing.id}
+    `;
+  } else {
+    await sql`
+      insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft)
+      values (${crypto.randomUUID()}, ${settings.id}, ${DEFAULT_CITY}, ${DEFAULT_PINCODE}, ${ratePerSqFt})
+    `;
+  }
+
+  revalidatePath("/admin/pricing");
+  return;
+}
+
 export async function addRateAction(formData: FormData) {
   const admin = await requireAdmin();
   if (!admin) {
@@ -75,7 +120,10 @@ export async function addRateAction(formData: FormData) {
   const ratePerSqFt = Number(formData.get("ratePerSqFt") ?? 0);
 
   if (!city || !pincode || !ratePerSqFt) {
-    throw new Error("All fields are required.");
+    throw new Error("City, pincode and rate are required.");
+  }
+  if (city === DEFAULT_CITY && pincode === DEFAULT_PINCODE) {
+    throw new Error("Use the default rate section for the default rate.");
   }
 
   await sql`
@@ -83,6 +131,7 @@ export async function addRateAction(formData: FormData) {
     values (${crypto.randomUUID()}, ${settings.id}, ${city}, ${pincode}, ${ratePerSqFt})
   `;
 
+  revalidatePath("/admin/pricing");
   return;
 }
 
@@ -97,6 +146,7 @@ export async function toggleRateAction(formData: FormData) {
 
   await sql`update city_pincode_rates set is_active = ${isActive} where id = ${rateId}`;
 
+  revalidatePath("/admin/pricing");
   return;
 }
 
@@ -198,9 +248,12 @@ export async function approveFirmAction(formData: FormData) {
   }
 
   const profileId = String(formData.get("profileId") ?? "");
+  const addVerifiedBadge = formData.get("addVerifiedBadge") === "on";
   await sql`
     update firm_profiles
-    set status = ${DesignerStatusValues.APPROVED}, updated_at = now()
+    set status = ${DesignerStatusValues.APPROVED},
+        verified_at = ${addVerifiedBadge ? new Date() : null},
+        updated_at = now()
     where id = ${profileId}
   `;
 
@@ -239,6 +292,33 @@ export async function rejectFirmAction(formData: FormData) {
   `;
 
   return;
+}
+
+export async function sendFirmPaymentNudgeAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) {
+    throw new Error("Unauthorized.");
+  }
+
+  const userId = String(formData.get("userId") ?? "");
+  const [user] = await sql<{ email: string; name: string | null }>`
+    select email, name from users where id = ${userId} and role = ${RoleValues.FIRM} limit 1
+  `;
+  if (!user) return;
+
+  const subject = "Complete your firm registration — Interior OS";
+  const message = "You haven’t completed your one-time registration payment (₹3,000). Sign in and pay to access your firm dashboard and start receiving leads.";
+  try {
+    await notifyUser({
+      userId,
+      email: user.email,
+      type: "FIRM_APPROVED",
+      title: subject,
+      message,
+    });
+  } catch {
+    // notification/email may fail if SMTP not configured
+  }
 }
 
 export async function holdPaymentAction(formData: FormData) {

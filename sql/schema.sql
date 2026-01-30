@@ -34,7 +34,7 @@ create type firm_status as enum ('PENDING', 'APPROVED', 'REJECTED');
 create type project_status as enum ('REQUESTED', 'ACCEPTED', 'REJECTED', 'ACTIVE', 'COMPLETED', 'CANCELLED');
 create type milestone_status as enum ('PENDING', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'DISPUTED');
 create type payment_status as enum ('PENDING', 'HELD', 'RELEASED', 'CANCELLED');
-create type payment_type as enum ('ADVANCE', 'MILESTONE', 'DIGITAL_TWIN_RENEWAL', 'FIRM_YEARLY_FEE', 'CUSTOMER_REGISTRATION_FEE');
+create type payment_type as enum ('ADVANCE', 'MILESTONE', 'DIGITAL_TWIN_RENEWAL', 'FIRM_YEARLY_FEE', 'CUSTOMER_REGISTRATION_FEE', 'FIRM_REGISTRATION_FEE');
 create type notification_type as enum (
   'FIRM_APPROVED',
   'PROJECT_REQUEST',
@@ -93,6 +93,7 @@ create table firm_profiles (
   pincode text not null,
   about text not null,
   status firm_status not null default 'PENDING',
+  verified_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

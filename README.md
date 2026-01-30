@@ -54,13 +54,16 @@ The first admin user is seeded on app boot using `ADMIN_SEED_EMAIL` and `ADMIN_S
 
 **Admin login:** Go to `/login?role=admin` and sign in with `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD`.
 
-### Demo Seed
+### Demo accounts
 
-```bash
-npm run seed:demo
-```
+Demo **customer** and **firm** accounts are created automatically on first app load (after schema is applied). You can also run `npm run seed:demo` to create or reset them and add extra sample data.
 
-Creates demo **customer** and **firm** accounts with password `Demo123!` (see [DEMO.md](./DEMO.md) for emails and investor-demo usage).
+| Role     | Email                     | Password  |
+|----------|---------------------------|-----------|
+| Customer | `customer@interioros.com` | `Demo123!`|
+| Firm     | `firm@interioros.com`     | `Demo123!`|
+
+Dummy data: 2 sample projects (one ACTIVE, one REQUESTED) linking the customer and firm, with milestones. See [DEMO.md](./DEMO.md) for details.
 
 ## Admin Settings
 

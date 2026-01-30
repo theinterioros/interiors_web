@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import CitySelect from "@/components/ui/CitySelect";
 
 type EstimateResult = {
   min: number;
@@ -72,48 +73,69 @@ export default function EstimatorForm() {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-      <form onSubmit={handleSubmit} className="card space-y-6">
+    <div className="flex flex-col gap-6 lg:flex-row lg:gap-8 lg:items-start">
+      <form onSubmit={handleSubmit} className="card space-y-5 flex-1 w-full min-w-0 max-w-xl">
+        <p className="eyebrow">Property essentials</p>
+
         <div className="space-y-4">
-          <p className="eyebrow">Property essentials</p>
-          <div className="grid gap-4 md:grid-cols-3">
-            <input name="city" required placeholder="City" className="input" />
-            <input name="pincode" required placeholder="Pincode" className="input" />
-            <select name="propertyType" className="input">
+          <div>
+            <label htmlFor="estimator-city" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">City</label>
+            <CitySelect id="estimator-city" name="city" required placeholder="Search and select city" className="input" />
+          </div>
+          <div>
+            <label htmlFor="estimator-pincode" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Pincode</label>
+            <input id="estimator-pincode" name="pincode" required placeholder="e.g. 560001" className="input" />
+          </div>
+          <div>
+            <label htmlFor="estimator-propertyType" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Property type</label>
+            <select id="estimator-propertyType" name="propertyType" className="input">
               <option value="apartment">Residential</option>
               <option value="villa">Villa / Independent</option>
             </select>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <select name="configuration" className="input">
+          <div>
+            <label htmlFor="estimator-configuration" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Configuration</label>
+            <select id="estimator-configuration" name="configuration" className="input">
               <option value="1BHK">1 BHK</option>
               <option value="2BHK">2 BHK</option>
               <option value="3BHK">3 BHK</option>
               <option value="4BHK">4 BHK</option>
               <option value="5BHK">5+ BHK</option>
             </select>
-            <div className="flex gap-2">
-              <input
-                name="carpetArea"
-                type="number"
-                min={100}
-                required
-                placeholder="Carpet area"
-                className="input"
-              />
-              <select name="areaUnit" className="input">
-                <option value="SFT">SFT</option>
-                <option value="SQM">SQ.M</option>
-                <option value="SQYD">SQ.YD</option>
-              </select>
-            </div>
-            <div className="card-subtle text-xs text-[var(--text-muted)]">
-              We use these details to calculate your estimate.
+          </div>
+          <div>
+            <label htmlFor="estimator-carpetArea" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+              Carpet area
+            </label>
+            <div className="flex gap-2 items-stretch">
+              <div className="flex-1 min-w-0">
+                <input
+                  id="estimator-carpetArea"
+                  name="carpetArea"
+                  type="number"
+                  min={100}
+                  required
+                  placeholder="e.g. 1200"
+                  className="input w-full min-w-0"
+                />
+              </div>
+              <div className="w-[6rem] shrink-0">
+                <select
+                  name="areaUnit"
+                  className="input h-full w-full min-w-0 bg-[var(--surface-subtle)] font-medium"
+                  aria-label="Area unit"
+                >
+                  <option value="SFT">Sq.ft</option>
+                  <option value="SQM">Sq.m</option>
+                  <option value="SQYD">Sq.yd</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
+
         <p className="text-xs text-[var(--text-muted)]">
-          Estimate uses city, property type, configuration, and carpet area. You can refine later.
+          We use city, property type, configuration, and carpet area for the estimate.
         </p>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
@@ -122,7 +144,7 @@ export default function EstimatorForm() {
         </button>
       </form>
 
-      <div className="card">
+      <div className="card w-full min-w-0 lg:max-w-sm lg:shrink-0">
         <p className="eyebrow mb-4">Estimated range</p>
         {result ? (
           <div className="space-y-4">
@@ -133,30 +155,20 @@ export default function EstimatorForm() {
               <p className="eyebrow mb-3">Breakdown</p>
               <div className="space-y-2 text-sm text-[var(--text-muted)]">
                 <div className="flex justify-between">
-                  <span>Rate per sq ft:</span>
-                  <span className="font-semibold text-[var(--foreground)]">₹{result.breakdown.ratePerSqFt}</span>
-                </div>
-                <div className="flex justify-between">
                   <span>Square feet:</span>
                   <span className="font-semibold text-[var(--foreground)]">{result.breakdown.squareFeet}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Property modifier:</span>
-                  <span className="font-semibold text-[var(--foreground)]">{result.breakdown.propertyMultiplier}x</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Room modifier:</span>
-                  <span className="font-semibold text-[var(--foreground)]">{result.breakdown.roomModifier}x</span>
-                </div>
                 <div className="flex justify-between pt-2 border-t border-[var(--border)]">
-                  <span>Adjusted estimate:</span>
-                  <span className="font-semibold text-[var(--brand)]">₹{result.breakdown.adjusted.toLocaleString()}</span>
+                  <span>Estimated range:</span>
+                  <span className="font-semibold text-[var(--brand)]">₹{result.min.toLocaleString()} – ₹{result.max.toLocaleString()}</span>
                 </div>
               </div>
             </div>
-            <p className="text-xs text-[var(--text-muted)]">{result.disclaimer}</p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Our AI analyses your property details and location to provide this estimated range. Final costs depend on scope and materials.
+            </p>
             <a href="/login?redirect=/estimator" className="btn btn-secondary w-full text-center">
-              Sign in to email estimate
+              Sign in to get a detailed estimate
             </a>
           </div>
         ) : (

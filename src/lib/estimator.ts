@@ -8,21 +8,41 @@ type EstimateInput = {
   rooms: number;
 };
 
+const DEFAULT_CITY = "DEFAULT";
+const DEFAULT_PINCODE = "*";
+
 export async function estimateCost(input: EstimateInput) {
   const { city, pincode, squareFeet, propertyType, rooms } = input;
-  const [rate] = await sql<{ rate_per_sq_ft: number }>`
+  const cityTrim = city.trim();
+  const pincodeTrim = pincode.trim();
+
+  const [specificRate] = await sql<{ rate_per_sq_ft: number }>`
     select rate_per_sq_ft
     from city_pincode_rates
-    where city = ${city.trim()}
-      and pincode = ${pincode.trim()}
+    where city = ${cityTrim}
+      and pincode = ${pincodeTrim}
       and is_active = true
     limit 1
   `;
 
+  let defaultRate: { rate_per_sq_ft: number } | undefined;
+  if (!specificRate) {
+    [defaultRate] = await sql<{ rate_per_sq_ft: number }>`
+      select rate_per_sq_ft
+      from city_pincode_rates
+      where city = ${DEFAULT_CITY}
+        and pincode = ${DEFAULT_PINCODE}
+        and is_active = true
+      limit 1
+    `;
+  }
+
+  const rate = specificRate ?? defaultRate;
+
   if (!rate) {
     return {
       ok: false as const,
-      error: "No pricing available for the selected city and pincode.",
+      error: "No pricing available for the selected city and pincode. Set a default rate in Admin → AI Estimator pricing.",
     };
   }
 

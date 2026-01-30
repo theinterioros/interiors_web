@@ -1,14 +1,13 @@
 import { updateFirmProfileAction, uploadFirmPortfolioAction } from "@/app/actions/designer";
 import { Building2 } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 
 export const dynamic = "force-dynamic";
 
 export default async function FirmProfilePage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const user = await requireFirmPaid();
 
   const [profile] = await sql<{
     id: string;

@@ -1,6 +1,5 @@
 import { CreditCard, ShieldCheck } from "lucide-react";
-import { requireRole } from "@/lib/auth";
-import { RoleValues } from "@/lib/types";
+import { requireCustomerPaid } from "@/lib/auth";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
 import FadeInItem from "@/components/animations/FadeInItem";
@@ -8,7 +7,7 @@ import FadeInItem from "@/components/animations/FadeInItem";
 export const dynamic = "force-dynamic";
 
 export default async function CustomerPaymentsPage() {
-  await requireRole([RoleValues.CUSTOMER]);
+  await requireCustomerPaid();
 
   return (
     <div className="page bg-white">

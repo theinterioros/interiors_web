@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FolderKanban, LayoutDashboard, Users } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
@@ -9,8 +9,7 @@ import FadeInItem from "@/components/animations/FadeInItem";
 export const dynamic = "force-dynamic";
 
 export default async function FirmDashboardPage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const user = await requireFirmPaid();
 
   const pendingRequests = await sql<{
     id: string;

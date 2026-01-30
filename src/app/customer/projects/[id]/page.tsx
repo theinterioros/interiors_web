@@ -1,6 +1,6 @@
 import { approveMilestoneAction } from "@/app/actions/project";
 import { ClipboardList } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { requireCustomerPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
@@ -11,10 +11,10 @@ export const dynamic = "force-dynamic";
 export default async function CustomerProjectPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const { id } = await params;
+  const user = await requireCustomerPaid();
 
   const [project] = await sql<{
     id: string;
@@ -25,7 +25,7 @@ export default async function CustomerProjectPage({
     select p.id, p.title, p.status, u.name as firm_name
     from projects p
     join users u on u.id = p.firm_id
-    where p.id = ${params.id} and p.customer_id = ${user.id}
+    where p.id = ${id} and p.customer_id = ${user.id}
     limit 1
   `;
 
