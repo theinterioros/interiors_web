@@ -34,6 +34,9 @@ export async function updateSettingsAction(formData: FormData) {
     smtpUser: String(formData.get("smtpUser") ?? "") || null,
     smtpPass: String(formData.get("smtpPass") ?? "") || null,
     smtpSecure: formData.get("smtpSecure") === "on",
+    contactEmail: String(formData.get("contactEmail") ?? "").trim() || null,
+    contactPhone: String(formData.get("contactPhone") ?? "").trim() || null,
+    contactAddress: String(formData.get("contactAddress") ?? "").trim() || null,
   };
 
   if (!settings) {
@@ -53,6 +56,9 @@ export async function updateSettingsAction(formData: FormData) {
         smtp_user = ${payload.smtpUser},
         smtp_pass = ${payload.smtpPass},
         smtp_secure = ${payload.smtpSecure},
+        contact_email = ${payload.contactEmail},
+        contact_phone = ${payload.contactPhone},
+        contact_address = ${payload.contactAddress},
         updated_at = now()
     where id = ${settings.id}
   `;
@@ -184,6 +190,8 @@ export async function addSocialLinkAction(formData: FormData) {
     )
   `;
 
+  revalidatePath("/");
+  revalidatePath("/admin/settings");
   return;
 }
 
@@ -234,11 +242,13 @@ export async function deleteLinkAction(formData: FormData) {
 
   if (type === "social") {
     await sql`delete from social_links where id = ${linkId}`;
+    revalidatePath("/");
   }
   if (type === "marketing") {
     await sql`delete from marketing_links where id = ${linkId}`;
   }
 
+  revalidatePath("/admin/settings");
   return;
 }
 

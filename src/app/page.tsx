@@ -22,6 +22,9 @@ import {
   FolderLock,
   Calculator,
   Ruler,
+  Globe,
+  Facebook,
+  Youtube,
 } from "lucide-react";
 import { getAdminSettings } from "@/lib/settings";
 import FadeIn from "@/components/animations/FadeIn";
@@ -69,7 +72,10 @@ export default async function Home() {
         ];
   const footerLinks = marketingLinks.filter((link) => link.showInFooter);
   const landingLinks = marketingLinks.filter((link) => link.showInLanding);
-  const socialLinks = settings.socialLinks.filter((link) => link.showInFooter || link.showInHeader);
+  /* Same social links in footer and contact section — from admin, any with footer/header/landing */
+  const socialLinks = settings.socialLinks.filter(
+    (link) => link.showInFooter || link.showInHeader || link.showInLanding
+  );
 
   const steps = [
     { step: "1", title: "Property details", desc: "Share your property and budget." },
@@ -553,67 +559,27 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Contact — compact, classy card */}
-        <section id="contact" className="section section-alt section-compact section-bg-pattern section-bg-gradient-alt relative">
-          <div className="absolute inset-0 pointer-events-none z-0" aria-hidden>
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full bg-[var(--brand)]/5 blur-3xl" />
-          </div>
-          <div className="page-inner relative z-10">
-            <FadeIn className="mx-auto max-w-3xl">
-              <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-lg shadow-[var(--foreground)]/5">
-                <div className="grid gap-0 md:grid-cols-2" data-contact-block>
-                  {/* Form — compact */}
-                  <div className="relative p-6 md:p-7 md:border-r border-[var(--border)]">
-                    <div className="absolute left-0 top-6 bottom-6 w-0.5 bg-[var(--brand)]/40 rounded-full hidden md:block" aria-hidden />
-                    <p className="eyebrow mb-1.5 text-[var(--brand)]">Get in touch</p>
-                    <h2 className="text-xl font-semibold text-[var(--foreground)] mb-2">Talk to our team</h2>
-                    <p className="text-sm text-[var(--text-muted)] mb-5 leading-relaxed">
-                      Walkthrough or project details. We reply within 24 hours.
-                    </p>
-                    <ContactForm />
-                  </div>
-                  {/* Contact + social — compact list */}
-                  <div className="p-6 md:p-7 bg-[var(--surface-subtle)]/60 flex flex-col justify-center">
-                    <p className="eyebrow text-[var(--text-muted)] mb-4">Reach us</p>
-                    <ul className="space-y-3 mb-6">
-                      <li>
-                        <a href="mailto:hello@interioros.com" className="flex items-center gap-3 text-sm text-[var(--foreground)] hover:text-[var(--brand)] transition-colors">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-[var(--border)] text-[var(--brand)]">
-                            <Mail className="h-4 w-4" />
-                          </span>
-                          <span className="font-medium">hello@interioros.com</span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="tel:+919000000000" className="flex items-center gap-3 text-sm text-[var(--foreground)] hover:text-[var(--brand)] transition-colors">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-[var(--border)] text-[var(--brand)]">
-                            <PhoneCall className="h-4 w-4" />
-                          </span>
-                          <span className="font-medium">+91 90000 00000</span>
-                        </a>
-                      </li>
-                      <li className="flex items-center gap-3 text-sm text-[var(--foreground)]">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-[var(--border)] text-[var(--brand)]">
-                          <MapPin className="h-4 w-4" />
-                        </span>
-                        <span className="font-medium">Bengaluru, India</span>
-                      </li>
-                    </ul>
-                    <div className="flex items-center gap-2 pt-4 border-t border-[var(--border)]">
-                      <span className="text-xs font-medium text-[var(--text-muted)]">Follow</span>
-                      <div className="flex gap-2">
-                        <a href="#" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)] bg-white text-[var(--text-muted)] hover:text-[var(--brand)] hover:border-[var(--brand)]/40 transition-colors" aria-label="Twitter">
-                          <Twitter className="h-4 w-4" />
-                        </a>
-                        <a href="#" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)] bg-white text-[var(--text-muted)] hover:text-[var(--brand)] hover:border-[var(--brand)]/40 transition-colors" aria-label="LinkedIn">
-                          <Linkedin className="h-4 w-4" />
-                        </a>
-                        <a href="#" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)] bg-white text-[var(--text-muted)] hover:text-[var(--brand)] hover:border-[var(--brand)]/40 transition-colors" aria-label="Instagram">
-                          <Instagram className="h-4 w-4" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
+        {/* Contact — dark form left, interiors image right (inspiration layout) */}
+        <section id="contact" className="section section-compact relative">
+          <div className="page-inner">
+            <FadeIn className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--foreground-deep)] shadow-2xl">
+              <div className="grid md:grid-cols-2 min-h-[420px]">
+                {/* Left: dark form */}
+                <div className="p-8 md:p-10 flex flex-col justify-center">
+                  <h2 className="text-2xl font-bold text-white mb-2">Chat to our team</h2>
+                  <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-md">
+                    Need help with something? Want a demo? Get in touch with our friendly team and we&apos;ll get back within 24 hours.
+                  </p>
+                  <ContactForm />
+                </div>
+                {/* Right: interiors image */}
+                <div className="relative min-h-[280px] md:min-h-0 bg-slate-700">
+                  <img
+                    src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80"
+                    alt="Modern interior design"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent" aria-hidden />
                 </div>
               </div>
             </FadeIn>
@@ -656,13 +622,13 @@ export default async function Home() {
         {/* Trust built in — clear 4-column grid with hierarchy */}
         <section className="section section-alt section-compact section-bg-pattern section-bg-gradient-alt">
           <div className="page-inner">
-            <FadeIn className="rounded-2xl bg-[var(--foreground)] p-6 sm:p-8 md:p-12 text-white shadow-xl overflow-hidden relative w-full">
+            <FadeIn className="rounded-2xl bg-[var(--foreground-deep)] p-6 sm:p-8 md:p-12 text-white shadow-xl overflow-hidden relative w-full">
               <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--brand)]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" aria-hidden />
               <div className="relative w-full flex flex-col items-center">
                 <div className="w-full max-w-2xl text-center mb-8 md:mb-12 px-2">
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 text-center drop-shadow-sm">
                     <span className="text-white">Clarity first.</span>{" "}
-                    <span className="text-[#FDE68A]">Trust built in.</span>
+                    <span className="text-[var(--accent-blush)]">Trust built in.</span>
                   </h2>
                   <p className="text-slate-300 text-sm leading-relaxed text-center">
                     How we keep your interior journey transparent and secure.
@@ -705,31 +671,57 @@ export default async function Home() {
       </main>
       </LandingScrollAnimations>
 
-      {/* Footer — above fixed background (z-10), solid bg and explicit colors for visibility */}
-      <footer className="relative z-10 border-t border-[#e2e8f0] bg-[#ffffff] text-[#334155]">
+      {/* Footer — Reach us (from admin) + Links + Social */}
+      <footer className="relative z-10 border-t border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]">
         <div className="page-inner py-12 md:py-16">
-          <div className="grid gap-10 md:grid-cols-3">
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
             <div>
-              <h3 className="font-semibold text-[#334155] mb-2">Interior OS</h3>
-              <p className="text-sm text-[#6b7280] leading-relaxed">
+              <h3 className="font-semibold text-[var(--foreground)] mb-2">Interior OS</h3>
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed">
                 Interior infrastructure for modern Indian homes — budgeting, verified firms, and document vault.
               </p>
             </div>
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] mb-3">Links</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">Links</h4>
               <div className="flex flex-col gap-2 text-sm">
                 {footerLinks.map((link) => (
-                  <Link key={link.label} href={link.url} className="text-[#64748b] hover:text-[#334155] transition-colors">
+                  <Link key={link.label} href={link.url} className="text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors">
                     {link.label}
                   </Link>
                 ))}
               </div>
             </div>
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#6b7280] mb-3">Social</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">Reach us</h4>
+              <div className="flex flex-col gap-2 text-sm">
+                {settings.contactEmail ? (
+                  <a href={`mailto:${settings.contactEmail}`} className="text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2">
+                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                    {settings.contactEmail}
+                  </a>
+                ) : null}
+                {settings.contactPhone ? (
+                  <a href={`tel:${settings.contactPhone.replace(/\D/g, "")}`} className="text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2">
+                    <PhoneCall className="h-3.5 w-3.5 shrink-0" />
+                    {settings.contactPhone}
+                  </a>
+                ) : null}
+                {settings.contactAddress ? (
+                  <span className="text-[var(--text-muted)] flex items-center gap-2">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                    {settings.contactAddress}
+                  </span>
+                ) : null}
+                {!settings.contactEmail && !settings.contactPhone && !settings.contactAddress ? (
+                  <p className="text-xs text-[var(--text-subtle)]">Set contact info in Admin → Settings.</p>
+                ) : null}
+              </div>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">Social</h4>
               <div className="flex flex-col gap-2 text-sm">
                 {socialLinks.length === 0 ? (
-                  <p className="text-xs text-[#94a3b8]">Configure social links in admin.</p>
+                  <p className="text-xs text-[var(--text-subtle)]">Configure social links in admin.</p>
                 ) : (
                   socialLinks.map((link) => (
                     <a
@@ -737,7 +729,7 @@ export default async function Home() {
                       href={link.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[#64748b] hover:text-[#334155] transition-colors"
+                      className="text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
                     >
                       {link.platform}
                     </a>
@@ -746,8 +738,8 @@ export default async function Home() {
               </div>
             </div>
           </div>
-          <div className="mt-10 pt-8 border-t border-[#e2e8f0]">
-            <p className="text-xs text-[#94a3b8]">© Interior OS. All rights reserved.</p>
+          <div className="mt-10 pt-8 border-t border-[var(--border)]">
+            <p className="text-xs text-[var(--text-subtle)]">© Interior OS. All rights reserved.</p>
           </div>
         </div>
       </footer>

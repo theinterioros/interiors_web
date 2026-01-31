@@ -78,7 +78,7 @@ export default async function FirmProfilePage({
                 Verified
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-amber-600">
+              <span className="flex items-center gap-1 text-[var(--brand)]">
                 <ShieldAlert className="h-3.5 w-3.5" />
                 Unverified
               </span>

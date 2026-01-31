@@ -31,6 +31,25 @@ async function main() {
   // Add verified_at to firm_profiles (safe to run multiple times)
   await sql`ALTER TABLE firm_profiles ADD COLUMN IF NOT EXISTS verified_at timestamptz`;
   console.log("Migration applied: firm_profiles.verified_at");
+
+  // Contact info on landing (Get in touch) — from admin settings
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS contact_email text`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS contact_phone text`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS contact_address text`;
+  console.log("Migration applied: admin_settings contact_email, contact_phone, contact_address");
+
+  // Contact form submissions as leads for admin
+  await sql`
+    CREATE TABLE IF NOT EXISTS contact_leads (
+      id uuid primary key default gen_random_uuid(),
+      name text not null,
+      email text not null,
+      phone text not null,
+      message text,
+      created_at timestamptz not null default now()
+    )
+  `;
+  console.log("Migration applied: contact_leads table");
 }
 
 main().catch((error) => {

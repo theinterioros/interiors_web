@@ -12,6 +12,9 @@ type AdminSettingsRow = {
   smtp_user: string | null;
   smtp_pass: string | null;
   smtp_secure: boolean;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  contact_address?: string | null;
   created_at: Date;
   updated_at: Date;
 };
@@ -35,6 +38,9 @@ export async function getAdminSettings() {
         smtpUser: null,
         smtpPass: null,
         smtpSecure: false,
+        contactEmail: null,
+        contactPhone: null,
+        contactAddress: null,
         createdAt: new Date(0),
         updatedAt: new Date(0),
         socialLinks: [],
@@ -99,6 +105,9 @@ export async function getAdminSettings() {
     smtpUser: settings.smtp_user,
     smtpPass: settings.smtp_pass,
     smtpSecure: settings.smtp_secure,
+    contactEmail: settings.contact_email ?? null,
+    contactPhone: settings.contact_phone ?? null,
+    contactAddress: settings.contact_address ?? null,
     createdAt: settings.created_at,
     updatedAt: settings.updated_at,
     socialLinks: socialLinks.map((link) => ({

@@ -64,7 +64,26 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 pt-4 border-t border-[var(--border)]">
+            <h3 className="text-sm font-semibold text-[var(--foreground)]">Contact info (Get in touch)</h3>
+            <p className="text-xs text-[var(--text-muted)]">Shown beside the contact form and in Reach us.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">Contact email</label>
+              <input name="contactEmail" type="email" defaultValue={settings.contactEmail ?? ""} placeholder="hello@interioros.com" className="input" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">Contact phone</label>
+              <input name="contactPhone" type="tel" defaultValue={settings.contactPhone ?? ""} placeholder="+91 90000 00000" className="input" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">Contact address</label>
+              <input name="contactAddress" type="text" defaultValue={settings.contactAddress ?? ""} placeholder="Bengaluru, India" className="input" />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 pt-4 border-t border-[var(--border)]">
             <div className="space-y-2">
               <label className="text-sm font-medium text-[var(--foreground)]">SMTP host</label>
               <input name="smtpHost" defaultValue={settings.smtpHost ?? ""} className="input" />
