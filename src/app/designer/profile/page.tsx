@@ -1,21 +1,28 @@
-import { updateDesignerProfileAction, uploadPortfolioAction } from "@/app/actions/designer";
-import { getCurrentUser } from "@/lib/auth";
+import {
+  updateFirmProfileAction,
+  uploadFirmPortfolioAction,
+} from "@/app/actions/designer";
+import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function DesignerProfilePage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const user = await requireFirmPaid();
 
   const [profile] = await sql<{
     id: string;
     name: string;
+    firm_name: string | null;
+    owner_name: string | null;
+    office_address: string | null;
     experience_years: number;
     city: string;
     pincode: string;
     about: string;
   }>`
-    select id, name, experience_years, city, pincode, about
-    from designer_profiles
+    select id, name, firm_name, owner_name, office_address, experience_years, city, pincode, about
+    from firm_profiles
     where user_id = ${user.id}
     limit 1
   `;
@@ -27,7 +34,7 @@ export default async function DesignerProfilePage() {
         file_name: string;
       }>`
         select id, blob_url, file_name
-        from designer_portfolio_files
+        from firm_portfolio_files
         where profile_id = ${profile.id}
         order by created_at desc
       `
@@ -45,7 +52,7 @@ export default async function DesignerProfilePage() {
         </div>
 
         <form
-          action={updateDesignerProfileAction}
+          action={updateFirmProfileAction}
           className="space-y-4 rounded-2xl border border-neutral-200 p-6"
         >
           <div className="grid gap-4 md:grid-cols-2">
@@ -55,6 +62,22 @@ export default async function DesignerProfilePage() {
                 name="name"
                 defaultValue={profile?.name ?? ""}
                 required
+                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-neutral-700">Firm name</label>
+              <input
+                name="firmName"
+                defaultValue={profile?.firm_name ?? ""}
+                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-neutral-700">Owner name</label>
+              <input
+                name="ownerName"
+                defaultValue={profile?.owner_name ?? ""}
                 className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               />
             </div>
@@ -69,8 +92,6 @@ export default async function DesignerProfilePage() {
                 className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               />
             </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-700">City</label>
               <input
@@ -89,13 +110,21 @@ export default async function DesignerProfilePage() {
                 className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               />
             </div>
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-sm font-medium text-neutral-700">Office address</label>
+              <input
+                name="officeAddress"
+                defaultValue={profile?.office_address ?? ""}
+                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-neutral-700">About</label>
             <textarea
               name="about"
               rows={4}
-                defaultValue={profile?.about ?? ""}
+              defaultValue={profile?.about ?? ""}
               required
               className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
             />
@@ -106,7 +135,7 @@ export default async function DesignerProfilePage() {
         </form>
 
         <form
-          action={uploadPortfolioAction}
+          action={uploadFirmPortfolioAction}
           encType="multipart/form-data"
           className="space-y-4 rounded-2xl border border-neutral-200 p-6"
         >

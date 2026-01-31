@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
 import { RoleValues } from "@/lib/types";
-import { requireRole } from "@/lib/auth";
+import { requireFirmPaid } from "@/lib/auth";
 
 export default async function DesignerLayout({ children }: { children: ReactNode }) {
-  await requireRole([RoleValues.DESIGNER]);
+  await requireFirmPaid();
   return <>{children}</>;
 }

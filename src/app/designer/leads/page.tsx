@@ -1,10 +1,11 @@
 import { respondProjectRequestAction } from "@/app/actions/project";
-import { getCurrentUser } from "@/lib/auth";
+import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function DesignerLeadsPage() {
-  const user = await getCurrentUser();
-  if (!user) return null;
+  const user = await requireFirmPaid();
 
   const leads = await sql<{
     id: string;
@@ -16,7 +17,7 @@ export default async function DesignerLeadsPage() {
     select p.id, p.title, p.description, u.name as customer_name, u.email as customer_email
     from projects p
     join users u on u.id = p.customer_id
-    where p.designer_id = ${user.id} and p.status = 'REQUESTED'
+    where p.firm_id = ${user.id} and p.status = 'REQUESTED'
     order by p.created_at desc
   `;
 
