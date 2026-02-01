@@ -26,7 +26,7 @@ export default async function LoginPage({
 
   return (
     <div
-      className={`min-h-screen -mt-[var(--header-height)] pt-[var(--header-height)] flex flex-col justify-center ${
+      className={`min-h-screen flex flex-col justify-center ${
         isCustomer
           ? "bg-gradient-to-br from-[var(--brand-light)]/30 to-white"
           : isFirm

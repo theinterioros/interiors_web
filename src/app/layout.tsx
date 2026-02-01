@@ -37,7 +37,7 @@ export default async function RootLayout({
         className={`${inter.variable} ${geistMono.variable} antialiased min-w-0 overflow-x-hidden`}
       >
         <SiteHeader user={user} />
-        <main id="main-content" className="min-w-0">
+        <main id="main-content" className="min-w-0 pt-[var(--header-height)]">
           {children}
         </main>
       </body>

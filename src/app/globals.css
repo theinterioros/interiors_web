@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --header-height: 3.5rem; /* sticky header height for main padding and scroll */
+  --header-height: 3.5rem; /* fixed navbar height; main has pt so content starts below */
   /* Atlassian-inspired: neutrals + brand blue (N0–N900, Blue500/600/700) */
   --background: #FFFFFF;       /* N0 */
   --foreground: #172B4D;       /* N900 — Squid Ink, primary text */

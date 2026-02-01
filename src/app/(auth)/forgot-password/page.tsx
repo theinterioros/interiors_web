@@ -13,7 +13,7 @@ export default async function ForgotPasswordPage({
   const role = resolved?.role === "firm" ? "firm" : resolved?.role === "admin" ? "admin" : "customer";
 
   return (
-    <div className="min-h-screen -mt-[var(--header-height)] pt-[var(--header-height)] flex flex-col justify-center bg-gradient-to-br from-[var(--brand-light)]/20 to-white">
+    <div className="min-h-screen flex flex-col justify-center bg-gradient-to-br from-[var(--brand-light)]/20 to-white">
       <main className="page flex-1 flex flex-col justify-center py-8">
         <div className="page-inner">
           <div className="mx-auto max-w-md">

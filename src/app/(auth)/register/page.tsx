@@ -19,7 +19,7 @@ export default async function RegisterPage({
   const isFirm = roleParam === "FIRM";
 
   return (
-    <div className={`min-h-screen -mt-[var(--header-height)] pt-[var(--header-height)] ${isCustomer ? "bg-gradient-to-br from-[var(--brand-light)]/30 to-white" : "bg-gradient-to-br from-slate-50 to-white"}`}>
+    <div className={`min-h-screen ${isCustomer ? "bg-gradient-to-br from-[var(--brand-light)]/30 to-white" : "bg-gradient-to-br from-slate-50 to-white"}`}>
       <main className="page">
         <div className="page-inner">
           <div className="mx-auto max-w-5xl">

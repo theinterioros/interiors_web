@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 export default async function FirmLayout({ children }: { children: ReactNode }) {
   await requireRole([RoleValues.FIRM]);
   return (
-    <div className="min-h-screen bg-[var(--surface-subtle)] -mt-[var(--header-height)] pt-[var(--header-height)]">
+    <div className="min-h-screen bg-[var(--surface-subtle)]">
       {children}
     </div>
   );
