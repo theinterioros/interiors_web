@@ -50,6 +50,30 @@ async function main() {
     )
   `;
   console.log("Migration applied: contact_leads table");
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS estimator_leads (
+      id uuid primary key default gen_random_uuid(),
+      name text not null,
+      email text not null,
+      city text not null,
+      pincode text not null,
+      square_feet int not null,
+      property_type text,
+      rooms int,
+      min_amount int,
+      max_amount int,
+      created_at timestamptz not null default now()
+    )
+  `;
+  console.log("Migration applied: estimator_leads table");
+
+  await sql`ALTER TABLE estimator_leads ADD COLUMN IF NOT EXISTS phone text`;
+  console.log("Migration applied: estimator_leads.phone");
+
+  await sql`ALTER TABLE city_pincode_rates ADD COLUMN IF NOT EXISTS rate_per_sq_yd numeric`;
+  await sql`ALTER TABLE city_pincode_rates ADD COLUMN IF NOT EXISTS rate_per_sq_m numeric`;
+  console.log("Migration applied: city_pincode_rates.rate_per_sq_yd, rate_per_sq_m");
 }
 
 main().catch((error) => {

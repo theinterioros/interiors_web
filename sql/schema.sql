@@ -244,6 +244,8 @@ create table city_pincode_rates (
   city text not null,
   pincode text not null,
   rate_per_sq_ft int not null,
+  rate_per_sq_yd numeric,
+  rate_per_sq_m numeric,
   is_active boolean not null default true,
   created_at timestamptz not null default now()
 );

@@ -84,7 +84,7 @@ export default function VisualizeIllustration() {
                 height="22"
                 rx="2"
                 className="text-[var(--brand)]/50"
-                fill="rgba(180, 83, 9, 0.08)"
+                fill="rgba(0, 82, 204, 0.08)"
               />
               <line x1="60" y1="6" x2="60" y2="28" className="text-[var(--brand)]/30" />
               <line x1="40" y1="17" x2="80" y2="17" className="text-[var(--brand)]/30" />

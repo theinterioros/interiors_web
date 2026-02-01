@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ensureAdminSeed } from "@/lib/seedAdmin";
 import { ensureDemoAccounts } from "@/lib/seedDemo";
 import { getCurrentUser } from "@/lib/auth";
 import SiteHeader from "@/components/layout/SiteHeader";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -31,12 +32,12 @@ export default async function RootLayout({
   const user = await getCurrentUser();
 
   return (
-    <html lang="en">
+    <html lang="en" className="overflow-x-hidden">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${geistMono.variable} antialiased min-w-0 overflow-x-hidden`}
       >
         <SiteHeader user={user} />
-        <main id="main-content">
+        <main id="main-content" className="min-w-0">
           {children}
         </main>
       </body>

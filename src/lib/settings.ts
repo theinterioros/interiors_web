@@ -46,6 +46,8 @@ export async function getAdminSettings() {
         socialLinks: [],
         marketingLinks: [],
         defaultRate: null,
+        defaultRatePerSqYd: null,
+        defaultRatePerSqM: null,
         rates: [],
       };
     }
@@ -81,17 +83,33 @@ export async function getAdminSettings() {
     show_in_landing: boolean;
   }>`select * from marketing_links where settings_id = ${settings.id} order by label asc`;
 
-  const rates = await sql<{
+  type RateRow = {
     id: string;
     settings_id: string;
     city: string;
     pincode: string;
     rate_per_sq_ft: number;
+    rate_per_sq_yd?: number | null;
+    rate_per_sq_m?: number | null;
     is_active: boolean;
-  }>`select * from city_pincode_rates where settings_id = ${settings.id} order by city, pincode`;
+  };
+
+  let rates: RateRow[];
+  try {
+    rates = await sql<RateRow>`select id, settings_id, city, pincode, rate_per_sq_ft, rate_per_sq_yd, rate_per_sq_m, is_active from city_pincode_rates where settings_id = ${settings.id} order by city, pincode`;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("rate_per_sq_yd") || message.includes("rate_per_sq_m")) {
+      rates = await sql<RateRow>`select id, settings_id, city, pincode, rate_per_sq_ft, is_active from city_pincode_rates where settings_id = ${settings.id} order by city, pincode`;
+    } else {
+      throw err;
+    }
+  }
 
   const defaultRateRow = rates.find((r) => r.city === "DEFAULT" && r.pincode === "*");
   const defaultRate = defaultRateRow?.rate_per_sq_ft ?? null;
+  const defaultRatePerSqYd = defaultRateRow?.rate_per_sq_yd ?? null;
+  const defaultRatePerSqM = defaultRateRow?.rate_per_sq_m ?? null;
   const overrideRates = rates.filter((r) => !(r.city === "DEFAULT" && r.pincode === "*"));
 
   return {
@@ -129,12 +147,16 @@ export async function getAdminSettings() {
       showInLanding: link.show_in_landing,
     })),
     defaultRate,
+    defaultRatePerSqYd,
+    defaultRatePerSqM,
     rates: overrideRates.map((rate) => ({
       id: rate.id,
       settingsId: rate.settings_id,
       city: rate.city,
       pincode: rate.pincode,
       ratePerSqFt: rate.rate_per_sq_ft,
+      ratePerSqYd: rate.rate_per_sq_yd ?? null,
+      ratePerSqM: rate.rate_per_sq_m ?? null,
       isActive: rate.is_active,
     })),
   };

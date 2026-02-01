@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Menu, X, LayoutGrid, Building2, Calculator, Box, LogIn, LogOut, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User, MessageSquare } from "lucide-react";
+import { Menu, X, LayoutGrid, LogIn, LogOut, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User, MessageSquare } from "lucide-react";
 
 type SessionUser = {
   id: string;
@@ -17,17 +17,12 @@ type HeaderNavProps = {
   logoutAction: () => Promise<void>;
 };
 
-/** Public nav — when not logged in */
-const navItems = [
-  { href: "/#how-it-works", label: "How it works", icon: LayoutGrid },
-  { href: "/designers", label: "Firms", icon: Building2 },
-  { href: "/estimator", label: "AI Cost Estimator", icon: Calculator },
-  { href: "/digital-twin", label: "Digital Twin", icon: Box },
-] as const;
+/** Public nav — when not logged in: only sign-in CTAs (no links in navbar per requirements) */
+const navItems: { href: string; label: string; icon: typeof User }[] = [];
 
 const adminNavItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/leads", label: "Contact Leads", icon: MessageSquare },
+  { href: "/admin/leads", label: "Leads", icon: MessageSquare },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/designers", label: "Firm Approvals", icon: BadgeCheck },
   { href: "/admin/firms-pending-payment", label: "Firms Pending Payment", icon: IndianRupee },
@@ -103,11 +98,11 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
           </form>
         ) : (
           <>
-            <Link href="/login?role=customer" className="btn btn-secondary text-sm">
+            <Link href="/login?role=customer" className="btn btn-secondary text-sm font-medium px-4 py-2 rounded-lg border border-[var(--border-strong)] text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors">
               Customer Sign In
             </Link>
-            <Link href="/login?role=firm" className="btn btn-primary text-sm">
-              Firm Sign In
+            <Link href="/login?role=firm" className="btn btn-primary text-sm font-medium px-4 py-2 rounded-lg">
+              Designer Sign In
             </Link>
           </>
         )}
@@ -185,22 +180,18 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
                 <Link
                   href="/login?role=customer"
                   onClick={close}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors"
+                  className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 border border-[var(--border-strong)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-subtle)] transition-colors"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--brand)]">
-                    <LogIn className="h-4 w-4" />
-                  </span>
-                  <span className="font-medium">Customer Sign In</span>
+                  <LogIn className="h-4 w-4 shrink-0" />
+                  Customer Sign In
                 </Link>
                 <Link
                   href="/login?role=firm"
                   onClick={close}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 bg-[var(--brand)] text-white hover:opacity-95 transition-opacity"
+                  className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-[var(--brand)] text-white font-semibold hover:opacity-95 transition-opacity"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20">
-                    <LogIn className="h-4 w-4" />
-                  </span>
-                  <span className="font-semibold">Firm Sign In</span>
+                  <LogIn className="h-4 w-4 shrink-0" />
+                  Designer Sign In
                 </Link>
               </>
             )}

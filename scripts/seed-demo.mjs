@@ -68,11 +68,16 @@ async function main() {
       values (${uuid()}, true, 0, 0, 1000)
     `;
     const [{ settings_id }] = await sql`select id as settings_id from admin_settings limit 1`;
+    // Default + city rates with dummy ₹/sq yd and ₹/sq m (admin can update in Admin → AI Estimator Pricing)
+    const defaultRateSqFt = 1500;
+    const defaultRateSqYd = Math.round(defaultRateSqFt * 9);
+    const defaultRateSqM = Math.round(defaultRateSqFt * 10.7639);
     await sql`
-      insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft, is_active)
+      insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft, rate_per_sq_yd, rate_per_sq_m, is_active)
       values
-        (${uuid()}, ${settings_id}, 'Mumbai', '400001', 1800, true),
-        (${uuid()}, ${settings_id}, 'Bengaluru', '560001', 1600, true)
+        (${uuid()}, ${settings_id}, 'DEFAULT', '*', ${defaultRateSqFt}, ${defaultRateSqYd}, ${defaultRateSqM}, true),
+        (${uuid()}, ${settings_id}, 'Mumbai', '400001', 1800, 16200, 19375, true),
+        (${uuid()}, ${settings_id}, 'Bengaluru', '560001', 1600, 14400, 17222, true)
     `;
     await sql`
       insert into social_links (id, settings_id, platform, url)

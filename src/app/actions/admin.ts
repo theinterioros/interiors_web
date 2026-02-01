@@ -87,6 +87,10 @@ export async function setDefaultRateAction(formData: FormData) {
   if (!ratePerSqFt || ratePerSqFt < 1) {
     throw new Error("Default rate must be at least 1 ₹/sq ft.");
   }
+  const ratePerSqYdRaw = formData.get("ratePerSqYd");
+  const ratePerSqYd = ratePerSqYdRaw !== null && ratePerSqYdRaw !== "" ? Number(ratePerSqYdRaw) : null;
+  const ratePerSqMRaw = formData.get("ratePerSqM");
+  const ratePerSqM = ratePerSqMRaw !== null && ratePerSqMRaw !== "" ? Number(ratePerSqMRaw) : null;
 
   const [existing] = await sql<{ id: string }>`
     select id from city_pincode_rates
@@ -94,17 +98,40 @@ export async function setDefaultRateAction(formData: FormData) {
     limit 1
   `;
 
-  if (existing) {
-    await sql`
-      update city_pincode_rates
-      set rate_per_sq_ft = ${ratePerSqFt}, is_active = true
-      where id = ${existing.id}
-    `;
-  } else {
-    await sql`
-      insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft)
-      values (${crypto.randomUUID()}, ${settings.id}, ${DEFAULT_CITY}, ${DEFAULT_PINCODE}, ${ratePerSqFt})
-    `;
+  try {
+    if (existing) {
+      await sql`
+        update city_pincode_rates
+        set rate_per_sq_ft = ${ratePerSqFt},
+            rate_per_sq_yd = ${ratePerSqYd},
+            rate_per_sq_m = ${ratePerSqM},
+            is_active = true
+        where id = ${existing.id}
+      `;
+    } else {
+      await sql`
+        insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft, rate_per_sq_yd, rate_per_sq_m)
+        values (${crypto.randomUUID()}, ${settings.id}, ${DEFAULT_CITY}, ${DEFAULT_PINCODE}, ${ratePerSqFt}, ${ratePerSqYd}, ${ratePerSqM})
+      `;
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("rate_per_sq_yd") || message.includes("rate_per_sq_m")) {
+      if (existing) {
+        await sql`
+          update city_pincode_rates
+          set rate_per_sq_ft = ${ratePerSqFt}, is_active = true
+          where id = ${existing.id}
+        `;
+      } else {
+        await sql`
+          insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft)
+          values (${crypto.randomUUID()}, ${settings.id}, ${DEFAULT_CITY}, ${DEFAULT_PINCODE}, ${ratePerSqFt})
+        `;
+      }
+    } else {
+      throw err;
+    }
   }
 
   revalidatePath("/admin/pricing");
@@ -125,18 +152,34 @@ export async function addRateAction(formData: FormData) {
   const city = String(formData.get("city") ?? "").trim();
   const pincode = String(formData.get("pincode") ?? "").trim();
   const ratePerSqFt = Number(formData.get("ratePerSqFt") ?? 0);
+  const ratePerSqYdRaw = formData.get("ratePerSqYd");
+  const ratePerSqYd = ratePerSqYdRaw !== null && ratePerSqYdRaw !== "" ? Number(ratePerSqYdRaw) : null;
+  const ratePerSqMRaw = formData.get("ratePerSqM");
+  const ratePerSqM = ratePerSqMRaw !== null && ratePerSqMRaw !== "" ? Number(ratePerSqMRaw) : null;
 
   if (!city || !pincode || !ratePerSqFt) {
-    throw new Error("City, pincode and rate are required.");
+    throw new Error("City, pincode and ₹/sq ft rate are required.");
   }
   if (city === DEFAULT_CITY && pincode === DEFAULT_PINCODE) {
     throw new Error("Use the default rate section for the default rate.");
   }
 
-  await sql`
-    insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft)
-    values (${crypto.randomUUID()}, ${settings.id}, ${city}, ${pincode}, ${ratePerSqFt})
-  `;
+  try {
+    await sql`
+      insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft, rate_per_sq_yd, rate_per_sq_m)
+      values (${crypto.randomUUID()}, ${settings.id}, ${city}, ${pincode}, ${ratePerSqFt}, ${ratePerSqYd}, ${ratePerSqM})
+    `;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("rate_per_sq_yd") || message.includes("rate_per_sq_m")) {
+      await sql`
+        insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft)
+        values (${crypto.randomUUID()}, ${settings.id}, ${city}, ${pincode}, ${ratePerSqFt})
+      `;
+    } else {
+      throw err;
+    }
+  }
 
   revalidatePath("/admin/pricing");
   return;
