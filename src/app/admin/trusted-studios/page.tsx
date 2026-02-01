@@ -14,8 +14,12 @@ const LOGO_BG_OPTIONS = [
   { value: "bg-[var(--foreground)]/80", label: "Foreground 80%" },
 ];
 
-export default async function AdminTrustedStudiosPage() {
+type PageProps = { searchParams?: Promise<{ error?: string }> };
+
+export default async function AdminTrustedStudiosPage({ searchParams }: PageProps) {
   const studios = await getTrustedStudios();
+  const params = await searchParams;
+  const error = params?.error;
 
   return (
     <div>
@@ -31,6 +35,11 @@ export default async function AdminTrustedStudiosPage() {
       </FadeIn>
 
       <FadeIn delay={0.1}>
+        {error && (
+          <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2" role="alert">
+            {decodeURIComponent(error)}
+          </p>
+        )}
         <form action={addTrustedStudioAction} className="card mb-8">
           <h2 className="text-base font-semibold text-[var(--foreground)] mb-4">Add studio</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
