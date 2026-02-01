@@ -74,6 +74,41 @@ async function main() {
   await sql`ALTER TABLE city_pincode_rates ADD COLUMN IF NOT EXISTS rate_per_sq_yd numeric`;
   await sql`ALTER TABLE city_pincode_rates ADD COLUMN IF NOT EXISTS rate_per_sq_m numeric`;
   console.log("Migration applied: city_pincode_rates.rate_per_sq_yd, rate_per_sq_m");
+
+  // Trusted studios (landing "Trusted by Growing studios")
+  await sql`
+    CREATE TABLE IF NOT EXISTS trusted_studios (
+      id uuid primary key default gen_random_uuid(),
+      name text not null,
+      mark text not null,
+      logo_bg text not null,
+      sort_order int not null default 0,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS trusted_studios_sort_idx ON trusted_studios(sort_order)`;
+  console.log("Migration applied: trusted_studios table");
+
+  // Seed trusted_studios if empty
+  const count = await sql`SELECT 1 FROM trusted_studios LIMIT 1`;
+  if (count.length === 0) {
+    const seed = [
+      { name: "Studio Maple", mark: "SM", logo_bg: "bg-[var(--foreground)]", sort_order: 0 },
+      { name: "UrbanWeave", mark: "UW", logo_bg: "bg-[var(--brand)]", sort_order: 1 },
+      { name: "Aura Interiors", mark: "AI", logo_bg: "bg-[var(--accent-teal)]", sort_order: 2 },
+      { name: "Frame & Form", mark: "FF", logo_bg: "bg-[var(--accent-amber)]", sort_order: 3 },
+      { name: "Nexa Design", mark: "ND", logo_bg: "bg-[var(--foreground)]/80", sort_order: 4 },
+      { name: "Spaces & Co", mark: "SC", logo_bg: "bg-[var(--brand)]", sort_order: 5 },
+      { name: "Design Nest", mark: "DN", logo_bg: "bg-[var(--accent-emerald)]", sort_order: 6 },
+    ];
+    for (const s of seed) {
+      await sql`
+        INSERT INTO trusted_studios (id, name, mark, logo_bg, sort_order)
+        VALUES (gen_random_uuid(), ${s.name}, ${s.mark}, ${s.logo_bg}, ${s.sort_order})
+      `;
+    }
+    console.log("Seeded trusted_studios with default items");
+  }
 }
 
 main().catch((error) => {

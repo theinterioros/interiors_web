@@ -1,5 +1,6 @@
 -- Interior OS schema for Neon (PostgreSQL) - refactored
 
+drop table if exists trusted_studios cascade;
 drop table if exists notifications cascade;
 drop table if exists city_pincode_rates cascade;
 drop table if exists marketing_links cascade;
@@ -201,6 +202,15 @@ create table digital_twin_subscriptions (
   last_charged_at timestamptz
 );
 
+create table trusted_studios (
+  id uuid primary key,
+  name text not null,
+  mark text not null,
+  logo_bg text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
 create table admin_settings (
   id uuid primary key,
   otp_enabled boolean not null default false,
@@ -284,3 +294,4 @@ create index twin_subscription_expires_idx on digital_twin_subscriptions(expires
 create index notification_user_idx on notifications(user_id);
 create index notification_type_idx on notifications(type);
 create index rates_city_idx on city_pincode_rates(city, pincode);
+create index trusted_studios_sort_idx on trusted_studios(sort_order);

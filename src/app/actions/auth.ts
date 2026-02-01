@@ -6,7 +6,7 @@ import { Role, Roles, RoleValues } from "@/lib/types";
 import { sql } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { createSession, clearSession } from "@/lib/session";
-import { requestOtp, verifyOtp } from "@/lib/otp";
+import { requestOtp, verifyOtp, requestForgotPasswordOtp, verifyOtpForForgotPassword } from "@/lib/otp";
 import { hasFirmPaidRegistration } from "@/lib/registrationPayments";
 import { FIRM_REGISTRATION_AMOUNT } from "@/lib/registrationPayments";
 import { getSessionUser } from "@/lib/session";
@@ -287,4 +287,57 @@ function redirectByRole(role: Role) {
     redirect("/firm/dashboard");
   }
   redirect("/customer/dashboard");
+}
+
+export async function requestForgotPasswordOtpAction(_prevState: unknown, formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!email) {
+    return { ok: false, error: "Email is required.", sent: false };
+  }
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Please enter a valid email address.", sent: false };
+  }
+  try {
+    const sent = await requestForgotPasswordOtp(email);
+    return { ok: true, error: "", sent, email };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unable to send code. Check SMTP settings.";
+    return { ok: false, error: message, sent: false };
+  }
+}
+
+export async function verifyOtpAndResetPasswordAction(_prevState: unknown, formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const code = String(formData.get("code") ?? "").trim();
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (!email || !code) {
+    return { ok: false, error: "Email and code are required." };
+  }
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Please enter a valid email address." };
+  }
+  if (!newPassword || newPassword.length < 8) {
+    return { ok: false, error: "Password must be at least 8 characters." };
+  }
+  if (newPassword !== confirmPassword) {
+    return { ok: false, error: "Passwords do not match." };
+  }
+
+  const valid = await verifyOtpForForgotPassword(email, code);
+  if (!valid) {
+    return { ok: false, error: "Invalid or expired code." };
+  }
+
+  const [user] = await sql<{ id: string }>`select id from users where email = ${email} limit 1`;
+  if (!user) {
+    return { ok: false, error: "Account not found." };
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await sql`update users set password_hash = ${passwordHash}, updated_at = now() where id = ${user.id}`;
+
+  const role = String(formData.get("role") ?? "customer");
+  redirect(`/login?role=${role}&reset=1`);
 }

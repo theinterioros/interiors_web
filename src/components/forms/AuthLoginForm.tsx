@@ -6,20 +6,24 @@ import { loginAction, requestOtpAction, verifyOtpAction } from "@/app/actions/au
 
 const initialState = { ok: false as boolean, error: "" };
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, isDesigner }: { label: string; isDesigner?: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="btn btn-primary w-full disabled:opacity-50"
+      className={
+        isDesigner
+          ? "btn w-full disabled:opacity-50 rounded-lg px-4 py-2.5 font-medium bg-teal-600 text-white hover:bg-teal-700 transition-colors"
+          : "btn btn-primary w-full disabled:opacity-50"
+      }
     >
       {pending ? "Please wait..." : label}
     </button>
   );
 }
 
-export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
+export default function AuthLoginForm({ otpEnabled, isDesigner }: { otpEnabled: boolean; isDesigner?: boolean }) {
   const [state, formAction] = useActionState<{ ok: boolean; error: string }, FormData>(
     loginAction as (prev: { ok: boolean; error: string }, formData: FormData) => Promise<{ ok: boolean; error: string }>,
     initialState
@@ -59,11 +63,11 @@ export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
           />
         </div>
         {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-        <SubmitButton label="Sign in" />
+        <SubmitButton label="Sign in" isDesigner={isDesigner} />
       </form>
 
       {otpEnabled && (
-        <div className="card-subtle">
+        <div className={isDesigner ? "rounded-xl border-2 border-teal-100 bg-teal-50/50 p-4" : "card-subtle"}>
           <h3 className="text-sm font-semibold text-[var(--foreground)] mb-2">Login with OTP</h3>
           <p className="text-xs text-[var(--text-muted)] mb-4">
             OTP login is enabled by the admin. Request a code to sign in.
@@ -78,7 +82,7 @@ export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
                 className="input"
               />
               {otpState.error && <p className="text-sm text-red-600">{otpState.error}</p>}
-              <SubmitButton label="Send OTP" />
+              <SubmitButton label="Send OTP" isDesigner={isDesigner} />
             </form>
           ) : (
             <form action={verifyAction} className="space-y-3">
@@ -97,7 +101,7 @@ export default function AuthLoginForm({ otpEnabled }: { otpEnabled: boolean }) {
                 className="input"
               />
               {verifyState.error && <p className="text-sm text-red-600">{verifyState.error}</p>}
-              <SubmitButton label="Verify & Sign in" />
+              <SubmitButton label="Verify & Sign in" isDesigner={isDesigner} />
             </form>
           )}
         </div>

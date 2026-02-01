@@ -34,6 +34,7 @@ import {
   Box,
 } from "lucide-react";
 import { getAdminSettings } from "@/lib/settings";
+import { getTrustedStudios } from "@/lib/trustedStudios";
 import { getCurrentUser } from "@/lib/auth";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
@@ -92,15 +93,7 @@ export default async function Home() {
     { step: "6", title: "Document Vault", desc: "Keep plans and handover in one place." },
   ];
 
-  const firms = [
-    { name: "Studio Maple", mark: "SM", logoBg: "bg-[var(--foreground)]" },
-    { name: "UrbanWeave", mark: "UW", logoBg: "bg-[var(--brand)]" },
-    { name: "Aura Interiors", mark: "AI", logoBg: "bg-[var(--accent-teal)]" },
-    { name: "Frame & Form", mark: "FF", logoBg: "bg-[var(--accent-amber)]" },
-    { name: "Nexa Design", mark: "ND", logoBg: "bg-[var(--foreground)]/80" },
-    { name: "Spaces & Co", mark: "SC", logoBg: "bg-[var(--brand)]" },
-    { name: "Design Nest", mark: "DN", logoBg: "bg-[var(--accent-emerald)]" },
-  ];
+  const firms = await getTrustedStudios();
 
   return (
     <div className="page-gradient relative overflow-x-hidden min-w-0 w-full -mt-[var(--header-height)] pt-[var(--header-height)]">
@@ -141,14 +134,14 @@ export default async function Home() {
                       { icon: Lock, label: "Escrow Payments" },
                       { icon: Box, label: "Digital Twin" },
                       { icon: Sparkles, label: "AI-assisted layouts", soon: true },
-                    ].map(({ icon: Icon, label, comingSoon }) => (
+                    ].map(({ icon: Icon, label, soon }) => (
                       <span
                         key={label}
-                        className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium ${comingSoon ? "border border-dashed border-[var(--brand)]/50 bg-[var(--brand-light)]/60 text-[var(--text-muted)]" : "bg-white border border-[var(--border)] text-[var(--foreground)] shadow-sm"}`}
+                        className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium ${soon ? "border border-dashed border-[var(--brand)]/50 bg-[var(--brand-light)]/60 text-[var(--text-muted)]" : "bg-white border border-[var(--border)] text-[var(--foreground)] shadow-sm"}`}
                       >
                         <Icon className="h-4 w-4 shrink-0 text-[var(--brand)]" />
                         {label}
-                        {comingSoon && <em className="text-[10px] font-semibold uppercase not-italic text-[var(--brand)]">Soon</em>}
+                        {soon && <em className="text-[10px] font-semibold uppercase not-italic text-[var(--brand)]">Soon</em>}
                       </span>
                     ))}
                   </div>
@@ -601,7 +594,7 @@ export default async function Home() {
               <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 sm:gap-x-12">
                 {firms.map((firm) => (
                   <div
-                    key={firm.name}
+                    key={firm.id}
                     className="flex items-center gap-3 shrink-0 rounded-xl px-4 py-2.5 border border-[var(--border)] bg-white/80 shadow-sm hover:shadow-md hover:border-[var(--border-strong)] transition-all"
                   >
                     <div

@@ -445,3 +445,38 @@ export async function releasePaymentAction(formData: FormData) {
 
   return;
 }
+
+export async function addTrustedStudioAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) throw new Error("Unauthorized.");
+
+  const name = String(formData.get("name") ?? "").trim();
+  const mark = String(formData.get("mark") ?? "").trim().toUpperCase().slice(0, 4);
+  const logoBg = String(formData.get("logoBg") ?? "bg-[var(--foreground)]").trim();
+  if (!name || !mark) {
+    return { error: "Name and mark (2–4 letters) are required." };
+  }
+
+  const maxOrder = await sql<{ max: number | null }>`select max(sort_order) as max from trusted_studios`;
+  const sortOrder = (maxOrder[0]?.max ?? -1) + 1;
+
+  await sql`
+    insert into trusted_studios (id, name, mark, logo_bg, sort_order)
+    values (${crypto.randomUUID()}, ${name}, ${mark}, ${logoBg}, ${sortOrder})
+  `;
+  revalidatePath("/");
+  revalidatePath("/admin/trusted-studios");
+  return {};
+}
+
+export async function deleteTrustedStudioAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) throw new Error("Unauthorized.");
+
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return {};
+  await sql`delete from trusted_studios where id = ${id}`;
+  revalidatePath("/");
+  revalidatePath("/admin/trusted-studios");
+  return {};
+}

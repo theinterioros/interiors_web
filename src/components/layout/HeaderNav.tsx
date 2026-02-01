@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Menu, X, LayoutGrid, LogIn, LogOut, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User, MessageSquare } from "lucide-react";
+import { Menu, X, LayoutGrid, LogIn, LogOut, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User, MessageSquare, Building2 } from "lucide-react";
 
 type SessionUser = {
   id: string;
@@ -27,6 +27,7 @@ const adminNavItems = [
   { href: "/admin/designers", label: "Firm Approvals", icon: BadgeCheck },
   { href: "/admin/firms-pending-payment", label: "Firms Pending Payment", icon: IndianRupee },
   { href: "/admin/pricing", label: "AI Estimator Pricing", icon: MapPin },
+  { href: "/admin/trusted-studios", label: "Trusted Studios", icon: Building2 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 
