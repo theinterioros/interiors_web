@@ -3,7 +3,6 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { loginAction, requestOtpAction, verifyOtpAction } from "@/app/actions/auth";
-import ValidatedIdentifierInput from "@/components/ui/ValidatedIdentifierInput";
 import ValidatedEmailInput from "@/components/ui/ValidatedEmailInput";
 
 const initialState = { ok: false as boolean, error: "" };
@@ -44,8 +43,8 @@ export default function AuthLoginForm({ otpEnabled, isDesigner }: { otpEnabled: 
     <div className="space-y-6">
       <form action={formAction} className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-[var(--foreground)]">Email or Mobile</label>
-          <ValidatedIdentifierInput name="identifier" className="input w-full" />
+          <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
+          <ValidatedEmailInput name="email" placeholder="you@example.com" className="input w-full" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-[var(--foreground)]">Password</label>

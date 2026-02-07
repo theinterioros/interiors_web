@@ -10,7 +10,7 @@ import { requestOtp, verifyOtp, requestForgotPasswordOtp, verifyOtpForForgotPass
 import { hasFirmPaidRegistration } from "@/lib/registrationPayments";
 import { FIRM_REGISTRATION_AMOUNT } from "@/lib/registrationPayments";
 import { getSessionUser } from "@/lib/session";
-import { isValidEmail, isValidIndianMobile, isEmailLike, normalizeIndianMobile } from "@/lib/validation";
+import { isValidEmail, isValidIndianMobile, normalizeIndianMobile } from "@/lib/validation";
 
 export async function registerAction(_prevState: unknown, formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -137,32 +137,19 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
 }
 
 export async function loginAction(_prevState: unknown, formData: FormData) {
-  const identifier = String(formData.get("identifier") ?? formData.get("email") ?? "").trim();
-  const identifierLower = identifier.toLowerCase();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
 
-  if (!identifier) {
-    return { ok: false, error: "Email or mobile number is required." };
+  if (!email) {
+    return { ok: false, error: "Email is required." };
   }
-  if (isEmailLike(identifier)) {
-    if (!isValidEmail(identifier)) {
-      return { ok: false, error: "Please enter a valid email address." };
-    }
-  } else {
-    if (!isValidIndianMobile(identifier)) {
-      return { ok: false, error: "Please enter a valid 10-digit Indian mobile number." };
-    }
+  if (!isValidEmail(email)) {
+    return { ok: false, error: "Please enter a valid email address." };
   }
 
-  const lookupEmail = isEmailLike(identifier) ? identifierLower : null;
-  const lookupPhone = !isEmailLike(identifier) ? normalizeIndianMobile(identifier) : null;
-  const [user] = lookupEmail
-    ? await sql<{ id: string; password_hash: string; role: Role }>`
-        select id, password_hash, role from users where email = ${lookupEmail} limit 1
-      `
-    : await sql<{ id: string; password_hash: string; role: Role }>`
-        select id, password_hash, role from users where phone = ${lookupPhone} limit 1
-      `;
+  const [user] = await sql<{ id: string; password_hash: string; role: Role }>`
+    select id, password_hash, role from users where email = ${email} limit 1
+  `;
   if (!user) {
     return { ok: false, error: "Invalid credentials." };
   }
