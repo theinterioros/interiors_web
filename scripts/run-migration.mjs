@@ -114,6 +114,80 @@ async function main() {
   await sql`ALTER TABLE payment_ledger ADD COLUMN IF NOT EXISTS platform_margin_amount int`;
   console.log("Migration applied: payment_ledger.platform_margin_amount");
 
+  // Designer yearly subscription: expiry on firm_profiles
+  await sql`ALTER TABLE firm_profiles ADD COLUMN IF NOT EXISTS subscription_expires_at timestamptz`;
+  try {
+    await sql`
+      UPDATE firm_profiles fp
+      SET subscription_expires_at = now() + interval '1 year'
+      WHERE subscription_expires_at IS NULL
+        AND EXISTS (
+          SELECT 1 FROM payment_ledger pl
+          WHERE pl.firm_id = fp.user_id
+            AND pl.type = 'FIRM_REGISTRATION_FEE'
+            AND pl.status = 'RELEASED'
+        )
+    `;
+  } catch (e) {
+    if (!String(e).includes("subscription_expires_at")) console.warn("subscription_expires_at backfill:", e);
+  }
+  console.log("Migration applied: firm_profiles.subscription_expires_at");
+
+  // Margin requests: designer submits margin %, admin approves/rejects with comment (full trail)
+  await sql`
+    CREATE TABLE IF NOT EXISTS margin_requests (
+      id uuid primary key default gen_random_uuid(),
+      profile_id uuid not null references firm_profiles(id) on delete cascade,
+      requested_margin_pct numeric not null,
+      status text not null default 'PENDING' check (status in ('PENDING', 'APPROVED', 'REJECTED')),
+      admin_comment text,
+      admin_set_margin_pct numeric,
+      created_at timestamptz not null default now(),
+      decided_at timestamptz,
+      decided_by uuid references users(id) on delete set null
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS margin_requests_profile_idx ON margin_requests(profile_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS margin_requests_status_idx ON margin_requests(status)`;
+  await sql`CREATE INDEX IF NOT EXISTS margin_requests_created_idx ON margin_requests(created_at desc)`;
+  console.log("Migration applied: margin_requests table");
+
+  // Portfolio works: optional table for grouping portfolio images
+  await sql`
+    CREATE TABLE IF NOT EXISTS firm_portfolio_works (
+      id uuid primary key default gen_random_uuid(),
+      profile_id uuid not null references firm_profiles(id) on delete cascade,
+      title text not null,
+      description text,
+      display_order int not null default 0,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS firm_portfolio_works_profile_idx ON firm_portfolio_works(profile_id)`;
+  try {
+    await sql`ALTER TABLE firm_portfolio_files ADD COLUMN IF NOT EXISTS work_id uuid references firm_portfolio_works(id) on delete set null`;
+    await sql`CREATE INDEX IF NOT EXISTS firm_portfolio_files_work_idx ON firm_portfolio_files(work_id)`;
+  } catch (e) {
+    if (!String(e).includes("firm_portfolio_files")) console.warn("firm_portfolio_files.work_id:", e);
+  }
+  console.log("Migration applied: firm_portfolio_works (and work_id on firm_portfolio_files if present)");
+
+  // Milestone trail: event log per milestone for timelines and audit
+  await sql`
+    CREATE TABLE IF NOT EXISTS milestone_trail (
+      id uuid primary key default gen_random_uuid(),
+      milestone_id uuid not null references milestones(id) on delete cascade,
+      event text not null,
+      actor_id uuid references users(id) on delete set null,
+      message text,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS milestone_trail_milestone_idx ON milestone_trail(milestone_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS milestone_trail_created_idx ON milestone_trail(created_at)`;
+  console.log("Migration applied: milestone_trail table");
+
   // Seed trusted_studios if empty
   const count = await sql`SELECT 1 FROM trusted_studios LIMIT 1`;
   if (count.length === 0) {

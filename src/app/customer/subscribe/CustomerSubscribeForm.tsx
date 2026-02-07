@@ -1,14 +1,20 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { payCustomerSubscriptionAction } from "@/app/actions/auth";
 import MockPaymentModal from "@/components/ui/MockPaymentModal";
 
 export default function CustomerSubscribeForm({ amount }: { amount: number }) {
+  const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
 
   async function handleConfirm() {
-    await payCustomerSubscriptionAction();
+    const result = await payCustomerSubscriptionAction();
+    if (result?.redirect) {
+      setModalOpen(false);
+      router.push(result.redirect);
+    }
   }
 
   return (

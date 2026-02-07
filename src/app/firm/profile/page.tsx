@@ -1,9 +1,7 @@
-import { updateFirmProfileAction, uploadFirmPortfolioAction, acceptMarginAction } from "@/app/actions/designer";
+import { updateFirmProfileAction, uploadFirmPortfolioAction, savePortfolioWorkAction } from "@/app/actions/designer";
 import { Building2 } from "lucide-react";
-import AcceptMarginBanner from "./AcceptMarginBanner";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import FadeIn from "@/components/animations/FadeIn";
 
 export const dynamic = "force-dynamic";
 
@@ -38,43 +36,74 @@ export default async function FirmProfilePage() {
     limit 1
   `;
 
-  const portfolio = profile
-    ? await sql<{
-        id: string;
-        blob_url: string;
-        file_name: string;
-      }>`
+  type PortfolioRow = { id: string; work_id: string | null; blob_url: string; file_name: string };
+  let portfolio: PortfolioRow[] = [];
+  if (profile) {
+    try {
+      portfolio = await sql<PortfolioRow>`
+        select id, work_id, blob_url, file_name
+        from firm_portfolio_files
+        where profile_id = ${profile.id}
+        order by created_at desc
+      `;
+    } catch {
+      const flat = await sql<{ id: string; blob_url: string; file_name: string }>`
         select id, blob_url, file_name
         from firm_portfolio_files
         where profile_id = ${profile.id}
         order by created_at desc
-      `
-    : [];
+      `;
+      portfolio = flat.map((f) => ({ ...f, work_id: null }));
+    }
+  }
+
+  let works: { id: string; title: string; description: string | null; display_order: number }[] = [];
+  try {
+    works = profile
+      ? await sql<{ id: string; title: string; description: string | null; display_order: number }>`
+          select id, title, description, display_order
+          from firm_portfolio_works
+          where profile_id = ${profile.id}
+          order by display_order
+        `
+      : [];
+  } catch {
+    // table may not exist
+  }
+
+  const filesByWorkId = new Map<string, typeof portfolio>();
+  for (const f of portfolio) {
+    if (f.work_id) {
+      if (!filesByWorkId.has(f.work_id)) filesByWorkId.set(f.work_id, []);
+      filesByWorkId.get(f.work_id)!.push(f);
+    }
+  }
+
+  const registrationPortfolio =
+    profile
+      ? await sql<{ id: string; blob_url: string; file_name: string }>`
+          select id, blob_url, file_name
+          from firm_documents
+          where profile_id = ${profile.id} and doc_type = 'portfolio'
+          order by created_at desc
+        `
+      : [];
 
   return (
-    <div className="page bg-white">
-      <div className="page-inner">
-        <FadeIn className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Building2 className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">Designer Profile</p>
-          </div>
-          <h1 className="heading-lg mb-3">Manage your profile</h1>
-          <p className="text-[var(--text-muted)]">
-            Update your details and upload portfolio documents for review.
-          </p>
-        </FadeIn>
+    <div className="space-y-8">
+      <header>
+        <div className="flex items-center gap-2 mb-1">
+          <Building2 className="h-4 w-4 text-[var(--text-muted)]" />
+          <p className="eyebrow">Profile</p>
+        </div>
+        <h1 className="heading-lg mb-1">Manage your profile</h1>
+        <p className="text-sm text-[var(--text-muted)]">
+          Update your details and upload portfolio for customers to view.
+        </p>
+      </header>
 
-        {profile?.status === "APPROVED" && !profile?.margin_accepted_at && (
-          <FadeIn delay={0.15}>
-            <AcceptMarginBanner
-              platformMarginPct={profile?.platform_margin_pct ?? undefined}
-              acceptMarginAction={acceptMarginAction}
-            />
-          </FadeIn>
-        )}
-        <FadeIn delay={0.2}>
-          <form action={updateFirmProfileAction} className="card space-y-4">
+      <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
+        <form action={updateFirmProfileAction} className="p-5 sm:p-6 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium text-[var(--foreground)]">Firm name</label>
@@ -163,22 +192,91 @@ export default async function FirmProfilePage() {
           <button type="submit" className="btn btn-primary">
             Save profile
           </button>
-          </form>
-        </FadeIn>
+        </form>
+      </div>
 
-        <FadeIn delay={0.3}>
+      <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--border)]">
+            <h2 className="font-semibold text-[var(--foreground)]">Portfolio works</h2>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">Max 3 works, 3 images each</p>
+          </div>
+          <div className="p-5 space-y-6">
+              {[0, 1, 2].map((order) => {
+                const work = works.find((w) => w.display_order === order);
+                const workFiles = work ? filesByWorkId.get(work.id) ?? [] : [];
+                return (
+                  <div key={order} className="rounded-lg border border-[var(--border)] bg-[var(--surface-subtle)]/30 p-4 space-y-4">
+                    <h3 className="font-semibold text-[var(--foreground)]">Work {order + 1}</h3>
+                    <form action={savePortfolioWorkAction} className="space-y-3">
+                      <input type="hidden" name="workOrder" value={order} />
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Title</label>
+                        <input name="title" defaultValue={work?.title ?? ""} placeholder="e.g. Living room makeover" className="input w-full" required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Description</label>
+                        <textarea name="description" rows={2} defaultValue={work?.description ?? ""} placeholder="Brief description" className="input w-full" />
+                      </div>
+                      <button type="submit" className="btn btn-secondary">Save work</button>
+                    </form>
+                    {work && workFiles.length < 3 && (
+                      <form action={uploadFirmPortfolioAction} encType="multipart/form-data" className="flex flex-wrap items-end gap-3 pt-2 border-t border-[var(--border)]">
+                        <input type="hidden" name="workId" value={work.id} />
+                        <input type="file" name="file" required accept="image/*" className="input flex-1 min-w-0" />
+                        <button type="submit" className="btn btn-secondary">Add image ({workFiles.length}/3)</button>
+                      </form>
+                    )}
+                    {work && workFiles.length > 0 && (
+                      <div className="text-sm">
+                        <span className="text-[var(--text-muted)]">Images: </span>
+                        {workFiles.map((f) => (
+                          <a key={f.id} href={f.blob_url} target="_blank" rel="noreferrer" className="text-[var(--brand)] hover:underline mr-2">
+                            {f.file_name}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          <p className="text-xs text-[var(--text-muted)] mt-2 px-5 pb-5">Save a work first (title + description), then add up to 3 images per work.</p>
+      </div>
+
+      <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--border)]">
+            <h2 className="font-semibold text-[var(--foreground)]">Portfolio uploads</h2>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">General files or use Portfolio works above.</p>
+          </div>
+          {registrationPortfolio.length > 0 && (
+            <div className="p-5 border-b border-[var(--border)]">
+              <p className="text-sm font-medium text-[var(--foreground)] mb-2">Portfolio from registration</p>
+              <div className="space-y-2 text-sm">
+                {registrationPortfolio.map((doc) => (
+                  <a
+                    key={doc.id}
+                    href={doc.blob_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block text-[var(--brand)] hover:underline"
+                  >
+                    {doc.file_name}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           <form
             action={uploadFirmPortfolioAction}
             encType="multipart/form-data"
-            className="card space-y-4"
+            className="p-5 space-y-4"
           >
-            <h2 className="heading-md mb-4">Portfolio uploads</h2>
             <input type="file" name="file" required className="input" />
             <button type="submit" className="btn btn-secondary">
               Upload portfolio file
             </button>
             <div className="space-y-2 text-sm">
-              {portfolio.map((file) => (
+              {portfolio.filter((f) => !f.work_id).map((file) => (
                 <a
                   key={file.id}
                   href={file.blob_url}
@@ -191,7 +289,6 @@ export default async function FirmProfilePage() {
               ))}
             </div>
           </form>
-        </FadeIn>
       </div>
     </div>
   );

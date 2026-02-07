@@ -1,10 +1,24 @@
 import { sql } from "@/lib/db";
 
+/** Designer yearly subscription: ₹3,000/year */
 const FIRM_REGISTRATION_AMOUNT = 3000;
 const CUSTOMER_SUBSCRIPTION_AMOUNT = 1000;
 
-/** True if this firm user has a RELEASED payment of type FIRM_REGISTRATION_FEE */
+/** True if this firm has an active yearly subscription (subscription_expires_at > now). Falls back to payment_ledger if no expiry set or column missing. */
 export async function hasFirmPaidRegistration(firmUserId: string): Promise<boolean> {
+  try {
+    const [profile] = await sql<{ subscription_expires_at: Date | null }>`
+      select subscription_expires_at from firm_profiles where user_id = ${firmUserId} limit 1
+    `;
+    if (profile?.subscription_expires_at && new Date(profile.subscription_expires_at) > new Date()) {
+      return true;
+    }
+    if (profile !== undefined) {
+      return false;
+    }
+  } catch {
+    // subscription_expires_at column may not exist before migration
+  }
   const [row] = await sql<{ id: string }>`
     select id from payment_ledger
     where firm_id = ${firmUserId}

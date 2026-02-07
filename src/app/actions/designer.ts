@@ -99,7 +99,36 @@ export async function updateFirmProfileAction(formData: FormData) {
   return;
 }
 
-/** Designer accepts the platform margin; profile becomes visible to customers. */
+/** Designer submits a margin request (%). Creates a new row in margin_requests for the trail. */
+export async function submitMarginRequestAction(formData: FormData): Promise<{ error?: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    return { error: "Unauthorized." };
+  }
+  const pct = Number(formData.get("marginPct"));
+  if (Number.isNaN(pct) || pct < 0 || pct > 100) {
+    return { error: "Enter a margin between 0 and 100%." };
+  }
+  const [profile] = await sql<{ id: string }>`select id from firm_profiles where user_id = ${user.id} limit 1`;
+  if (!profile) {
+    return { error: "Profile not found." };
+  }
+  try {
+    await sql`
+      insert into margin_requests (id, profile_id, requested_margin_pct, status)
+      values (${crypto.randomUUID()}, ${profile.id}, ${pct}, 'PENDING')
+    `;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("margin_requests") && msg.includes("does not exist")) {
+      return { error: "Margin requests are not set up yet. Please run the database migration." };
+    }
+    throw e;
+  }
+  return {};
+}
+
+/** Designer accepts the platform margin (allowed before profile approval). Next step is pay subscription; then admin can approve profile. */
 export async function acceptMarginAction(): Promise<void> {
   const user = await getCurrentUser();
   if (!user || user.role !== RoleValues.FIRM) {
@@ -108,7 +137,7 @@ export async function acceptMarginAction(): Promise<void> {
   await sql`
     update firm_profiles
     set margin_accepted_at = now(), updated_at = now()
-    where user_id = ${user.id} and status = 'APPROVED' and margin_accepted_at is null
+    where user_id = ${user.id} and margin_accepted_at is null
   `;
 }
 
@@ -131,20 +160,105 @@ export async function uploadFirmPortfolioAction(formData: FormData) {
     throw new Error("Create your profile first.");
   }
 
+  const workIdRaw = formData.get("workId");
+  const workId = typeof workIdRaw === "string" && workIdRaw.trim() ? workIdRaw.trim() : null;
+
+  if (workId) {
+    const [count] = await sql<{ n: number }>`
+      select count(*)::int as n from firm_portfolio_files where work_id = ${workId}
+    `;
+    if (count && count.n >= 3) {
+      throw new Error("Maximum 3 images per work.");
+    }
+  }
+
   const blobUrl = await uploadBlob(file, `firm-portfolio/${profile.id}`);
-  await sql`
-    insert into firm_portfolio_files (
-      id, profile_id, blob_url, file_name, mime_type, size_bytes
-    )
-    values (
-      ${crypto.randomUUID()},
-      ${profile.id},
-      ${blobUrl},
-      ${file.name},
-      ${file.type},
-      ${file.size}
-    )
-  `;
+  try {
+    await sql`
+      insert into firm_portfolio_files (
+        id, profile_id, work_id, blob_url, file_name, mime_type, size_bytes
+      )
+      values (
+        ${crypto.randomUUID()},
+        ${profile.id},
+        ${workId},
+        ${blobUrl},
+        ${file.name},
+        ${file.type},
+        ${file.size}
+      )
+    `;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("work_id")) {
+      await sql`
+        insert into firm_portfolio_files (
+          id, profile_id, blob_url, file_name, mime_type, size_bytes
+        )
+        values (
+          ${crypto.randomUUID()},
+          ${profile.id},
+          ${blobUrl},
+          ${file.name},
+          ${file.type},
+          ${file.size}
+        )
+      `;
+    } else {
+      throw e;
+    }
+  }
 
   return;
+}
+
+export async function savePortfolioWorkAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    throw new Error("Unauthorized.");
+  }
+
+  const workOrder = Number(formData.get("workOrder"));
+  if (Number.isNaN(workOrder) || workOrder < 0 || workOrder > 2) {
+    throw new Error("Invalid work slot.");
+  }
+
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  if (!title) {
+    throw new Error("Work title is required.");
+  }
+
+  const [profile] = await sql<{ id: string }>`
+    select id from firm_profiles where user_id = ${user.id} limit 1
+  `;
+  if (!profile) {
+    throw new Error("Create your profile first.");
+  }
+
+  try {
+    const [existing] = await sql<{ id: string }>`
+      select id from firm_portfolio_works
+      where profile_id = ${profile.id} and display_order = ${workOrder}
+      limit 1
+    `;
+    if (existing) {
+      await sql`
+        update firm_portfolio_works
+        set title = ${title}, description = ${description}, updated_at = now()
+        where id = ${existing.id}
+      `;
+    } else {
+      await sql`
+        insert into firm_portfolio_works (id, profile_id, title, description, display_order)
+        values (${crypto.randomUUID()}, ${profile.id}, ${title}, ${description}, ${workOrder})
+      `;
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("firm_portfolio_works") || msg.includes("does not exist")) {
+      return; // table not migrated yet
+    }
+    throw e;
+  }
 }

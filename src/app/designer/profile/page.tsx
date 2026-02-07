@@ -40,6 +40,15 @@ export default async function DesignerProfilePage() {
       `
     : [];
 
+  const registrationPortfolio = profile
+    ? await sql<{ id: string; blob_url: string; file_name: string }>`
+        select id, blob_url, file_name
+        from firm_documents
+        where profile_id = ${profile.id} and doc_type = 'portfolio'
+        order by created_at desc
+      `
+    : [];
+
   return (
     <div className="min-h-screen bg-white px-6 py-16">
       <div className="mx-auto max-w-5xl space-y-8">
@@ -134,6 +143,18 @@ export default async function DesignerProfilePage() {
           </button>
         </form>
 
+        {registrationPortfolio.length > 0 && (
+          <div className="space-y-2 rounded-2xl border border-neutral-200 p-6">
+            <h2 className="text-lg font-semibold text-neutral-900">Portfolio from registration</h2>
+            <div className="space-y-2 text-sm text-neutral-600">
+              {registrationPortfolio.map((doc) => (
+                <a key={doc.id} href={doc.blob_url} target="_blank" rel="noreferrer" className="block underline">
+                  {doc.file_name}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
         <form
           action={uploadFirmPortfolioAction}
           encType="multipart/form-data"

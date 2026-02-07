@@ -18,7 +18,7 @@ After running the demo seed, you can log in as a **customer** or a **firm** with
 | Role     | Email                    | Password  |
 |----------|--------------------------|-----------|
 | Customer | `customer@interioros.com`| `Demo123!`|
-| Firm     | `firm@interioros.com`   | `Demo123!`|
+| Firm     | `firm@interioros.com`    | `Demo123!`|
 
 ### How to create demo users
 
@@ -37,7 +37,7 @@ Demo accounts are created on first app load or by running the seed script. Demo 
 ### What the demo includes
 
 - **Customer:** Aarav Sharma — can use the customer dashboard, view projects, milestones, digital twin.
-- **Firm:** Mira Kapoor / Studio Nirmaan — approved firm profile; can use the firm dashboard, leads, and project management.
+- **Firm:** Mira Kapoor / Studio Nirmaan — approved firm profile with full bio, portfolio PDF, and 3 sample works; can use the firm dashboard, leads, and project management. (Email `firm@interiors.com` is also supported for backwards compatibility.)
 - 2 sample projects (one ACTIVE, one REQUESTED) with milestones (Concept Design – SUBMITTED, Carpentry & finishing – PENDING). Running `npm run seed:demo` adds more (digital twin file, notifications).
 
 Use these accounts to walk through the product (AI Cost Estimator, designers, project tracking, payments, digital twin) for demos.

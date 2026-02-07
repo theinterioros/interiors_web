@@ -1,14 +1,22 @@
 import { ReactNode } from "react";
 import { RoleValues } from "@/lib/types";
 import { requireRole } from "@/lib/auth";
+import { getPendingActionsForUser } from "@/lib/pendingActions";
+import AppSidebar from "@/components/layout/AppSidebar";
+import PendingActionsBanner from "@/components/layout/PendingActionsBanner";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  await requireRole([RoleValues.ADMIN]);
+  const user = await requireRole([RoleValues.ADMIN]);
+  const pendingActions = await getPendingActionsForUser(user.id, user.role);
   return (
-    <div className="min-h-screen bg-[var(--surface-subtle)]">
-      <div className="mx-auto max-w-5xl w-full min-w-0 px-4 py-6 sm:px-6 sm:py-8">
-        {children}
+    <>
+      <AppSidebar role="admin" />
+      <div className="md:pl-[260px] min-h-[calc(100vh-var(--header-height))] bg-[var(--surface-subtle)]">
+        <PendingActionsBanner items={pendingActions} />
+        <div className="mx-auto w-full max-w-6xl min-w-0 px-4 py-6 sm:px-6 sm:py-8">
+          {children}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

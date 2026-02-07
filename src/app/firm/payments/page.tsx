@@ -1,28 +1,37 @@
-import { CreditCard, Clock, Lock, CheckCircle } from "lucide-react";
+import { CreditCard, Clock, Lock, CheckCircle, Info } from "lucide-react";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import FadeIn from "@/components/animations/FadeIn";
-import StaggerChildren from "@/components/animations/StaggerChildren";
-import FadeInItem from "@/components/animations/FadeInItem";
+import { paymentTypeLabel } from "@/lib/paymentLabels";
 
 export const dynamic = "force-dynamic";
+
+type LedgerRow = {
+  id: string;
+  type: string;
+  status: string;
+  amount: number;
+  platform_margin_amount: number | null;
+  project_title: string | null;
+  milestone_title: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  created_at: Date;
+};
 
 export default async function FirmPaymentsPage() {
   const user = await requireFirmPaid();
 
   const [ledger, pendingMilestones] = await Promise.all([
-    sql<{
-      id: string;
-      type: string;
-      status: string;
-      amount: number;
-      platform_margin_amount: number | null;
-      project_title: string | null;
-      created_at: Date;
-    }>`
-      select p.id, p.type, p.status, p.amount, p.platform_margin_amount, pr.title as project_title, p.created_at
+    sql<LedgerRow>`
+      select
+        p.id, p.type, p.status, p.amount, p.platform_margin_amount,
+        pr.title as project_title, m.title as milestone_title,
+        cu.name as customer_name, cu.email as customer_email,
+        p.created_at
       from payment_ledger p
       left join projects pr on pr.id = p.project_id
+      left join milestones m on m.id = p.milestone_id
+      left join users cu on cu.id = p.customer_id
       where p.firm_id = ${user.id}
       order by p.created_at desc
     `,
@@ -42,101 +51,134 @@ export default async function FirmPaymentsPage() {
   const dispatchedToDesigner = releasedRows.reduce((s, r) => s + (r.amount - (r.platform_margin_amount ?? 0)), 0);
 
   return (
-    <div className="page bg-white">
-      <div className="page-inner">
-        <FadeIn className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <CreditCard className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">Earnings Ledger</p>
+    <div className="space-y-8">
+      <header>
+        <div className="flex items-center gap-2 mb-1">
+          <CreditCard className="h-4 w-4 text-[var(--text-muted)]" />
+          <p className="eyebrow">Payments</p>
+        </div>
+        <h1 className="heading-lg mb-1">Your earnings</h1>
+        <p className="text-sm text-[var(--text-muted)] mb-2">
+          Track pending milestones, amounts in escrow (awaiting admin release), and payouts already sent to you. The ledger shows date, payment type, particulars, customer, amount, margin, and what you receive.
+        </p>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-subtle)]/50 p-4 flex items-start gap-3">
+          <Info className="h-4 w-4 text-[var(--brand)] shrink-0 mt-0.5" />
+          <div className="text-sm text-[var(--text-muted)]">
+            <strong className="text-[var(--foreground)]">Flow:</strong> Pending = not yet submitted for approval. In escrow = customer approved; admin will release. Dispatched = paid to you after platform margin is deducted.
           </div>
-          <h1 className="heading-lg mb-3">Money management</h1>
-          <p className="text-[var(--text-muted)]">
-            Three-column view: work in progress, customer-paid (in escrow), and dispatched to your bank.
+        </div>
+      </header>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-lg border border-[var(--border)] bg-white p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="h-4 w-4 text-[var(--text-muted)]" />
+            <span className="eyebrow">Pending</span>
+          </div>
+          <p className="text-2xl font-semibold text-[var(--foreground)]">₹{pendingTotal.toLocaleString()}</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Milestones not yet submitted for approval</p>
+        </div>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--accent-amber-light)]/30 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="h-4 w-4 text-[var(--accent-amber)]" />
+            <span className="eyebrow">In escrow</span>
+          </div>
+          <p className="text-2xl font-semibold text-[var(--foreground)]">₹{heldTotal.toLocaleString()}</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Customer approved; awaiting admin release</p>
+        </div>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--accent-emerald-light)]/30 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle className="h-4 w-4 text-[var(--accent-emerald)]" />
+            <span className="eyebrow">Dispatched to you</span>
+          </div>
+          <p className="text-2xl font-semibold text-[var(--foreground)]">₹{dispatchedToDesigner.toLocaleString()}</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">After platform margin deducted</p>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
+        <div className="px-4 sm:px-5 py-4 border-b border-[var(--border)]">
+          <h2 className="font-semibold text-[var(--foreground)]">Payment ledger</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            Date, payment type, particulars, customer, amount, margin, you receive, and status.
           </p>
-        </FadeIn>
-
-        <FadeIn delay={0.1} className="grid gap-4 sm:grid-cols-3 mb-8">
-          <div className="card border-[var(--border)]">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-4 w-4 text-[var(--text-muted)]" />
-              <span className="eyebrow">Pending</span>
-            </div>
-            <p className="text-2xl font-semibold text-[var(--foreground)]">₹{pendingTotal.toLocaleString()}</p>
-            <p className="text-xs text-[var(--text-muted)]">Work in progress (milestones not yet submitted)</p>
+        </div>
+        {ledger.length === 0 && pendingMilestones.length === 0 ? (
+          <div className="p-8 text-center text-sm text-[var(--text-muted)]">
+            No payments or pending milestones yet. Create milestones on a project; when the customer approves, amounts appear here as In escrow until admin releases them to you.
           </div>
-          <div className="card border-[var(--accent-amber)]/40 bg-[var(--accent-amber-light)]/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Lock className="h-4 w-4 text-[var(--accent-amber)]" />
-              <span className="eyebrow">In escrow</span>
-            </div>
-            <p className="text-2xl font-semibold text-[var(--foreground)]">₹{heldTotal.toLocaleString()}</p>
-            <p className="text-xs text-[var(--text-muted)]">Customer paid · awaiting admin release</p>
-          </div>
-          <div className="card border-green-200 bg-green-50/50">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="eyebrow">Dispatched</span>
-            </div>
-            <p className="text-2xl font-semibold text-[var(--foreground)]">₹{dispatchedToDesigner.toLocaleString()}</p>
-            <p className="text-xs text-[var(--text-muted)]">Money in bank (after platform margin)</p>
-          </div>
-        </FadeIn>
-
-        <FadeIn delay={0.2}>
-          <h2 className="heading-md mb-4">Ledger entries</h2>
-          {ledger.length === 0 && pendingMilestones.length === 0 ? (
-            <div className="card text-center text-[var(--text-muted)] py-8">
-              No payments or pending milestones yet.
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {pendingMilestones.length > 0 && (
-                <div>
-                  <p className="eyebrow mb-2">Pending (work in progress)</p>
-                  <StaggerChildren className="space-y-2">
-                    {pendingMilestones.map((m, i) => (
-                      <FadeInItem key={`pending-${i}`}>
-                        <div className="card flex flex-wrap items-center justify-between gap-3 opacity-90">
-                          <div>
-                            <p className="text-sm font-semibold text-[var(--foreground)]">{m.title}</p>
-                            <p className="text-xs text-[var(--text-muted)]">{m.project_title}</p>
-                          </div>
-                          <p className="text-sm font-semibold text-[var(--foreground)]">₹{m.amount.toLocaleString()}</p>
-                        </div>
-                      </FadeInItem>
-                    ))}
-                  </StaggerChildren>
-                </div>
-              )}
-              {ledger.length > 0 && (
-                <div>
-                  <p className="eyebrow mb-2">In escrow / Dispatched</p>
-                  <StaggerChildren className="space-y-2">
-                    {ledger.map((row) => (
-                      <FadeInItem key={row.id}>
-                        <div className="card flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-[var(--foreground)]">{row.type.replace(/_/g, " ")}</p>
-                            <p className="text-xs text-[var(--text-muted)]">
-                              {row.project_title ?? "—"} · {row.status}
-                              {row.platform_margin_amount != null && row.status === "RELEASED" && (
-                                <> · Margin: ₹{row.platform_margin_amount.toLocaleString()}</>
-                              )}
-                            </p>
-                          </div>
-                          <p className="text-sm font-semibold text-[var(--foreground)]">₹{row.amount.toLocaleString()}</p>
-                          <p className="text-xs text-[var(--text-muted)] w-full sm:w-auto">
-                            {new Date(row.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </FadeInItem>
-                    ))}
-                  </StaggerChildren>
-                </div>
-              )}
-            </div>
-          )}
-        </FadeIn>
+        ) : (
+          <>
+            {pendingMilestones.length > 0 && (
+              <div className="px-4 sm:px-5 py-4 bg-[var(--surface-subtle)]/50 border-b border-[var(--border)]">
+                <p className="eyebrow mb-2">Pending (not yet submitted for approval)</p>
+                <ul className="space-y-2">
+                  {pendingMilestones.map((m, i) => (
+                    <li key={`pending-${i}`} className="flex items-center justify-between gap-3 py-2">
+                      <div>
+                        <p className="text-sm font-medium text-[var(--foreground)]">{m.title}</p>
+                        <p className="text-xs text-[var(--text-muted)]">Project: {m.project_title}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-[var(--foreground)]">₹{m.amount.toLocaleString()}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {ledger.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--border)] bg-[var(--surface-subtle)]/50">
+                      <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">Date</th>
+                      <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">Payment type</th>
+                      <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">Particulars</th>
+                      <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">From customer</th>
+                      <th className="text-right py-3 px-4 font-medium text-[var(--text-muted)]">Amount</th>
+                      <th className="text-right py-3 px-4 font-medium text-[var(--text-muted)]">Margin</th>
+                      <th className="text-right py-3 px-4 font-medium text-[var(--text-muted)]">You receive</th>
+                      <th className="text-right py-3 px-4 font-medium text-[var(--text-muted)]">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ledger.map((row) => {
+                      const margin = row.platform_margin_amount ?? 0;
+                      const netToDesigner = row.amount - margin;
+                      return (
+                        <tr key={row.id} className="border-b border-[var(--border)] last:border-0">
+                          <td className="py-3 px-4 text-[var(--foreground)]">{new Date(row.created_at).toLocaleDateString()}</td>
+                          <td className="py-3 px-4">{paymentTypeLabel(row.type)}</td>
+                          <td className="py-3 px-4 text-[var(--text-muted)]">
+                            {row.project_title && row.milestone_title
+                              ? `${row.project_title} / ${row.milestone_title}`
+                              : row.milestone_title ?? row.project_title ?? "—"}
+                          </td>
+                          <td className="py-3 px-4">{row.customer_name ?? row.customer_email ?? "—"}</td>
+                          <td className="py-3 px-4 text-right font-medium">₹{row.amount.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-right">{row.type === "MILESTONE" ? (margin > 0 ? `₹${margin.toLocaleString()}` : "—") : "—"}</td>
+                          <td className="py-3 px-4 text-right font-medium">
+                            {row.status === "RELEASED" ? `₹${netToDesigner.toLocaleString()}` : "—"}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <span
+                              className={
+                                row.status === "HELD"
+                                  ? "rounded-full bg-[var(--accent-amber)]/20 text-[var(--accent-amber)] px-2.5 py-1 text-xs font-medium"
+                                  : "rounded-full bg-[var(--accent-emerald)]/20 text-[var(--accent-emerald)] px-2.5 py-1 text-xs font-medium"
+                              }
+                            >
+                              {row.status === "HELD" ? "In escrow" : "Dispatched"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

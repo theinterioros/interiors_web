@@ -170,6 +170,10 @@ a {
   cursor: pointer;
 }
 
+.btn:disabled {
+  cursor: wait;
+}
+
 .btn-primary {
   background: var(--brand);
   color: white;

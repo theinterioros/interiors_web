@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { contactAction, type ContactState } from "@/app/actions/contact";
-import { CheckCircle2, User, Users } from "lucide-react";
+import { CheckCircle2, Loader2, User, Users } from "lucide-react";
 import ValidatedEmailInput from "@/components/ui/ValidatedEmailInput";
 import ValidatedPhoneInput from "@/components/ui/ValidatedPhoneInput";
 
@@ -18,9 +18,16 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full py-4 px-5 rounded-xl font-semibold text-sm text-slate-900 bg-white hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-60 disabled:pointer-events-none transition-all duration-200 mt-2"
+      className="flex cursor-pointer items-center justify-center gap-2 w-full py-4 px-5 rounded-xl font-semibold text-sm text-slate-900 bg-white hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-60 disabled:cursor-wait transition-all duration-200 mt-2"
     >
-      {pending ? "Sending…" : "Get in touch"}
+      {pending ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          Sending…
+        </>
+      ) : (
+        "Get in touch"
+      )}
     </button>
   );
 }

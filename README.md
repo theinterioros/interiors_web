@@ -61,7 +61,7 @@ Demo **customer** and **firm** accounts are created automatically on first app l
 | Role     | Email                     | Password  |
 |----------|---------------------------|-----------|
 | Customer | `customer@interioros.com` | `Demo123!`|
-| Firm     | `firm@interioros.com`     | `Demo123!`|
+| Firm     | `firm@interioros.com`    | `Demo123!`|
 
 Dummy data: 2 sample projects (one ACTIVE, one REQUESTED) linking the customer and firm, with milestones. See [DEMO.md](./DEMO.md) for details.
 

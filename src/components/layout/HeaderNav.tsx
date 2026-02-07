@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { createPortal } from "react-dom";
-import { Menu, X, LogIn, LogOut, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User, MessageSquare, Building2 } from "lucide-react";
+import { Menu, X, LogIn, LogOut, Loader2, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User, MessageSquare, Building2, HelpCircle } from "lucide-react";
 
 type SessionUser = {
   id: string;
@@ -26,6 +28,7 @@ const adminNavItems = [
   { href: "/admin/leads", label: "Leads", icon: MessageSquare },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/designers", label: "Designer Approvals", icon: BadgeCheck },
+  { href: "/admin/margin-requests", label: "Margin Requests", icon: BadgeCheck },
   { href: "/admin/firms-pending-payment", label: "Designers Pending Payment", icon: IndianRupee },
   { href: "/admin/pricing", label: "AI Estimator Pricing", icon: MapPin },
   { href: "/admin/trusted-studios", label: "Trusted Studios", icon: Building2 },
@@ -47,7 +50,50 @@ const designerNavItems = [
   { href: "/firm/payments", label: "Payment Ledger", icon: CreditCard },
 ] as const;
 
+function SignOutButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border-strong)] px-4 py-2 text-sm font-medium text-[var(--foreground)] bg-white hover:bg-[var(--surface-subtle)] transition-colors disabled:opacity-70 disabled:cursor-wait"
+    >
+      {pending ? (
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+      ) : (
+        <LogOut className="h-4 w-4 shrink-0" />
+      )}
+      {pending ? "Signing out…" : "Sign out"}
+    </button>
+  );
+}
+
+function SignOutButtonMobile() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-left font-medium text-[var(--foreground)] border-2 border-[var(--border-strong)] hover:bg-[var(--surface-subtle)] transition-colors disabled:opacity-70 disabled:cursor-wait"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)]">
+        {pending ? (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+        ) : (
+          <LogOut className="h-4 w-4" />
+        )}
+      </span>
+      {pending ? "Signing out…" : "Sign out"}
+    </button>
+  );
+}
+
 export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderNavProps) {
+  const pathname = usePathname();
+  const isAppRoute =
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/customer") ||
+    pathname?.startsWith("/firm");
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -84,23 +130,33 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
 
   return (
     <>
-      {/* Desktop nav — hidden on mobile */}
-      <nav className="hidden md:flex items-center gap-3 lg:gap-4">
-        {desktopLinks.map(({ href, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors whitespace-nowrap"
-          >
-            {label}
-          </Link>
-        ))}
+      {/* Desktop: nav links (hidden on app routes; sidebar shows there) + Help + Sign out / CTAs */}
+      <div className="hidden md:flex items-center gap-2 lg:gap-3">
+        {!isAppRoute &&
+          desktopLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors whitespace-nowrap"
+            >
+              {label}
+            </Link>
+          ))}
         {user ? (
-          <form action={logoutAction} className="inline-block">
-            <button type="submit" className="btn btn-ghost text-sm">
-              Sign out
-            </button>
-          </form>
+          <>
+            <Link
+              href="/#contact"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors"
+              title="Help & contact"
+            >
+              <HelpCircle className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Help</span>
+            </Link>
+            <span className="h-6 w-px bg-[var(--border)] hidden sm:block" aria-hidden />
+            <form action={logoutAction} className="inline-block">
+              <SignOutButton />
+            </form>
+          </>
         ) : (
           <>
             <Link href="/login?role=customer" className="btn btn-secondary text-sm font-medium px-4 py-2 rounded-lg border border-[var(--border-strong)] text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors">
@@ -111,7 +167,7 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
             </Link>
           </>
         )}
-      </nav>
+      </div>
 
       {/* Mobile: menu button */}
       <button
@@ -173,17 +229,21 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
                 ))}
                 <div className="my-2 h-px shrink-0 bg-[var(--border)]" />
                 {user ? (
-                  <form action={logoutAction} className="block shrink-0">
-                    <button
-                      type="submit"
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition-colors"
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <Link
+                      href="/#contact"
+                      onClick={close}
+                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors"
                     >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--text-muted)]">
-                        <LogOut className="h-4 w-4" />
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--brand)]">
+                        <HelpCircle className="h-4 w-4" />
                       </span>
-                      <span className="font-medium">Sign out</span>
-                    </button>
-                  </form>
+                      <span className="font-medium">Help & contact</span>
+                    </Link>
+                    <form action={logoutAction} className="block">
+                      <SignOutButtonMobile />
+                    </form>
+                  </div>
                 ) : (
                   <div className="flex flex-col gap-2 shrink-0">
                     <Link

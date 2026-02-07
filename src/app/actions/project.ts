@@ -1,6 +1,7 @@
 "use server";
 
 import crypto from "crypto";
+import { revalidatePath } from "next/cache";
 import {
   RoleValues,
   MilestoneStatusValues,
@@ -43,6 +44,12 @@ export async function requestProjectAction(
   const firmId = String(formData.get("firmId") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
+  const propertyType = String(formData.get("property_type") ?? "").trim() || null;
+  const carpetAreaRaw = formData.get("carpet_area");
+  const carpetArea = carpetAreaRaw !== null && carpetAreaRaw !== "" ? parseInt(String(carpetAreaRaw), 10) : null;
+  const roomsRaw = formData.get("rooms");
+  const rooms = roomsRaw !== null && roomsRaw !== "" ? parseInt(String(roomsRaw), 10) : null;
+  const budgetRange = String(formData.get("budget_range") ?? "").trim() || null;
 
   if (!firmId || !title) {
     return { ok: false, error: "Firm and title are required." };
@@ -67,14 +74,18 @@ export async function requestProjectAction(
 
   const projectId = crypto.randomUUID();
   await sql`
-    insert into projects (id, customer_id, firm_id, status, title, description)
+    insert into projects (id, customer_id, firm_id, status, title, description, property_type, carpet_area, rooms, budget_range)
     values (
       ${projectId},
       ${user.id},
       ${firmId},
       ${ProjectStatusValues.LEAD},
       ${title},
-      ${description || null}
+      ${description || null},
+      ${propertyType},
+      ${carpetArea},
+      ${rooms},
+      ${budgetRange}
     )
   `;
 
@@ -92,10 +103,14 @@ export async function requestProjectAction(
     });
   }
 
+  revalidatePath("/customer/dashboard");
+  revalidatePath("/admin/projects");
+  revalidatePath("/firm/leads");
+  revalidatePath("/firm/dashboard");
   return { ok: true, projectId };
 }
 
-/** Designer: move project from LEAD to ACTIVE after meetup. */
+/** Designer: move project from LEAD or ACCEPTED to ACTIVE (start work / add milestones). */
 export async function initiateProjectAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user || user.role !== RoleValues.FIRM) {
@@ -106,10 +121,19 @@ export async function initiateProjectAction(formData: FormData): Promise<void> {
   const [updated] = await sql<{ id: string }>`
     update projects
     set status = ${ProjectStatusValues.ACTIVE}, updated_at = now()
-    where id = ${projectId} and firm_id = ${user.id} and status = ${ProjectStatusValues.LEAD}
+    where id = ${projectId} and firm_id = ${user.id}
+      and status in (${ProjectStatusValues.LEAD}, ${ProjectStatusValues.ACCEPTED})
     returning id
   `;
-  if (!updated) throw new Error("Project not found or not in LEAD status.");
+  if (!updated) throw new Error("Project not found or not in LEAD/ACCEPTED status.");
+
+  revalidatePath("/firm/leads");
+  revalidatePath("/firm/projects");
+  revalidatePath(`/firm/projects/${projectId}`);
+  revalidatePath("/firm/dashboard");
+  revalidatePath("/customer/dashboard");
+  revalidatePath("/admin/projects");
+  revalidatePath("/admin");
 }
 
 export async function respondProjectRequestAction(formData: FormData) {
@@ -137,6 +161,10 @@ export async function respondProjectRequestAction(formData: FormData) {
     throw new Error("Project not found.");
   }
 
+  revalidatePath("/firm/projects");
+  revalidatePath("/firm/dashboard");
+  revalidatePath("/customer/dashboard");
+  revalidatePath("/admin/projects");
   return;
 }
 
@@ -178,8 +206,13 @@ export async function createMilestoneAction(formData: FormData) {
     )
   `;
 
+  revalidatePath("/firm/projects");
+  revalidatePath(`/firm/projects/${projectId}`);
   return;
 }
+
+const MILESTONE_MIN_IMAGES = 1;
+const MILESTONE_MAX_IMAGES = 3;
 
 export async function submitMilestoneAction(formData: FormData) {
   const user = await getCurrentUser();
@@ -195,11 +228,12 @@ export async function submitMilestoneAction(formData: FormData) {
   const [milestone] = await sql<{
     id: string;
     title: string;
+    status: string;
     project_id: string;
     customer_id: string;
     customer_email: string;
   }>`
-    select m.id, m.title, m.project_id, p.customer_id, u.email as customer_email
+    select m.id, m.title, m.status, m.project_id, p.customer_id, u.email as customer_email
     from milestones m
     join projects p on p.id = m.project_id
     join users u on u.id = p.customer_id
@@ -211,11 +245,31 @@ export async function submitMilestoneAction(formData: FormData) {
     throw new Error("Milestone not found.");
   }
 
+  if (milestone.status !== MilestoneStatusValues.PENDING && milestone.status !== MilestoneStatusValues.IN_PROGRESS) {
+    throw new Error("This milestone is not in a state that can be submitted.");
+  }
+
+  const [countRow] = await sql<{ count: string }>`
+    select count(*)::text as count from milestone_images where milestone_id = ${milestone.id}
+  `;
+  const imageCount = parseInt(countRow?.count ?? "0", 10);
+  if (imageCount < MILESTONE_MIN_IMAGES) {
+    throw new Error("Upload at least one image before requesting approval.");
+  }
+  if (imageCount > MILESTONE_MAX_IMAGES) {
+    throw new Error(`Maximum ${MILESTONE_MAX_IMAGES} images allowed. Remove extras before submitting.`);
+  }
+
   await sql`
     update milestones
     set status = ${MilestoneStatusValues.SUBMITTED},
         updated_at = now()
     where id = ${milestone.id}
+  `;
+
+  await sql`
+    insert into milestone_trail (id, milestone_id, event, actor_id, message, created_at)
+    values (${crypto.randomUUID()}, ${milestone.id}, 'SUBMITTED', ${user.id}, null, now())
   `;
 
   await notifyUser({
@@ -226,6 +280,8 @@ export async function submitMilestoneAction(formData: FormData) {
     message: `Milestone "${milestone.title}" is ready for approval.`,
   });
 
+  revalidatePath(`/firm/projects/${milestone.project_id}`);
+  revalidatePath(`/customer/projects/${milestone.project_id}`);
   return;
 }
 
@@ -267,6 +323,11 @@ export async function approveMilestoneAction(formData: FormData) {
   `;
 
   await sql`
+    insert into milestone_trail (id, milestone_id, event, actor_id, message, created_at)
+    values (${crypto.randomUUID()}, ${milestone.id}, 'APPROVED', ${user.id}, null, now())
+  `;
+
+  await sql`
     insert into payment_ledger (
       id, type, status, amount, project_id, milestone_id, customer_id, firm_id
     )
@@ -296,6 +357,12 @@ export async function approveMilestoneAction(formData: FormData) {
     });
   }
 
+  revalidatePath("/admin");
+  revalidatePath("/admin/payments");
+  revalidatePath("/customer/payments");
+  revalidatePath("/firm/payments");
+  revalidatePath(`/customer/projects/${milestone.project_id}`);
+  revalidatePath(`/firm/projects/${milestone.project_id}`);
   return;
 }
 
@@ -311,8 +378,8 @@ export async function uploadMilestoneImageAction(formData: FormData) {
     throw new Error("Milestone and file are required.");
   }
 
-  const [milestone] = await sql<{ id: string }>`
-    select m.id
+  const [milestone] = await sql<{ id: string; project_id: string }>`
+    select m.id, m.project_id
     from milestones m
     join projects p on p.id = m.project_id
     where m.id = ${milestoneId} and p.firm_id = ${user.id}
@@ -321,6 +388,14 @@ export async function uploadMilestoneImageAction(formData: FormData) {
 
   if (!milestone) {
     throw new Error("Milestone not found.");
+  }
+
+  const [countRow] = await sql<{ count: string }>`
+    select count(*)::text as count from milestone_images where milestone_id = ${milestone.id}
+  `;
+  const imageCount = parseInt(countRow?.count ?? "0", 10);
+  if (imageCount >= MILESTONE_MAX_IMAGES) {
+    throw new Error(`Maximum ${MILESTONE_MAX_IMAGES} images per milestone. Remove one to add another.`);
   }
 
   const blobUrl = await uploadBlob(file, `milestones/${milestoneId}`);
@@ -338,5 +413,139 @@ export async function uploadMilestoneImageAction(formData: FormData) {
     )
   `;
 
+  revalidatePath(`/firm/projects/${milestone.project_id}`);
+  revalidatePath(`/customer/projects/${milestone.project_id}`);
+  return;
+}
+
+export async function deleteMilestoneImageAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    throw new Error("Unauthorized.");
+  }
+
+  const imageId = String(formData.get("imageId") ?? "");
+  if (!imageId) {
+    throw new Error("Image is required.");
+  }
+
+  const [row] = await sql<{ milestone_id: string; project_id: string }>`
+    select mi.milestone_id, m.project_id
+    from milestone_images mi
+    join milestones m on m.id = mi.milestone_id
+    join projects p on p.id = m.project_id
+    where mi.id = ${imageId} and p.firm_id = ${user.id}
+    limit 1
+  `;
+
+  if (!row) {
+    throw new Error("Image not found.");
+  }
+
+  await sql`delete from milestone_images where id = ${imageId}`;
+
+  revalidatePath(`/firm/projects/${row.project_id}`);
+  revalidatePath(`/customer/projects/${row.project_id}`);
+  return;
+}
+
+export async function rejectMilestoneAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.CUSTOMER) {
+    throw new Error("Unauthorized.");
+  }
+
+  const milestoneId = String(formData.get("milestoneId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!milestoneId) {
+    throw new Error("Milestone is required.");
+  }
+
+  const [milestone] = await sql<{
+    id: string;
+    title: string;
+    project_id: string;
+    firm_id: string;
+  }>`
+    select m.id, m.title, m.project_id, p.firm_id
+    from milestones m
+    join projects p on p.id = m.project_id
+    where m.id = ${milestoneId} and p.customer_id = ${user.id} and m.status = ${MilestoneStatusValues.SUBMITTED}
+    limit 1
+  `;
+
+  if (!milestone) {
+    throw new Error("Milestone not found or not awaiting approval.");
+  }
+
+  await sql`
+    update milestones
+    set status = ${MilestoneStatusValues.IN_PROGRESS},
+        updated_at = now()
+    where id = ${milestone.id}
+  `;
+
+  await sql`
+    insert into milestone_trail (id, milestone_id, event, actor_id, message, created_at)
+    values (${crypto.randomUUID()}, ${milestone.id}, 'REJECTED', ${user.id}, ${reason || null}, now())
+  `;
+
+  const [firmUser] = await sql<{ email: string }>`
+    select email from users where id = ${milestone.firm_id} limit 1
+  `;
+  if (firmUser) {
+    await notifyUser({
+      userId: milestone.firm_id,
+      email: firmUser.email,
+      type: "MILESTONE_DISPUTED",
+      title: "Milestone sent back for revision",
+      message: reason
+        ? `Milestone "${milestone.title}" was sent back. Reason: ${reason}`
+        : `Milestone "${milestone.title}" was sent back for revision. You can update the description, upload new images (max 3), and request approval again.`,
+    });
+  }
+
+  revalidatePath(`/customer/projects/${milestone.project_id}`);
+  revalidatePath(`/firm/projects/${milestone.project_id}`);
+  return;
+}
+
+export async function updateMilestoneDescriptionAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    throw new Error("Unauthorized.");
+  }
+
+  const milestoneId = String(formData.get("milestoneId") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  if (!milestoneId) {
+    throw new Error("Milestone is required.");
+  }
+
+  const [milestone] = await sql<{ id: string; project_id: string; status: string }>`
+    select m.id, m.project_id, m.status
+    from milestones m
+    join projects p on p.id = m.project_id
+    where m.id = ${milestoneId} and p.firm_id = ${user.id}
+    limit 1
+  `;
+
+  if (!milestone) {
+    throw new Error("Milestone not found.");
+  }
+
+  if (milestone.status !== MilestoneStatusValues.IN_PROGRESS && milestone.status !== MilestoneStatusValues.PENDING) {
+    throw new Error("Description can only be updated when milestone is Pending or In progress.");
+  }
+
+  await sql`
+    update milestones
+    set description = ${description || ""},
+        updated_at = now()
+    where id = ${milestone.id}
+  `;
+
+  revalidatePath(`/firm/projects/${milestone.project_id}`);
+  revalidatePath(`/customer/projects/${milestone.project_id}`);
   return;
 }

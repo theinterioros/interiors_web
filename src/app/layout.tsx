@@ -4,7 +4,7 @@ import "./globals.css";
 import { ensureAdminSeed } from "@/lib/seedAdmin";
 import { ensureDemoAccounts } from "@/lib/seedDemo";
 import { getCurrentUser } from "@/lib/auth";
-import SiteHeader from "@/components/layout/SiteHeader";
+import AuthAwareLayout from "@/components/layout/AuthAwareLayout";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,10 +36,7 @@ export default async function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased min-w-0 overflow-x-hidden`}
       >
-        <SiteHeader user={user} />
-        <main id="main-content" className="min-w-0 pt-[var(--header-height)]">
-          {children}
-        </main>
+        <AuthAwareLayout user={user}>{children}</AuthAwareLayout>
       </body>
     </html>
   );

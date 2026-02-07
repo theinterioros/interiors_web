@@ -82,3 +82,28 @@ export function sanitizePhoneInputLive(value: string): string {
 export function isEmailLike(value: string): boolean {
   return value.trim().includes("@");
 }
+
+/** Portfolio file: max 10MB; PDF or image (JPEG, PNG, WebP). */
+export const PORTFOLIO_FILE_MAX_BYTES = 10 * 1024 * 1024;
+export const PORTFOLIO_ALLOWED_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+export function validatePortfolioFile(
+  file: File | null
+): { valid: true } | { valid: false; error: string } {
+  if (!file || file.size === 0) {
+    return { valid: false, error: "Please select a file." };
+  }
+  if (file.size > PORTFOLIO_FILE_MAX_BYTES) {
+    return { valid: false, error: "File must be 10 MB or smaller." };
+  }
+  const type = file.type?.toLowerCase();
+  if (!type || !PORTFOLIO_ALLOWED_TYPES.includes(type as (typeof PORTFOLIO_ALLOWED_TYPES)[number])) {
+    return { valid: false, error: "File must be PDF or image (JPEG, PNG, WebP)." };
+  }
+  return { valid: true };
+}

@@ -51,8 +51,6 @@ import {
 import ContactForm from "@/components/landing/ContactForm";
 import EstimatorForm from "@/components/estimator/EstimatorForm";
 
-export const dynamic = "force-dynamic";
-
 export default async function Home() {
   const [settings, user] = await Promise.all([getAdminSettings(), getCurrentUser()]);
   const isCustomer = user?.role === "CUSTOMER";

@@ -13,6 +13,7 @@ export async function POST(request: Request) {
   const name = String(body.name ?? "").trim();
   const emailRaw = String(body.email ?? "").trim();
   const phoneRaw = String(body.phone ?? "").trim();
+  const requireContact = Boolean(body.requireContact !== false && (name || emailRaw || phoneRaw));
   const city = String(body.city ?? "");
   const pincode = String(body.pincode ?? "");
   const area = Number(body.area ?? body.squareFeet ?? 0);
@@ -21,16 +22,20 @@ export async function POST(request: Request) {
   const propertyType = body.propertyType === "villa" ? "villa" : "apartment";
   const rooms = Number(body.rooms ?? 0);
 
-  const emailResult = validateEmail(emailRaw);
-  if (!emailResult.valid) {
-    return NextResponse.json({ error: EMAIL_ERROR }, { status: 400 });
+  let email = "";
+  let phone = "";
+  if (requireContact) {
+    const emailResult = validateEmail(emailRaw);
+    if (!emailResult.valid) {
+      return NextResponse.json({ error: EMAIL_ERROR }, { status: 400 });
+    }
+    const phoneResult = validatePhoneIndia(phoneRaw);
+    if (!phoneResult.valid) {
+      return NextResponse.json({ error: PHONE_ERROR }, { status: 400 });
+    }
+    email = emailResult.sanitized;
+    phone = phoneResult.sanitized;
   }
-  const phoneResult = validatePhoneIndia(phoneRaw);
-  if (!phoneResult.valid) {
-    return NextResponse.json({ error: PHONE_ERROR }, { status: 400 });
-  }
-  const email = emailResult.sanitized;
-  const phone = phoneResult.sanitized;
 
   if (!city || !pincode) {
     return NextResponse.json({ error: "Missing required fields (city, pincode)." }, { status: 400 });
@@ -54,7 +59,7 @@ export async function POST(request: Request) {
 
   const squareFeetForLead = result.data.breakdown.squareFeet;
 
-  if (name && email) {
+  if (name && email && phone) {
     try {
       await sql`
         insert into estimator_leads (name, email, phone, city, pincode, square_feet, property_type, rooms, min_amount, max_amount)

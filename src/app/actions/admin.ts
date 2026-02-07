@@ -272,6 +272,8 @@ export async function addMarketingLinkAction(formData: FormData) {
     )
   `;
 
+  revalidatePath("/");
+  revalidatePath("/admin/settings");
   return;
 }
 
@@ -304,18 +306,29 @@ export async function approveFirmAction(formData: FormData) {
 
   const profileId = String(formData.get("profileId") ?? "");
   const addVerifiedBadge = formData.get("addVerifiedBadge") === "on";
-  const platformMarginPct = formData.get("platformMarginPct");
-  const marginPct =
-    platformMarginPct !== null && platformMarginPct !== ""
-      ? Math.min(100, Math.max(0, Number(platformMarginPct)))
-      : null;
+
+  const [profile] = await sql<{ margin_accepted_at: Date | null; user_id: string }>`
+    select margin_accepted_at, user_id from firm_profiles where id = ${profileId} limit 1
+  `;
+  if (!profile) {
+    throw new Error("Profile not found.");
+  }
+  if (profile.margin_accepted_at == null) {
+    throw new Error("Designer must accept the agreed margin in their dashboard before profile can be approved.");
+  }
+  const [paid] = await sql<{ id: string }>`
+    select id from payment_ledger
+    where firm_id = ${profile.user_id} and type = 'FIRM_REGISTRATION_FEE' and status = 'RELEASED'
+    limit 1
+  `;
+  if (!paid) {
+    throw new Error("Designer must pay the yearly subscription (₹3,000) before profile can be approved.");
+  }
 
   await sql`
     update firm_profiles
     set status = ${DesignerStatusValues.APPROVED},
         verified_at = ${addVerifiedBadge ? new Date() : null},
-        platform_margin_pct = ${marginPct},
-        margin_accepted_at = null,
         updated_at = now()
     where id = ${profileId}
   `;
@@ -329,17 +342,19 @@ export async function approveFirmAction(formData: FormData) {
   `;
 
   if (profileUser) {
-    const marginText =
-      marginPct != null ? ` Platform margin: ${marginPct}%. Please accept in your dashboard to go live.` : "";
     await notifyUser({
       userId: profileUser.user_id,
       email: profileUser.email,
       type: "FIRM_APPROVED",
       title: "Firm profile approved",
-      message: `Your firm profile has been approved.${marginText}`,
+      message: "Your firm profile has been approved. You are now listed and can receive customer requests.",
     });
   }
 
+  revalidatePath("/admin");
+  revalidatePath("/admin/designers");
+  revalidatePath("/admin/payments");
+  revalidatePath("/designers");
   return;
 }
 
@@ -356,6 +371,69 @@ export async function rejectFirmAction(formData: FormData) {
     where id = ${profileId}
   `;
 
+  revalidatePath("/admin");
+  revalidatePath("/admin/designers");
+  revalidatePath("/admin/payments");
+  revalidatePath("/designers");
+  return;
+}
+
+export async function approveMarginRequestAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) {
+    throw new Error("Unauthorized.");
+  }
+  const requestId = String(formData.get("requestId") ?? "");
+  const adminSetPctRaw = formData.get("adminSetMarginPct");
+  const adminSetPct =
+    adminSetPctRaw !== null && adminSetPctRaw !== "" ? Math.min(100, Math.max(0, Number(adminSetPctRaw))) : null;
+
+  const [req] = await sql<{ profile_id: string; requested_margin_pct: number }>`
+    select profile_id, requested_margin_pct from margin_requests where id = ${requestId} and status = 'PENDING' limit 1
+  `;
+  if (!req) {
+    throw new Error("Margin request not found or already decided.");
+  }
+  const finalPct = adminSetPct ?? req.requested_margin_pct;
+
+  await sql`
+    update margin_requests
+    set status = 'APPROVED', admin_set_margin_pct = ${adminSetPct}, decided_at = now(), decided_by = ${admin.id}
+    where id = ${requestId}
+  `;
+  await sql`
+    update firm_profiles
+    set platform_margin_pct = ${finalPct}, updated_at = now()
+    where id = ${req.profile_id}
+  `;
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/designers");
+  revalidatePath("/admin/margin-requests");
+  revalidatePath("/firm/dashboard");
+  revalidatePath("/designer/dashboard");
+  return;
+}
+
+export async function rejectMarginRequestAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) {
+    throw new Error("Unauthorized.");
+  }
+  const requestId = String(formData.get("requestId") ?? "");
+  const comment = String(formData.get("adminComment") ?? "").trim() || null;
+
+  await sql`
+    update margin_requests
+    set status = 'REJECTED', admin_comment = ${comment}, decided_at = now(), decided_by = ${admin.id}
+    where id = ${requestId} and status = 'PENDING'
+  `;
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/designers");
+  revalidatePath("/admin/margin-requests");
+  revalidatePath("/firm/dashboard");
+  revalidatePath("/designer/dashboard");
   return;
 }
 
@@ -371,8 +449,8 @@ export async function sendFirmPaymentNudgeAction(formData: FormData) {
   `;
   if (!user) return;
 
-  const subject = "Complete your firm registration — Interior OS";
-  const message = "You haven’t completed your one-time registration payment (₹3,000). Sign in and pay to access your firm dashboard and start receiving leads.";
+  const subject = "Complete your designer subscription — Interior OS";
+  const message = "You haven’t completed your yearly subscription (₹3,000/year). Sign in and pay to access your firm dashboard and start receiving leads.";
   try {
     await notifyUser({
       userId,
@@ -399,6 +477,8 @@ export async function holdPaymentAction(formData: FormData) {
     where id = ${paymentId}
   `;
 
+  revalidatePath("/admin");
+  revalidatePath("/admin/payments");
   return;
 }
 
@@ -471,6 +551,10 @@ export async function releasePaymentAction(formData: FormData) {
     });
   }
 
+  revalidatePath("/admin");
+  revalidatePath("/admin/payments");
+  revalidatePath("/customer/payments");
+  revalidatePath("/firm/payments");
   return;
 }
 

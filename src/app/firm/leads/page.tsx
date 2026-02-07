@@ -3,9 +3,6 @@ import { initiateProjectAction } from "@/app/actions/project";
 import { Inbox } from "lucide-react";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import FadeIn from "@/components/animations/FadeIn";
-import StaggerChildren from "@/components/animations/StaggerChildren";
-import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
@@ -28,53 +25,53 @@ export default async function FirmLeadsPage() {
   `;
 
   return (
-    <div className="page bg-white">
-      <div className="page-inner">
-        <FadeIn className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Inbox className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">Designer Leads</p>
-          </div>
-          <h1 className="heading-lg mb-3">Leads (request meetup)</h1>
-          <p className="text-[var(--text-muted)]">
-            After the meetup, click &quot;Initiate Project&quot; to move the project to Active.
-          </p>
-        </FadeIn>
+    <div className="space-y-8">
+      <header>
+        <div className="flex items-center gap-2 mb-1">
+          <Inbox className="h-4 w-4 text-[var(--text-muted)]" />
+          <p className="eyebrow">Leads</p>
+        </div>
+        <h1 className="heading-lg mb-1">Incoming leads</h1>
+        <p className="text-sm text-[var(--text-muted)] mb-2">
+          Leads are created when a customer requests a meetup from your studio (Browse designers → your profile → Request meetup). When you agree to work together, click <strong>Initiate project</strong> to create an active project where you can add milestones and receive payments.
+        </p>
+      </header>
 
+      <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
         {leads.length === 0 ? (
-          <FadeIn>
-            <p className="text-sm text-[var(--text-muted)]">No leads yet.</p>
-          </FadeIn>
+          <div className="p-8 text-center text-sm text-[var(--text-muted)]">
+            No leads yet.
+          </div>
         ) : (
-          <StaggerChildren className="space-y-4">
+          <ul className="divide-y divide-[var(--border)]">
             {leads.map((project) => (
-              <FadeInItem key={project.id}>
-                <div className="card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="space-y-2 min-w-0">
-                    <p className="eyebrow">LEAD</p>
-                    <h3 className="heading-md">{project.title}</h3>
+              <li key={project.id} className="px-4 py-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="space-y-1 min-w-0">
+                    <span className="badge text-xs">LEAD</span>
+                    <h3 className="font-semibold text-[var(--foreground)]">{project.title}</h3>
                     <p className="text-sm text-[var(--text-muted)]">
                       {project.customer_name ?? project.customer_email}
                     </p>
                     {project.description && (
-                      <p className="text-sm text-[var(--text-muted)] line-clamp-2">{project.description}</p>
+                      <p className="text-sm text-[var(--text-muted)] line-clamp-2 mt-1">{project.description}</p>
                     )}
                   </div>
-                  <div className="flex gap-3 shrink-0">
+                  <div className="flex gap-2 shrink-0">
                     <form action={initiateProjectAction}>
                       <input type="hidden" name="projectId" value={project.id} />
-                      <button type="submit" className="btn btn-primary">
-                        Initiate Project
+                      <button type="submit" className="btn btn-primary text-sm">
+                        Initiate project
                       </button>
                     </form>
-                    <Link href={`/firm/projects/${project.id}`} className="btn btn-secondary">
+                    <Link href={`/firm/projects/${project.id}`} className="btn btn-secondary text-sm">
                       View
                     </Link>
                   </div>
                 </div>
-              </FadeInItem>
+              </li>
             ))}
-          </StaggerChildren>
+          </ul>
         )}
       </div>
     </div>

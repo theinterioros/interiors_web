@@ -1,6 +1,7 @@
 "use server";
 
 import crypto from "crypto";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Role, Roles, RoleValues } from "@/lib/types";
 import { sql } from "@/lib/db";
@@ -10,9 +11,12 @@ import { requestOtp, verifyOtp, requestForgotPasswordOtp, verifyOtpForForgotPass
 import { hasFirmPaidRegistration } from "@/lib/registrationPayments";
 import { FIRM_REGISTRATION_AMOUNT } from "@/lib/registrationPayments";
 import { getSessionUser } from "@/lib/session";
-import { isValidEmail, isValidIndianMobile, normalizeIndianMobile } from "@/lib/validation";
+import { isValidEmail, isValidIndianMobile, normalizeIndianMobile, validatePortfolioFile } from "@/lib/validation";
+import { uploadBlob } from "@/lib/blob";
 
-export async function registerAction(_prevState: unknown, formData: FormData) {
+export type RegisterResult = { error?: string; redirect?: string };
+
+export async function registerAction(_prevState: unknown, formData: FormData): Promise<RegisterResult> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const phone = String(formData.get("phone") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -21,31 +25,31 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
 
   if (!email || !password) {
-    return { ok: false, error: "Email and password are required." };
+    return { error: "Email and password are required." };
   }
   if (!isValidEmail(email)) {
-    return { ok: false, error: "Please enter a valid email address." };
+    return { error: "Please enter a valid email address." };
   }
   if (password !== confirmPassword) {
-    return { ok: false, error: "Passwords do not match." };
+    return { error: "Passwords do not match." };
   }
   if (role === RoleValues.FIRM && !phone) {
-    return { ok: false, error: "Phone is required for firm registration." };
+    return { error: "Phone is required for firm registration." };
   }
   if (phone && !isValidIndianMobile(phone)) {
-    return { ok: false, error: "Please enter a valid 10-digit Indian mobile number." };
+    return { error: "Please enter a valid 10-digit Indian mobile number." };
   }
   const phoneForDb = phone ? normalizeIndianMobile(phone) : null;
   if (role === RoleValues.CUSTOMER && !name) {
-    return { ok: false, error: "Name is required." };
+    return { error: "Name is required." };
   }
 
   if (!Roles.includes(role)) {
-    return { ok: false, error: "Invalid role selection." };
+    return { error: "Invalid role selection." };
   }
 
   if (role === RoleValues.ADMIN) {
-    return { ok: false, error: "Admin signups are not allowed." };
+    return { error: "Admin signups are not allowed." };
   }
 
   if (role === RoleValues.FIRM) {
@@ -55,19 +59,27 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
     const firmName = String(formData.get("firmName") ?? "").trim();
     const ownerName = String(formData.get("ownerName") ?? "").trim();
     const officeAddress = String(formData.get("officeAddress") ?? "").trim();
-    if (!city || !pincode || !about) {
-      return { ok: false, error: "Firm profile details are required." };
+    const missing: string[] = [];
+    if (!city) missing.push("City");
+    if (!pincode) missing.push("Pincode");
+    if (!about) missing.push("About your firm");
+    if (missing.length > 0) {
+      return { error: `Please fill in: ${missing.join(", ")}.` };
     }
-    if (!firmName || !ownerName || !officeAddress) {
-      return { ok: false, error: "Firm details are required." };
+    const missingFirm: string[] = [];
+    if (!firmName) missingFirm.push("Firm name");
+    if (!ownerName) missingFirm.push("Owner / contact name");
+    if (!officeAddress) missingFirm.push("Office address");
+    if (missingFirm.length > 0) {
+      return { error: `Please fill in: ${missingFirm.join(", ")}.` };
     }
   }
 
   const [existing] = await sql<{ id: string }>`
-    select id from users where email = ${email} or (${phoneForDb} is not null and phone = ${phoneForDb}) limit 1
+    select id from users where email = ${email} limit 1
   `;
   if (existing) {
-    return { ok: false, error: "Email or phone is already registered." };
+    return { error: "This email is already registered. Sign in or use a different email." };
   }
 
   const passwordHash = await hashPassword(password);
@@ -88,6 +100,15 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
     const designersCount = Number(formData.get("designersCount") ?? 0) || null;
     const comments = String(formData.get("comments") ?? "").trim();
 
+    const portfolioFile = formData.get("portfolio");
+    if (portfolioFile instanceof File && portfolioFile.size > 0) {
+      const validated = validatePortfolioFile(portfolioFile);
+      if (!validated.valid) {
+        return { error: validated.error };
+      }
+    }
+
+    const profileId = crypto.randomUUID();
     await sql`
       insert into firm_profiles (
         id,
@@ -107,7 +128,7 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
         about
       )
       values (
-        ${crypto.randomUUID()},
+        ${profileId},
         ${userId},
         ${firmName || null},
         ${ownerName || null},
@@ -124,21 +145,49 @@ export async function registerAction(_prevState: unknown, formData: FormData) {
         ${String(formData.get("about") ?? "").trim()}
       )
     `;
+
+    if (portfolioFile instanceof File && portfolioFile.size > 0) {
+      const blobUrl = await uploadBlob(portfolioFile, `firm-documents/${profileId}`);
+      await sql`
+        insert into firm_documents (id, profile_id, doc_type, blob_url, file_name, mime_type, size_bytes)
+        values (
+          ${crypto.randomUUID()},
+          ${profileId},
+          'portfolio',
+          ${blobUrl},
+          ${portfolioFile.name},
+          ${portfolioFile.type},
+          ${portfolioFile.size}
+        )
+      `;
+    }
   }
 
   await createSession(userId);
   if (role === RoleValues.FIRM) {
-    redirect("/firm/register/pay");
+    return { redirect: "/firm/dashboard" };
   }
   if (role === RoleValues.CUSTOMER) {
-    redirect("/customer/dashboard");
+    return { redirect: "/customer/dashboard" };
   }
-  return redirectByRole(role);
+  if (role === RoleValues.ADMIN) {
+    return { redirect: "/admin" };
+  }
+  return { redirect: "/customer/dashboard" };
 }
+
+const INTENDED_ROLE_TO_DB: Record<string, Role> = {
+  customer: RoleValues.CUSTOMER,
+  firm: RoleValues.FIRM,
+  designer: RoleValues.FIRM,
+  admin: RoleValues.ADMIN,
+};
 
 export async function loginAction(_prevState: unknown, formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const intendedRoleRaw = String(formData.get("intendedRole") ?? "").trim().toLowerCase();
+  const intendedRole = INTENDED_ROLE_TO_DB[intendedRoleRaw] ?? null;
 
   if (!email) {
     return { ok: false, error: "Email is required." };
@@ -159,6 +208,18 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
     return { ok: false, error: "Invalid credentials." };
   }
 
+  if (intendedRole != null && user.role !== intendedRole) {
+    const roleLabels: Record<Role, string> = {
+      [RoleValues.ADMIN]: "Admin",
+      [RoleValues.CUSTOMER]: "Customer",
+      [RoleValues.FIRM]: "Designer",
+    };
+    return {
+      ok: false,
+      error: `This email is registered as ${roleLabels[user.role]}. Please sign in as ${roleLabels[user.role]} to continue.`,
+    };
+  }
+
   await createSession(user.id);
   if (user.role === RoleValues.FIRM) {
     const paid = await hasFirmPaidRegistration(user.id);
@@ -176,39 +237,63 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
   return redirectByRole(user.role);
 }
 
-export async function payFirmRegistrationAction() {
+export type PayFirmRegistrationResult = { redirect?: string; error?: string };
+
+export async function payFirmRegistrationAction(): Promise<PayFirmRegistrationResult> {
   const user = await getSessionUser();
   if (!user || user.role !== RoleValues.FIRM) {
-    redirect("/login?role=firm");
+    return { error: "Unauthorized." };
   }
   const paid = await hasFirmPaidRegistration(user.id);
   if (paid) {
-    redirect("/firm/dashboard");
+    return { redirect: "/firm/dashboard" };
   }
   const id = crypto.randomUUID();
   await sql`
     insert into payment_ledger (id, type, status, amount, currency, firm_id)
     values (${id}, 'FIRM_REGISTRATION_FEE', 'RELEASED', ${FIRM_REGISTRATION_AMOUNT}, 'INR', ${user.id})
   `;
-  redirect("/firm/dashboard");
+  try {
+    await sql`
+      update firm_profiles
+      set subscription_expires_at = coalesce(
+        case when subscription_expires_at > now() then subscription_expires_at + interval '1 year' else null end,
+        now() + interval '1 year'
+      )
+      where user_id = ${user.id}
+    `;
+  } catch {
+    // subscription_expires_at column may not exist before migration
+  }
+  revalidatePath("/admin");
+  revalidatePath("/admin/payments");
+  revalidatePath("/firm/dashboard");
+  revalidatePath("/firm/payments");
+  return { redirect: "/firm/dashboard" };
 }
 
-export async function payCustomerSubscriptionAction() {
+export type PayCustomerSubscriptionResult = { redirect?: string; error?: string };
+
+export async function payCustomerSubscriptionAction(): Promise<PayCustomerSubscriptionResult> {
   const user = await getSessionUser();
   if (!user || user.role !== RoleValues.CUSTOMER) {
-    redirect("/login?role=customer");
+    return { error: "Unauthorized." };
   }
   const { hasCustomerPaidSubscription, CUSTOMER_SUBSCRIPTION_AMOUNT } = await import("@/lib/registrationPayments");
   const paid = await hasCustomerPaidSubscription(user.id);
   if (paid) {
-    redirect("/customer/dashboard");
+    return { redirect: "/customer/dashboard" };
   }
   const id = crypto.randomUUID();
   await sql`
     insert into payment_ledger (id, type, status, amount, currency, customer_id)
     values (${id}, 'CUSTOMER_REGISTRATION_FEE', 'RELEASED', ${CUSTOMER_SUBSCRIPTION_AMOUNT}, 'INR', ${user.id})
   `;
-  redirect("/customer/dashboard");
+  revalidatePath("/admin");
+  revalidatePath("/admin/payments");
+  revalidatePath("/customer/dashboard");
+  revalidatePath("/customer/payments");
+  return { redirect: "/customer/dashboard" };
 }
 
 /** Pay additional project fee (₹1000) to unlock one more project slot. No redirect. */
@@ -223,6 +308,9 @@ export async function payAdditionalProjectFeeAction(): Promise<void> {
     insert into payment_ledger (id, type, status, amount, currency, customer_id)
     values (${id}, 'ADDITIONAL_PROJECT_FEE', 'RELEASED', ${ADDITIONAL_PROJECT_FEE_AMOUNT}, 'INR', ${user.id})
   `;
+  revalidatePath("/admin");
+  revalidatePath("/admin/payments");
+  revalidatePath("/customer/dashboard");
 }
 
 export async function logoutAction() {

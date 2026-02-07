@@ -9,12 +9,14 @@ drop table if exists admin_settings cascade;
 drop table if exists digital_twin_subscriptions cascade;
 drop table if exists digital_twin_files cascade;
 drop table if exists payment_ledger cascade;
+drop table if exists milestone_trail cascade;
 drop table if exists milestone_images cascade;
 drop table if exists milestone_comments cascade;
 drop table if exists milestones cascade;
 drop table if exists projects cascade;
 drop table if exists firm_documents cascade;
 drop table if exists firm_portfolio_files cascade;
+drop table if exists firm_portfolio_works cascade;
 drop table if exists firm_profiles cascade;
 drop table if exists email_otps cascade;
 drop table if exists sessions cascade;
@@ -98,6 +100,7 @@ create table firm_profiles (
   platform_margin_pct numeric,
   margin_accepted_at timestamptz,
   google_review_links text,
+  subscription_expires_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -113,9 +116,20 @@ create table firm_documents (
   created_at timestamptz not null default now()
 );
 
+create table firm_portfolio_works (
+  id uuid primary key,
+  profile_id uuid not null references firm_profiles(id) on delete cascade,
+  title text not null,
+  description text,
+  display_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table firm_portfolio_files (
   id uuid primary key,
   profile_id uuid not null references firm_profiles(id) on delete cascade,
+  work_id uuid references firm_portfolio_works(id) on delete set null,
   blob_url text not null,
   file_name text not null,
   mime_type text not null,
@@ -168,6 +182,17 @@ create table milestone_comments (
   message text not null,
   created_at timestamptz not null default now()
 );
+
+create table milestone_trail (
+  id uuid primary key,
+  milestone_id uuid not null references milestones(id) on delete cascade,
+  event text not null,
+  actor_id uuid references users(id) on delete set null,
+  message text,
+  created_at timestamptz not null default now()
+);
+create index milestone_trail_milestone_idx on milestone_trail(milestone_id);
+create index milestone_trail_created_idx on milestone_trail(created_at);
 
 create table payment_ledger (
   id uuid primary key,

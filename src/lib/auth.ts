@@ -33,14 +33,18 @@ export async function requireRole(allowedRoles: Role[]) {
   return user;
 }
 
-/** Use in firm portal pages. Redirects to pay page if firm has not paid registration. */
+/** Use in firm portal pages. Allows access before payment until margin is accepted; then redirects to pay if not paid. */
 export async function requireFirmPaid() {
   const user = await requireRole(["FIRM"]);
   const paid = await hasFirmPaidRegistration(user.id);
-  if (!paid) {
-    redirect("/firm/register/pay");
-  }
-  return user;
+  if (paid) return user;
+  const { sql } = await import("@/lib/db");
+  const [profile] = await sql<{ margin_accepted_at: Date | null }>`
+    select margin_accepted_at from firm_profiles where user_id = ${user.id} limit 1
+  `;
+  // If margin not yet accepted, allow access (designer can declare margin and accept on dashboard).
+  if (profile?.margin_accepted_at == null) return user;
+  redirect("/firm/register/pay");
 }
 
 /** Use in customer portal pages that require subscription. Redirects to subscribe page if not paid. */

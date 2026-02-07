@@ -1,5 +1,6 @@
 import {
   createMilestoneAction,
+  initiateProjectAction,
   submitMilestoneAction,
   uploadMilestoneImageAction,
 } from "@/app/actions/project";
@@ -83,9 +84,17 @@ export default async function DesignerProjectPage({
           </p>
         </div>
 
-        {project.status === "LEAD" && (
+        {(project.status === "LEAD" || project.status === "ACCEPTED") && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 text-sm text-neutral-700">
-            Lead. After the meetup, go to Dashboard or Leads and click &quot;Initiate Project&quot; to move this project to Active. Milestones can only be created for active projects.
+            {project.status === "LEAD"
+              ? "Lead. After the meetup, click Initiate project below to move to Active and add milestones."
+              : "Accepted. Click Initiate project below to move to Active and add milestones."}
+            <form action={initiateProjectAction} className="mt-3">
+              <input type="hidden" name="projectId" value={project.id} />
+              <button type="submit" className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+                Initiate project
+              </button>
+            </form>
           </div>
         )}
 
