@@ -6,10 +6,10 @@ const nextConfig: NextConfig = {
     cssChunking: "strict",
     // Tree-shake lucide-react so only used icons are bundled
     optimizePackageImports: ["lucide-react"],
-  },
-  // Allow firm/designer registration with portfolio file (max 10 MB per validation)
-  serverActions: {
-    bodySizeLimit: "12mb",
+    // Allow firm/designer registration with portfolio file (max 10 MB per validation)
+    serverActions: {
+      bodySizeLimit: "12mb",
+    },
   },
 };
 
