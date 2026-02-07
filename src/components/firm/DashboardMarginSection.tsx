@@ -43,14 +43,14 @@ export default function DashboardMarginSection({
   const showPayCta = marginAcceptedAt != null && !hasPaid;
   const showProfileCta = hasPaid && !profileComplete;
 
-  async function handleSubmit(formData: FormData) {
+  const handleSubmit = async (formData: FormData): Promise<void> => {
     setSubmitting(true);
     setSubmitError(null);
     const result = await submitMarginRequestAction(formData);
     if (result?.error) setSubmitError(result.error);
     else router.refresh();
     setSubmitting(false);
-  }
+  };
 
   async function handleAccept() {
     setSubmitting(true);

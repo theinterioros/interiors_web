@@ -30,7 +30,7 @@ export default function FirmRegisterPayForm() {
   const router = useRouter();
   const [error, setError] = useState("");
 
-  async function handleAction() {
+  const handleAction = async (_formData: FormData): Promise<void> => {
     setError("");
     const result = await payFirmRegistrationAction();
     if (result?.redirect) {
@@ -40,7 +40,7 @@ export default function FirmRegisterPayForm() {
     if (result?.error) {
       setError(result.error);
     }
-  }
+  };
 
   return (
     <form action={handleAction}>

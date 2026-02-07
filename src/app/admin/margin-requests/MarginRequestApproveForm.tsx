@@ -9,7 +9,7 @@ type Props = { requestId: string; requestedPct: number };
 export default function MarginRequestApproveForm({ requestId, requestedPct }: Props) {
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  const handleSubmit = async (formData: FormData): Promise<void> => {
     setLoading(true);
     try {
       await approveMarginRequestAction(formData);
@@ -17,7 +17,7 @@ export default function MarginRequestApproveForm({ requestId, requestedPct }: Pr
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <form action={handleSubmit} className="flex flex-wrap items-end gap-2">

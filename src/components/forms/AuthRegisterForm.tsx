@@ -65,7 +65,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
     }
   };
 
-  const handleAction = async (formData: FormData) => {
+  const handleAction = async (formData: FormData): Promise<void> => {
     const result = await registerAction(undefined, formData);
     if (result?.redirect) {
       router.push(result.redirect);
@@ -74,7 +74,6 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
     if (result?.error) {
       setServerError(result.error);
     }
-    return result;
   };
 
   return (

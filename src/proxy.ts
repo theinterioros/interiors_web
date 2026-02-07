@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
  * Redirect /designer/* to /firm/* so designers use a single portal.
  * Fixes 404 when viewing ACCEPTED projects from designer dashboard.
  */
-export default function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   if (pathname.startsWith("/designer")) {
     const newPath = pathname.replace(/^\/designer/, "/firm");

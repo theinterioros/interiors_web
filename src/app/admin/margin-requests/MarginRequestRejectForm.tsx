@@ -10,7 +10,7 @@ export default function MarginRequestRejectForm({ requestId }: Props) {
   const [loading, setLoading] = useState(false);
   const [showComment, setShowComment] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  const handleSubmit = async (formData: FormData): Promise<void> => {
     setLoading(true);
     try {
       await rejectMarginRequestAction(formData);
@@ -18,7 +18,7 @@ export default function MarginRequestRejectForm({ requestId }: Props) {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   if (!showComment) {
     return (
