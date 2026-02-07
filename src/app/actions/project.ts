@@ -12,11 +12,32 @@ import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { uploadBlob } from "@/lib/blob";
 import { notifyUser } from "@/lib/notifications";
+import { getCustomerProjectSlotsPaid } from "@/lib/registrationPayments";
 
-export async function requestProjectAction(formData: FormData) {
+/** Returns { allowed, slotsPaid, projectCount } for the current customer. */
+export async function checkProjectLimitAction(): Promise<{
+  allowed: boolean;
+  slotsPaid: number;
+  projectCount: number;
+}> {
   const user = await getCurrentUser();
   if (!user || user.role !== RoleValues.CUSTOMER) {
-    throw new Error("Unauthorized.");
+    return { allowed: false, slotsPaid: 0, projectCount: 0 };
+  }
+  const slotsPaid = await getCustomerProjectSlotsPaid(user.id);
+  const [countRow] = await sql<{ count: string }>`
+    select count(*)::text as count from projects where customer_id = ${user.id}
+  `;
+  const projectCount = parseInt(countRow?.count ?? "0", 10);
+  return { allowed: projectCount < slotsPaid, slotsPaid, projectCount };
+}
+
+export async function requestProjectAction(
+  formData: FormData
+): Promise<{ ok: true; projectId: string } | { ok: false; error: string }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.CUSTOMER) {
+    return { ok: false, error: "Unauthorized." };
   }
 
   const firmId = String(formData.get("firmId") ?? "");
@@ -24,15 +45,24 @@ export async function requestProjectAction(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
 
   if (!firmId || !title) {
-    throw new Error("Firm and title are required.");
+    return { ok: false, error: "Firm and title are required." };
   }
 
-  const [firmProfile] = await sql<{ id: string; status: string }>`
-    select id, status from firm_profiles where user_id = ${firmId} limit 1
+  const [firmProfile] = await sql<{ id: string; status: string; margin_accepted_at: Date | null }>`
+    select id, status, margin_accepted_at from firm_profiles where user_id = ${firmId} limit 1
   `;
 
-  if (!firmProfile || firmProfile.status !== "APPROVED") {
-    throw new Error("Firm is not available.");
+  if (!firmProfile || firmProfile.status !== "APPROVED" || !firmProfile.margin_accepted_at) {
+    return { ok: false, error: "Firm is not available." };
+  }
+
+  const slotsPaid = await getCustomerProjectSlotsPaid(user.id);
+  const [countRow] = await sql<{ count: string }>`
+    select count(*)::text as count from projects where customer_id = ${user.id}
+  `;
+  const projectCount = parseInt(countRow?.count ?? "0", 10);
+  if (projectCount >= slotsPaid) {
+    return { ok: false, error: "PROJECT_LIMIT_REACHED" };
   }
 
   const projectId = crypto.randomUUID();
@@ -42,7 +72,7 @@ export async function requestProjectAction(formData: FormData) {
       ${projectId},
       ${user.id},
       ${firmId},
-      ${ProjectStatusValues.REQUESTED},
+      ${ProjectStatusValues.LEAD},
       ${title},
       ${description || null}
     )
@@ -62,7 +92,24 @@ export async function requestProjectAction(formData: FormData) {
     });
   }
 
-  return;
+  return { ok: true, projectId };
+}
+
+/** Designer: move project from LEAD to ACTIVE after meetup. */
+export async function initiateProjectAction(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    throw new Error("Unauthorized.");
+  }
+  const projectId = String(formData.get("projectId") ?? "");
+  if (!projectId) throw new Error("Project is required.");
+  const [updated] = await sql<{ id: string }>`
+    update projects
+    set status = ${ProjectStatusValues.ACTIVE}, updated_at = now()
+    where id = ${projectId} and firm_id = ${user.id} and status = ${ProjectStatusValues.LEAD}
+    returning id
+  `;
+  if (!updated) throw new Error("Project not found or not in LEAD status.");
 }
 
 export async function respondProjectRequestAction(formData: FormData) {
@@ -108,12 +155,15 @@ export async function createMilestoneAction(formData: FormData) {
     throw new Error("All fields are required.");
   }
 
-  const [project] = await sql<{ id: string }>`
-    select id from projects where id = ${projectId} and firm_id = ${user.id} limit 1
+  const [project] = await sql<{ id: string; status: string }>`
+    select id, status from projects where id = ${projectId} and firm_id = ${user.id} limit 1
   `;
 
   if (!project) {
     throw new Error("Project not found.");
+  }
+  if (project.status !== ProjectStatusValues.ACTIVE) {
+    throw new Error("Milestones can only be created for active projects. Initiate the project first.");
   }
 
   await sql`

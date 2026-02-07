@@ -3,10 +3,11 @@ import { sql } from "@/lib/db";
 import { BadgeCheck, Building2, Star, ShieldAlert } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { RoleValues } from "@/lib/types";
-import { requestProjectAction } from "@/app/actions/project";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
 import FadeInItem from "@/components/animations/FadeInItem";
+import RequestMeetupForm from "@/components/customer/RequestMeetupForm";
+import { ADDITIONAL_PROJECT_FEE_AMOUNT } from "@/lib/registrationPayments";
 
 export const dynamic = "force-dynamic";
 
@@ -28,12 +29,16 @@ export default async function FirmProfilePage({
     about: string;
     status: string;
     verified_at: Date | null;
+    margin_accepted_at: Date | null;
   }>`
-    select id, user_id, name, firm_name, owner_name, experience_years, city, pincode, about, status, verified_at
+    select id, user_id, name, firm_name, owner_name, experience_years, city, pincode, about, status, verified_at, margin_accepted_at
     from firm_profiles
     where id = ${id}
     limit 1
   `;
+
+  const isVerifiedAndAccepted =
+    firm && firm.status === "APPROVED" && firm.margin_accepted_at != null;
 
   if (!firm) {
     return (
@@ -65,14 +70,14 @@ export default async function FirmProfilePage({
         <FadeIn className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Building2 className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">{firm.verified_at && firm.status === "APPROVED" ? "Verified Firm" : "Firm"}</p>
+            <p className="eyebrow">{isVerifiedAndAccepted ? "Verified Designer" : "Designer"}</p>
           </div>
           <h1 className="heading-lg mb-3">{firm.firm_name ?? firm.name}</h1>
           <p className="text-[var(--text-muted)] mb-2">
             {firm.city} • {firm.pincode} • {firm.experience_years}+ years
           </p>
           <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] mb-3">
-            {firm.verified_at && firm.status === "APPROVED" ? (
+            {isVerifiedAndAccepted ? (
               <span className="flex items-center gap-1">
                 <BadgeCheck className="h-3.5 w-3.5 text-[var(--brand)]" />
                 Verified
@@ -129,32 +134,20 @@ export default async function FirmProfilePage({
           </StaggerChildren>
         </FadeIn>
 
-        {canRequest ? (
+        {canRequest && isVerifiedAndAccepted ? (
           <FadeIn delay={0.4}>
-            <form action={requestProjectAction} className="card space-y-4">
-              <input type="hidden" name="firmId" value={firm.user_id} />
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--foreground)]">Project title</label>
-                <input name="title" required className="input" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--foreground)]">Project details</label>
-                <textarea name="description" rows={4} className="input" />
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <button type="submit" className="btn btn-primary">
-                  Request Project
-                </button>
-                <button type="button" className="btn btn-secondary">
-                  Select Firm
-                </button>
-              </div>
-            </form>
+            <RequestMeetupForm firmId={firm.user_id} additionalProjectFeeAmount={ADDITIONAL_PROJECT_FEE_AMOUNT} />
+          </FadeIn>
+        ) : canRequest && !isVerifiedAndAccepted ? (
+          <FadeIn delay={0.4}>
+            <p className="text-sm text-[var(--text-muted)]">
+              This designer is not yet visible for new requests. Check back after verification.
+            </p>
           </FadeIn>
         ) : (
           <FadeIn delay={0.4}>
             <p className="text-sm text-[var(--text-muted)] mb-2">
-              Sign in as a customer to request a project with this firm.
+              Sign in as a customer to request a meetup with this designer.
             </p>
             <Link href="/login?role=customer" className="btn btn-primary">
               Sign in

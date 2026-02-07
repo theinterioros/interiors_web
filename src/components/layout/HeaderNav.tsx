@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Menu, X, LayoutGrid, LogIn, LogOut, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User, MessageSquare, Building2 } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Menu, X, LogIn, LogOut, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User, MessageSquare, Building2 } from "lucide-react";
 
 type SessionUser = {
   id: string;
@@ -21,11 +22,11 @@ type HeaderNavProps = {
 const navItems: { href: string; label: string; icon: typeof User }[] = [];
 
 const adminNavItems = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/leads", label: "Leads", icon: MessageSquare },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/designers", label: "Firm Approvals", icon: BadgeCheck },
-  { href: "/admin/firms-pending-payment", label: "Firms Pending Payment", icon: IndianRupee },
+  { href: "/admin/designers", label: "Designer Approvals", icon: BadgeCheck },
+  { href: "/admin/firms-pending-payment", label: "Designers Pending Payment", icon: IndianRupee },
   { href: "/admin/pricing", label: "AI Estimator Pricing", icon: MapPin },
   { href: "/admin/trusted-studios", label: "Trusted Studios", icon: Building2 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
@@ -35,18 +36,21 @@ const adminNavItems = [
 const customerNavItems = [
   { href: "/customer/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/customer/digital-twin", label: "Digital Twin", icon: Layers },
-  { href: "/customer/payments", label: "Payments", icon: CreditCard },
+  { href: "/customer/payments", label: "Payment Ledger", icon: CreditCard },
 ] as const;
 
-/** Firm portal nav — only firm-persona features (/firm/*) */
-const firmNavItems = [
+/** Designer portal nav — designer = firm in backend */
+const designerNavItems = [
   { href: "/firm/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/firm/leads", label: "Leads", icon: FolderKanban },
   { href: "/firm/profile", label: "Profile", icon: User },
+  { href: "/firm/payments", label: "Payment Ledger", icon: CreditCard },
 ] as const;
 
 export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderNavProps) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -75,7 +79,7 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
     : isCustomer
       ? customerNavItems
       : isFirm
-        ? firmNavItems
+        ? designerNavItems
         : navItems;
 
   return (
@@ -102,7 +106,7 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
             <Link href="/login?role=customer" className="btn btn-secondary text-sm font-medium px-4 py-2 rounded-lg border border-[var(--border-strong)] text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors">
               Customer Sign In
             </Link>
-            <Link href="/login?role=firm" className="btn btn-primary text-sm font-medium px-4 py-2 rounded-lg">
+            <Link href="/login?role=designer" className="btn btn-primary text-sm font-medium px-4 py-2 rounded-lg">
               Designer Sign In
             </Link>
           </>
@@ -119,86 +123,92 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Mobile drawer — always in tree so server/client HTML match; visibility toggled with CSS */}
-      <div
-        className="md:hidden fixed inset-0 z-[9999]"
-        style={{ visibility: open ? "visible" : "hidden", pointerEvents: open ? "auto" : "none" }}
-        aria-hidden={!open}
-      >
-        <div
-          className="absolute inset-0 bg-[var(--foreground)]/25 backdrop-blur-sm transition-opacity duration-200"
-          style={{ opacity: open ? 1 : 0 }}
-          onClick={close}
-          aria-hidden
-        />
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation menu"
-          className="absolute top-0 right-0 bottom-0 w-full max-w-[min(320px,85vw)] bg-[var(--background)] border-l border-[var(--border)] shadow-2xl flex flex-col transition-transform duration-300 ease-out"
-          style={{ transform: open ? "translateX(0)" : "translateX(100%)" }}
-        >
-          <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
-            <span className="text-sm font-semibold text-[var(--foreground)]">Menu</span>
-            <button
-              type="button"
+      {/* Mobile drawer — portaled to body so it's not clipped by header overflow */}
+      {mounted &&
+        createPortal(
+          <div
+            className="md:hidden fixed inset-0 z-[9999]"
+            style={{
+              visibility: open ? "visible" : "hidden",
+              pointerEvents: open ? "auto" : "none",
+            }}
+            aria-hidden={!open}
+          >
+            <div
+              className="absolute inset-0 bg-[var(--foreground)]/40"
               onClick={close}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition-colors"
-              aria-label="Close menu"
+              aria-hidden
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation menu"
+              className="absolute top-0 right-0 bottom-0 w-full max-w-[min(320px,85vw)] bg-white border-l border-[var(--border)] shadow-2xl flex flex-col min-h-0"
+              style={{ transform: open ? "translateX(0)" : "translateX(100%)", transition: "transform 0.3s ease-out" }}
             >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <nav className="flex-1 overflow-y-auto p-4 flex flex-col gap-1 min-h-0">
-            {desktopLinks.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={close}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--brand)]">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="font-medium">{label}</span>
-              </Link>
-            ))}
-            <div className="my-4 h-px bg-[var(--border)]" />
-            {user ? (
-              <form action={logoutAction} className="block">
+              <div className="flex shrink-0 items-center justify-between p-4 border-b border-[var(--border)]">
+                <span className="text-sm font-semibold text-[var(--foreground)]">Menu</span>
                 <button
-                  type="submit"
-                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition-colors"
+                  type="button"
+                  onClick={close}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition-colors"
+                  aria-label="Close menu"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--text-muted)]">
-                    <LogOut className="h-4 w-4" />
-                  </span>
-                  <span className="font-medium">Sign out</span>
+                  <X className="h-5 w-5" />
                 </button>
-              </form>
-            ) : (
-              <>
-                <Link
-                  href="/login?role=customer"
-                  onClick={close}
-                  className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 border border-[var(--border-strong)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-subtle)] transition-colors"
-                >
-                  <LogIn className="h-4 w-4 shrink-0" />
-                  Customer Sign In
-                </Link>
-                <Link
-                  href="/login?role=firm"
-                  onClick={close}
-                  className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-[var(--brand)] text-white font-semibold hover:opacity-95 transition-opacity"
-                >
-                  <LogIn className="h-4 w-4 shrink-0" />
-                  Designer Sign In
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </div>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-2">
+                {desktopLinks.map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={close}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--brand)]">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="font-medium">{label}</span>
+                  </Link>
+                ))}
+                <div className="my-2 h-px shrink-0 bg-[var(--border)]" />
+                {user ? (
+                  <form action={logoutAction} className="block shrink-0">
+                    <button
+                      type="submit"
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition-colors"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--text-muted)]">
+                        <LogOut className="h-4 w-4" />
+                      </span>
+                      <span className="font-medium">Sign out</span>
+                    </button>
+                  </form>
+                ) : (
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <Link
+                      href="/login?role=customer"
+                      onClick={close}
+                      className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 border border-[var(--border-strong)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-subtle)] transition-colors"
+                    >
+                      <LogIn className="h-4 w-4 shrink-0" />
+                      Customer Sign In
+                    </Link>
+                    <Link
+                      href="/login?role=designer"
+                      onClick={close}
+                      className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-[var(--brand)] text-white font-semibold hover:opacity-95 transition-opacity"
+                    >
+                      <LogIn className="h-4 w-4 shrink-0" />
+                      Designer Sign In
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 }

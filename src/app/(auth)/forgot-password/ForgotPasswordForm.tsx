@@ -7,6 +7,7 @@ import {
   requestForgotPasswordOtpAction,
   verifyOtpAndResetPasswordAction,
 } from "@/app/actions/auth";
+import ValidatedEmailInput from "@/components/ui/ValidatedEmailInput";
 
 const initialRequestState = { ok: false, error: "", sent: false, email: "" };
 const initialResetState = { ok: false, error: "" };
@@ -46,14 +47,7 @@ export default function ForgotPasswordForm({ role }: { role: string }) {
           <form action={requestAction} className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
-              <input
-                type="email"
-                name="email"
-                required
-                className="input"
-                placeholder="you@example.com"
-                autoComplete="email"
-              />
+              <ValidatedEmailInput name="email" placeholder="you@example.com" className="input w-full" />
             </div>
             {requestState.error && <p className="text-sm text-red-600">{requestState.error}</p>}
             <SubmitButton label="Send verification code" />

@@ -12,13 +12,15 @@ export default async function AdminProjectsPage() {
     title: string;
     status: string;
     customer_email: string;
-    firm_email: string;
+    designer_email: string | null;
+    milestone_count: string;
   }>`
-    select p.id, p.title, p.status, cu.email as customer_email, fu.email as firm_email
+    select p.id, p.title, p.status, cu.email as customer_email, fu.email as designer_email,
+           (select count(*)::text from milestones m where m.project_id = p.id) as milestone_count
     from projects p
     join users cu on cu.id = p.customer_id
-    join users fu on fu.id = p.firm_id
-    order by p.created_at desc
+    left join users fu on fu.id = p.firm_id
+    order by p.updated_at desc
   `;
 
   return (
@@ -29,7 +31,7 @@ export default async function AdminProjectsPage() {
             <p className="eyebrow">Projects</p>
           </div>
           <h1 className="heading-lg mb-3">All projects</h1>
-          <p className="text-[var(--text-muted)]">Track overall project status.</p>
+          <p className="text-[var(--text-muted)]">Track project status, customer, designer, and milestones.</p>
         </FadeIn>
 
         {projects.length === 0 ? (
@@ -41,14 +43,15 @@ export default async function AdminProjectsPage() {
             {projects.map((project) => (
               <FadeInItem key={project.id}>
                 <div className="card">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-[var(--foreground)]">{project.title}</p>
                       <p className="text-xs text-[var(--text-muted)]">
-                        {project.customer_email} → {project.firm_email}
+                        Customer: {project.customer_email} · Designer: {project.designer_email ?? "—"}
                       </p>
+                      <p className="text-xs text-[var(--text-subtle)] mt-1">{project.milestone_count} milestone(s)</p>
                     </div>
-                    <span className="badge">{project.status}</span>
+                    <span className="badge shrink-0">{project.status}</span>
                   </div>
                 </div>
               </FadeInItem>

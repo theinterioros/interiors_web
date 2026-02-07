@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, Building2, Star, ShieldAlert } from "lucide-react";
+import { BadgeCheck, Building2, Star } from "lucide-react";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
@@ -17,10 +17,12 @@ export default async function FirmsPage() {
     rating: number | null;
     status: string;
     verified_at: Date | null;
+    margin_accepted_at: Date | null;
   }>`
-    select id, name, firm_name, city, experience_years, rating, status, verified_at
+    select id, name, firm_name, city, experience_years, rating, status, verified_at, margin_accepted_at
     from firm_profiles
-    order by (verified_at is not null and status = 'APPROVED') desc nulls last, created_at desc
+    where status = 'APPROVED' and margin_accepted_at is not null
+    order by verified_at desc nulls last, created_at desc
   `;
 
   return (
@@ -29,11 +31,11 @@ export default async function FirmsPage() {
         <FadeIn className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Building2 className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">Verified Firms</p>
+            <p className="eyebrow">Verified Designers</p>
           </div>
-          <h1 className="heading-lg mb-3">Browse interior firms</h1>
+          <h1 className="heading-lg mb-3">Browse verified designers</h1>
           <p className="text-[var(--text-muted)]">
-            Verified firms are reviewed by Interior OS. Unverified firms are listed but not yet approved.
+            Only verified designers who have accepted platform terms are shown. Request a meetup to start a project.
           </p>
         </FadeIn>
 
@@ -54,17 +56,10 @@ export default async function FirmsPage() {
                       {firm.city} • {firm.experience_years}+ years
                     </p>
                     <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] flex-wrap">
-                      {firm.verified_at && firm.status === "APPROVED" ? (
-                        <span className="flex items-center gap-1">
-                          <BadgeCheck className="h-3.5 w-3.5 text-[var(--brand)]" />
-                          Verified
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-[var(--brand)]">
-                          <ShieldAlert className="h-3.5 w-3.5" />
-                          Unverified
-                        </span>
-                      )}
+                      <span className="flex items-center gap-1">
+                        <BadgeCheck className="h-3.5 w-3.5 text-[var(--brand)]" />
+                        Verified
+                      </span>
                       <span className="flex items-center gap-1">
                         <Star className="h-3.5 w-3.5 text-[var(--brand)]" />
                         {firm.rating ?? 4.8}/5
@@ -80,17 +75,12 @@ export default async function FirmsPage() {
                         />
                       ))}
                     </div>
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/designers/${firm.id}`}
-                        className="btn btn-primary flex-1 text-xs"
-                      >
-                        View profile
-                      </Link>
-                      <button className="btn btn-secondary text-xs">
-                        Request call
-                      </button>
-                    </div>
+                    <Link
+                      href={`/designers/${firm.id}`}
+                      className="btn btn-primary w-full text-xs"
+                    >
+                      View profile & request meetup
+                    </Link>
                   </div>
                 </div>
               </FadeInItem>

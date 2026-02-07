@@ -96,7 +96,7 @@ export async function estimateCost(input: EstimateInput) {
         adjusted,
       },
       disclaimer:
-        "Estimate is based on admin-configured rates. Final pricing depends on scope and materials.",
+        "Final pricing depends on scope and materials.",
     },
   };
 }

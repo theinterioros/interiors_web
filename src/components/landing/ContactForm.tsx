@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { contactAction, type ContactState } from "@/app/actions/contact";
 import { CheckCircle2, User, Users } from "lucide-react";
+import ValidatedEmailInput from "@/components/ui/ValidatedEmailInput";
+import ValidatedPhoneInput from "@/components/ui/ValidatedPhoneInput";
 
 const initialState: ContactState = { ok: false, error: "" };
 
@@ -64,24 +66,18 @@ export default function ContactForm() {
         </div>
       </div>
       <div>
-        <input
-          type="email"
+        <ValidatedEmailInput
           name="email"
           required
           placeholder="Work email"
-          autoComplete="email"
           className={inputClass}
         />
       </div>
       <div>
-        <input
-          type="tel"
+        <ValidatedPhoneInput
           name="phone"
           required
           placeholder="+91 (000) 000-0000"
-          inputMode="numeric"
-          minLength={10}
-          maxLength={14}
           className={inputClass}
         />
       </div>

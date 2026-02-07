@@ -13,13 +13,12 @@ type SessionUser = {
 export default function SiteHeader({ user }: { user: SessionUser | null }) {
   const dashboardHref =
     user?.role === "ADMIN"
-      ? "/admin/dashboard"
+      ? "/admin"
       : user?.role === "FIRM"
         ? "/firm/dashboard"
         : user?.role === "CUSTOMER"
           ? "/customer/dashboard"
           : null;
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-[var(--header-height)] flex flex-col justify-center border-b border-[var(--border)] bg-white/95 backdrop-blur-md min-w-0 overflow-x-hidden">
       <div className="page-inner min-w-0">

@@ -224,6 +224,20 @@ export async function payCustomerSubscriptionAction() {
   redirect("/customer/dashboard");
 }
 
+/** Pay additional project fee (₹1000) to unlock one more project slot. No redirect. */
+export async function payAdditionalProjectFeeAction(): Promise<void> {
+  const user = await getSessionUser();
+  if (!user || user.role !== RoleValues.CUSTOMER) {
+    throw new Error("Unauthorized.");
+  }
+  const { ADDITIONAL_PROJECT_FEE_AMOUNT } = await import("@/lib/registrationPayments");
+  const id = crypto.randomUUID();
+  await sql`
+    insert into payment_ledger (id, type, status, amount, currency, customer_id)
+    values (${id}, 'ADDITIONAL_PROJECT_FEE', 'RELEASED', ${ADDITIONAL_PROJECT_FEE_AMOUNT}, 'INR', ${user.id})
+  `;
+}
+
 export async function logoutAction() {
   await clearSession();
   redirect("/");
@@ -281,7 +295,7 @@ export async function verifyOtpAction(_prevState: unknown, formData: FormData) {
 
 function redirectByRole(role: Role) {
   if (role === RoleValues.ADMIN) {
-    redirect("/admin/dashboard");
+    redirect("/admin");
   }
   if (role === RoleValues.FIRM) {
     redirect("/firm/dashboard");

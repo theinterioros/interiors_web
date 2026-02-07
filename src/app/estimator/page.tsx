@@ -1,8 +1,14 @@
 import { Zap } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
 import EstimatorForm from "@/components/estimator/EstimatorForm";
 import FadeIn from "@/components/animations/FadeIn";
 
-export default function EstimatorPage() {
+export const dynamic = "force-dynamic";
+
+export default async function EstimatorPage() {
+  const user = await getCurrentUser();
+  const isLoggedInCustomer = user?.role === "CUSTOMER";
+
   return (
     <div className="page bg-white min-w-0 overflow-visible">
       <div className="page-inner min-w-0 max-w-4xl">
@@ -13,11 +19,11 @@ export default function EstimatorPage() {
           </div>
           <h1 className="heading-lg mb-3">Know your interior budget early</h1>
           <p className="text-[var(--text-muted)] max-w-2xl">
-            Get an AI-powered cost range based on your property, location, and preferences. Complete the steps below for an instant estimate.
+            Get an AI-powered cost range. Share your property details and contact to see your estimate. Create a free account for a detailed breakdown and to connect with verified designers.
           </p>
         </FadeIn>
         <FadeIn delay={0.1} className="w-full overflow-visible">
-          <EstimatorForm />
+          <EstimatorForm isLoggedInCustomer={isLoggedInCustomer} />
         </FadeIn>
       </div>
     </div>

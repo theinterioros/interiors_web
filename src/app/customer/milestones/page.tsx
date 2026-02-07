@@ -1,5 +1,5 @@
-import { approveMilestoneAction } from "@/app/actions/project";
 import { ClipboardList } from "lucide-react";
+import ApproveMilestonePay from "@/components/customer/ApproveMilestonePay";
 import { requireCustomerPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
@@ -52,12 +52,11 @@ export default async function CustomerMilestonesPage() {
                   <p className="text-sm font-semibold text-[var(--foreground)] mb-4">
                     ₹{milestone.amount.toLocaleString()}
                   </p>
-                  <form action={approveMilestoneAction}>
-                    <input type="hidden" name="milestoneId" value={milestone.id} />
-                    <button type="submit" className="btn btn-primary">
-                      Approve milestone
-                    </button>
-                  </form>
+                  <ApproveMilestonePay
+                    milestoneId={milestone.id}
+                    amount={milestone.amount}
+                    title={milestone.title}
+                  />
                 </div>
               </FadeInItem>
             ))}

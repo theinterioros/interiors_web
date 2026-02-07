@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { loginAction, requestOtpAction, verifyOtpAction } from "@/app/actions/auth";
+import ValidatedIdentifierInput from "@/components/ui/ValidatedIdentifierInput";
+import ValidatedEmailInput from "@/components/ui/ValidatedEmailInput";
 
 const initialState = { ok: false as boolean, error: "" };
 
@@ -43,15 +45,7 @@ export default function AuthLoginForm({ otpEnabled, isDesigner }: { otpEnabled: 
       <form action={formAction} className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-[var(--foreground)]">Email or Mobile</label>
-          <input
-            type="text"
-            name="identifier"
-            required
-            className="input"
-            autoComplete="username"
-            placeholder="Email or 10-digit mobile"
-            title="Enter your email or 10-digit Indian mobile number"
-          />
+          <ValidatedIdentifierInput name="identifier" className="input w-full" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-[var(--foreground)]">Password</label>
@@ -74,25 +68,19 @@ export default function AuthLoginForm({ otpEnabled, isDesigner }: { otpEnabled: 
           </p>
           {!otpRequested ? (
             <form action={otpAction} className="space-y-3">
-              <input
-                type="email"
-                name="email"
-                required
-                placeholder="Email"
-                className="input"
-              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
+                <ValidatedEmailInput name="email" placeholder="Email" className="input w-full" />
+              </div>
               {otpState.error && <p className="text-sm text-red-600">{otpState.error}</p>}
               <SubmitButton label="Send OTP" isDesigner={isDesigner} />
             </form>
           ) : (
             <form action={verifyAction} className="space-y-3">
-              <input
-                type="email"
-                name="email"
-                required
-                placeholder="Email"
-                className="input"
-              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
+                <ValidatedEmailInput name="email" placeholder="Email" className="input w-full" />
+              </div>
               <input
                 type="text"
                 name="code"

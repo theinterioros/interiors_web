@@ -27,4 +27,17 @@ export async function hasCustomerPaidSubscription(customerUserId: string): Promi
   return !!row;
 }
 
+/** Number of project slots paid for: 1 per CUSTOMER_REGISTRATION_FEE + 1 per ADDITIONAL_PROJECT_FEE (RELEASED). */
+export async function getCustomerProjectSlotsPaid(customerUserId: string): Promise<number> {
+  const rows = await sql<{ count: string }>`
+    select count(*)::text as count from payment_ledger
+    where customer_id = ${customerUserId}
+      and type in ('CUSTOMER_REGISTRATION_FEE', 'ADDITIONAL_PROJECT_FEE')
+      and status = 'RELEASED'
+  `;
+  return parseInt(rows[0]?.count ?? "0", 10);
+}
+
+export const ADDITIONAL_PROJECT_FEE_AMOUNT = 1000;
+
 export { FIRM_REGISTRATION_AMOUNT, CUSTOMER_SUBSCRIPTION_AMOUNT };

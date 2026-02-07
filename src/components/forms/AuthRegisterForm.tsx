@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { registerAction } from "@/app/actions/auth";
 import { useState } from "react";
+import ValidatedEmailInput from "@/components/ui/ValidatedEmailInput";
+import ValidatedPhoneInput from "@/components/ui/ValidatedPhoneInput";
 
 const initialState = { ok: false as boolean, error: "" };
 
@@ -45,29 +47,11 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
         <label className="text-sm font-medium text-[var(--foreground)]">
           Mobile number {role === "FIRM" ? "(required)" : "(optional)"}
         </label>
-        <input
-          type="tel"
-          name="phone"
-          required={role === "FIRM"}
-          className="input"
-          inputMode="numeric"
-          minLength={10}
-          maxLength={14}
-          placeholder="10-digit mobile"
-          title="Enter 10-digit Indian mobile number (e.g. 9876543210)"
-        />
+        <ValidatedPhoneInput name="phone" required={role === "FIRM"} placeholder="10-digit mobile" className="input w-full" />
       </div>
       <div className="space-y-2">
         <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
-        <input
-          type="email"
-          name="email"
-          required
-          className="input"
-          autoComplete="email"
-          placeholder="you@example.com"
-          title="Enter a valid email address"
-        />
+        <ValidatedEmailInput name="email" placeholder="you@example.com" className="input w-full" />
       </div>
       <div className="space-y-2">
         <label className="text-sm font-medium text-[var(--foreground)]">Password</label>
@@ -132,11 +116,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-700">Alternate mobile</label>
-              <input
-                type="tel"
-                name="altPhone"
-                className="input"
-              />
+              <ValidatedPhoneInput name="altPhone" placeholder="10-digit mobile (optional)" className="input w-full" />
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">

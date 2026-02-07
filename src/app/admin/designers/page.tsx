@@ -27,10 +27,10 @@ export default async function AdminDesignersPage() {
         <FadeIn className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <BadgeCheck className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">Firm Approvals</p>
+            <p className="eyebrow">Designer Approvals</p>
           </div>
           <h1 className="heading-lg mb-3">Review applications</h1>
-          <p className="text-[var(--text-muted)]">Approve firms to show publicly.</p>
+          <p className="text-[var(--text-muted)]">Approve designers to show publicly.</p>
         </FadeIn>
 
         {pending.length === 0 ? (
@@ -61,8 +61,20 @@ export default async function AdminDesignersPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3 items-center">
-                    <form action={approveFirmAction} className="flex flex-wrap gap-2 items-center">
+                    <form action={approveFirmAction} className="flex flex-wrap gap-3 items-end">
                       <input type="hidden" name="profileId" value={profile.id} />
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm text-[var(--foreground)]">Platform margin %</label>
+                        <input
+                          type="number"
+                          name="platformMarginPct"
+                          min={0}
+                          max={100}
+                          step={0.5}
+                          placeholder="8"
+                          className="input w-20"
+                        />
+                      </div>
                       <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
                         <input type="checkbox" name="addVerifiedBadge" className="rounded border-[var(--border)]" />
                         Add verified badge

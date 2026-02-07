@@ -1,5 +1,6 @@
-import { approveMilestoneAction } from "@/app/actions/project";
 import { ClipboardList } from "lucide-react";
+import ApproveMilestonePay from "@/components/customer/ApproveMilestonePay";
+import BeforeAfterSlider from "@/components/customer/BeforeAfterSlider";
 import { requireCustomerPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
@@ -88,7 +89,7 @@ export default async function CustomerProjectPage({
           </div>
           <h1 className="heading-lg mb-3">{project.title}</h1>
           <p className="text-[var(--text-muted)]">
-            Firm: {project.firm_name ?? "Interior firm"} • Status: {project.status}
+            Designer: {project.firm_name ?? "—"} • Status: {project.status}
           </p>
         </FadeIn>
 
@@ -116,15 +117,15 @@ export default async function CustomerProjectPage({
         </FadeIn>
 
         <FadeIn delay={0.3}>
-          <h2 className="heading-md mb-6">Milestones</h2>
+          <h2 className="heading-md mb-6">Live tracker · Milestones</h2>
           {milestones.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)]">No milestones yet.</p>
           ) : (
-            <StaggerChildren className="space-y-4">
+            <StaggerChildren className="space-y-6">
               {milestones.map((milestone) => (
                 <FadeInItem key={milestone.id}>
                   <div className="card">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                       <div>
                         <p className="eyebrow mb-1">{milestone.status}</p>
                         <h3 className="heading-md">{milestone.title}</h3>
@@ -134,7 +135,11 @@ export default async function CustomerProjectPage({
                       </p>
                     </div>
                     <p className="text-[var(--text-muted)] mb-4">{milestone.description}</p>
-                    {imagesByMilestone[milestone.id]?.length ? (
+                    {milestone.status === "SUBMITTED" && imagesByMilestone[milestone.id]?.length ? (
+                      <div className="mb-6">
+                        <BeforeAfterSlider images={imagesByMilestone[milestone.id]} />
+                      </div>
+                    ) : imagesByMilestone[milestone.id]?.length ? (
                       <div className="grid gap-2 md:grid-cols-2 mb-4">
                         {imagesByMilestone[milestone.id].map((image) => (
                           <a
@@ -142,7 +147,7 @@ export default async function CustomerProjectPage({
                             href={image.blob_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="card-subtle text-xs text-[var(--text-muted)] hover:border-[var(--border-strong)] transition-colors"
+                            className="rounded-lg border border-[var(--border)] p-3 text-xs text-[var(--text-muted)] hover:border-[var(--border-strong)] transition-colors"
                           >
                             {image.file_name}
                           </a>
@@ -150,21 +155,23 @@ export default async function CustomerProjectPage({
                       </div>
                     ) : null}
                     {milestone.status === "SUBMITTED" && (
-                      <div className="flex flex-wrap gap-3 mb-4">
-                        <form action={approveMilestoneAction}>
-                          <input type="hidden" name="milestoneId" value={milestone.id} />
-                          <button type="submit" className="btn btn-primary">
-                            Approve milestone
+                      <div className="rounded-xl border-2 border-[var(--brand)]/30 bg-[var(--brand-light)]/20 p-6">
+                        <p className="text-sm font-semibold text-[var(--foreground)] mb-2">Ready for your approval</p>
+                        <p className="text-sm text-[var(--text-muted)] mb-4">
+                          Review the evidence above. Approve & pay to release funds to escrow.
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                          <ApproveMilestonePay
+                            milestoneId={milestone.id}
+                            amount={milestone.amount}
+                            title={milestone.title}
+                          />
+                          <button type="button" className="btn btn-secondary">
+                            Raise issue
                           </button>
-                        </form>
-                        <button type="button" className="btn btn-secondary">
-                          Raise issue
-                        </button>
+                        </div>
                       </div>
                     )}
-                    <div className="card-subtle text-xs text-[var(--text-muted)]">
-                      Comments area (customer + firm)
-                    </div>
                   </div>
                 </FadeInItem>
               ))}

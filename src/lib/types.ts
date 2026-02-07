@@ -11,6 +11,7 @@ export const DesignerStatusValues = {
 } as const;
 export type DesignerStatus = (typeof DesignerStatusValues)[keyof typeof DesignerStatusValues];
 export const ProjectStatusValues = {
+  LEAD: "LEAD",
   REQUESTED: "REQUESTED",
   ACCEPTED: "ACCEPTED",
   REJECTED: "REJECTED",
@@ -40,6 +41,8 @@ export const PaymentTypeValues = {
   DIGITAL_TWIN_RENEWAL: "DIGITAL_TWIN_RENEWAL",
   FIRM_YEARLY_FEE: "FIRM_YEARLY_FEE",
   CUSTOMER_REGISTRATION_FEE: "CUSTOMER_REGISTRATION_FEE",
+  FIRM_REGISTRATION_FEE: "FIRM_REGISTRATION_FEE",
+  ADDITIONAL_PROJECT_FEE: "ADDITIONAL_PROJECT_FEE",
 } as const;
 export type PaymentType = (typeof PaymentTypeValues)[keyof typeof PaymentTypeValues];
 export const NotificationTypeValues = {

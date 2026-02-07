@@ -162,7 +162,7 @@ export default async function Home() {
                 {/* Right: estimator form (multi-step, full width so complete form is visible) */}
                 <div className="w-full min-w-0 flex justify-center lg:justify-end">
                   <FadeIn delay={0.08} className="w-full max-w-xl">
-                    <EstimatorForm variant="inline" />
+                    <EstimatorForm variant="inline" isLoggedInCustomer={isCustomer} />
                   </FadeIn>
                 </div>
               </div>

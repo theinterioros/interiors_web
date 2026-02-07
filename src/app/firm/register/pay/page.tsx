@@ -28,12 +28,12 @@ export default async function FirmRegisterPayPage() {
                   <Building2 className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="eyebrow">Firm registration</p>
+                  <p className="eyebrow">Designer registration</p>
                   <h1 className="heading-md">Complete your registration</h1>
                 </div>
               </div>
               <p className="text-sm text-[var(--text-muted)] mb-6">
-                Pay the one-time registration fee to access your firm dashboard, accept leads, and manage projects.
+                Pay the one-time registration fee to access your designer dashboard, accept leads, and manage projects.
               </p>
               <div className="flex items-baseline gap-2 mb-6">
                 <IndianRupee className="h-6 w-6 text-[var(--foreground)]" />
@@ -42,7 +42,7 @@ export default async function FirmRegisterPayPage() {
               </div>
               <FirmRegisterPayForm />
               <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
-                <Link href="/login?role=firm" className="font-medium text-[var(--brand)] hover:underline">
+                <Link href="/login?role=designer" className="font-medium text-[var(--brand)] hover:underline">
                   Back to sign in
                 </Link>
               </p>

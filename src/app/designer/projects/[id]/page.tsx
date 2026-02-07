@@ -19,10 +19,11 @@ export default async function DesignerProjectPage({
   const [project] = await sql<{
     id: string;
     title: string;
+    status: string;
     customer_name: string | null;
     customer_email: string;
   }>`
-    select p.id, p.title, u.name as customer_name, u.email as customer_email
+    select p.id, p.title, p.status, u.name as customer_name, u.email as customer_email
     from projects p
     join users u on u.id = p.customer_id
     where p.id = ${id} and p.firm_id = ${user.id}
@@ -78,10 +79,17 @@ export default async function DesignerProjectPage({
           <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Project Management</p>
           <h1 className="text-3xl font-semibold text-neutral-900">{project.title}</h1>
           <p className="text-sm text-neutral-500">
-            Customer: {project.customer_name ?? project.customer_email}
+            Customer: {project.customer_name ?? project.customer_email} • Status: {project.status}
           </p>
         </div>
 
+        {project.status === "LEAD" && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 text-sm text-neutral-700">
+            Lead. After the meetup, go to Dashboard or Leads and click &quot;Initiate Project&quot; to move this project to Active. Milestones can only be created for active projects.
+          </div>
+        )}
+
+        {project.status === "ACTIVE" ? (
         <form
           action={createMilestoneAction}
           className="space-y-4 rounded-2xl border border-neutral-200 p-6"
@@ -119,6 +127,11 @@ export default async function DesignerProjectPage({
             Add milestone
           </button>
         </form>
+        ) : (
+          <div className="rounded-2xl border border-neutral-200 p-6 text-sm text-neutral-500">
+            Create milestones after initiating this project (status must be Active).
+          </div>
+        )}
 
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-neutral-900">Milestones</h2>

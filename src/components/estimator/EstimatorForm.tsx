@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import CitySelect from "@/components/ui/CitySelect";
+import { validateEmail, validatePhoneIndia, sanitizePhoneInputLive, PHONE_ERROR, EMAIL_ERROR } from "@/lib/validation";
 import { Zap, X, Upload, ChevronRight, ChevronLeft, MapPin, Home, User } from "lucide-react";
 
 type EstimateResult = {
@@ -20,6 +22,8 @@ type EstimateResult = {
 
 type EstimatorFormProps = {
   variant?: "default" | "inline";
+  /** When true, user is logged in as customer: show full breakdown and dashboard CTA instead of sign-up CTA */
+  isLoggedInCustomer?: boolean;
 };
 
 const STEPS = [
@@ -28,15 +32,42 @@ const STEPS = [
   { id: 3, title: "Your contact", short: "Contact", icon: User },
 ] as const;
 
-export default function EstimatorForm({ variant = "default" }: EstimatorFormProps) {
+export default function EstimatorForm({ variant = "default", isLoggedInCustomer = false }: EstimatorFormProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const isInline = variant === "inline";
+
+  const phoneResult = phone ? validatePhoneIndia(phone) : null;
+  const phoneInvalid = phoneTouched && phone && !(phoneResult?.valid);
+  const emailResult = email ? validateEmail(email) : null;
+  const emailInvalid = emailTouched && email && !(emailResult?.valid);
+
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const next = sanitizePhoneInputLive(e.target.value);
+    setPhone(next);
+    if (next) setPhoneTouched(true);
+  }
+
+  function handleEmailChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\s/g, "");
+    setEmail(raw);
+    if (raw) setEmailTouched(true);
+  }
+
+  function handleEmailBlur() {
+    const trimmed = email.trim().toLowerCase();
+    if (trimmed !== email) setEmail(trimmed);
+    setEmailTouched(true);
+  }
 
   function canGoNext(): boolean {
     if (!formRef.current) return true;
@@ -72,12 +103,29 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
     setError("");
     setResult(null);
     setShowModal(false);
 
     const formData = new FormData(event.currentTarget);
+    const name = String(formData.get("name") ?? "").trim();
+    const emailRaw = String(formData.get("email") ?? "").trim();
+    const phoneRaw = String(formData.get("phone") ?? "");
+
+    const emailResult = validateEmail(emailRaw);
+    if (!emailResult.valid) {
+      setError(EMAIL_ERROR);
+      setEmailTouched(true);
+      return;
+    }
+    const phoneResult = validatePhoneIndia(phoneRaw);
+    if (!phoneResult.valid) {
+      setError(PHONE_ERROR);
+      setPhoneTouched(true);
+      return;
+    }
+
+    setLoading(true);
     const area = Number(formData.get("carpetArea"));
     const areaUnit = String(formData.get("areaUnit") ?? "sqft");
     const configuration = String(formData.get("configuration") || "2BHK");
@@ -95,9 +143,9 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
               : 5;
 
     const payload = {
-      name: String(formData.get("name") ?? "").trim(),
-      email: String(formData.get("email") ?? "").trim(),
-      phone: String(formData.get("phone") ?? "").trim(),
+      name,
+      email: emailResult.sanitized,
+      phone: phoneResult.sanitized,
       city: formData.get("city"),
       pincode: formData.get("pincode"),
       area: Math.max(0, area),
@@ -138,7 +186,7 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-semibold text-[var(--foreground)]">Get Cost Estimate</h2>
-                <p className="text-sm text-[var(--text-muted)] mt-0.5">Fill in your details to get an AI-powered cost range instantly</p>
+                <p className="text-sm text-[var(--text-muted)] mt-0.5">Share your property details and contact to receive your estimate</p>
               </div>
             </div>
 
@@ -222,17 +270,17 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
                   <p className="text-sm text-[var(--text-muted)]">Type, size and optional floor plan help us refine your estimate.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                  <div className="space-y-1.5 min-w-0">
                     <label htmlFor="estimator-propertyType" className="block text-sm font-medium text-[var(--foreground)]">Property type</label>
-                    <select id="estimator-propertyType" name="propertyType" className="input w-full">
+                    <select id="estimator-propertyType" name="propertyType" className="input w-full min-w-0">
                       <option value="flat">Flat</option>
                       <option value="independent">Independent house</option>
                       <option value="villa">Villa</option>
                     </select>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 min-w-0">
                     <label htmlFor="estimator-configuration" className="block text-sm font-medium text-[var(--foreground)]">Configuration</label>
-                    <select id="estimator-configuration" name="configuration" className="input w-full" required>
+                    <select id="estimator-configuration" name="configuration" className="input w-full min-w-0" required>
                       <option value="1BHK">1 BHK</option>
                       <option value="2BHK">2 BHK</option>
                       <option value="3BHK">3 BHK</option>
@@ -240,8 +288,8 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
                       <option value="5BHK">5+ BHK</option>
                     </select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 sm:col-span-2">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-4 sm:col-span-2 min-w-0">
+                    <div className="space-y-1.5 min-w-0">
                       <label htmlFor="estimator-carpetArea" className="block text-sm font-medium text-[var(--foreground)]">Carpet area</label>
                       <input
                         id="estimator-carpetArea"
@@ -253,9 +301,9 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
                         className="input w-full"
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 min-w-0">
                       <label htmlFor="estimator-areaUnit" className="block text-sm font-medium text-[var(--foreground)]">Unit</label>
-                      <select id="estimator-areaUnit" name="areaUnit" className="input w-full" defaultValue="sqft">
+                      <select id="estimator-areaUnit" name="areaUnit" className="input w-full min-w-0" defaultValue="sqft">
                         <option value="sqft">Sq.ft</option>
                         <option value="sqyd">Sq.yd</option>
                         <option value="sqm">Sq.m</option>
@@ -287,7 +335,7 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
               >
                 <div className="mb-4">
                   <h3 id="step-3-heading" className="text-base font-semibold text-[var(--foreground)] mb-0.5">Your contact</h3>
-                  <p className="text-sm text-[var(--text-muted)]">We’ll send your estimate here. No spam.</p>
+                  <p className="text-sm text-[var(--text-muted)]">Share your contact to receive your estimate. Create a free account later for a detailed breakdown and to connect with verified designers.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="sm:col-span-3 space-y-1.5">
@@ -306,9 +354,22 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
                       id="estimator-phone"
                       name="phone"
                       type="tel"
-                      placeholder="e.g. 9876543210"
-                      className="input w-full"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      required
+                      value={phone}
+                      onChange={handlePhoneChange}
+                      onBlur={() => setPhoneTouched(true)}
+                      placeholder="e.g. 9876543210 or +91 98765 43210"
+                      className={`input w-full ${phoneInvalid ? "border-red-500 focus:border-red-500" : ""}`}
+                      aria-invalid={phoneInvalid}
+                      aria-describedby={phoneInvalid ? "estimator-phone-error" : undefined}
                     />
+                    {phoneInvalid && (
+                      <p id="estimator-phone-error" className="text-sm text-red-600" role="alert">
+                        {PHONE_ERROR}
+                      </p>
+                    )}
                   </div>
                   <div className="sm:col-span-3 space-y-1.5">
                     <label htmlFor="estimator-email" className="block text-sm font-medium text-[var(--foreground)]">Email</label>
@@ -317,9 +378,19 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
                       name="email"
                       type="email"
                       required
+                      value={email}
+                      onChange={handleEmailChange}
+                      onBlur={handleEmailBlur}
                       placeholder="priya@example.com"
-                      className="input w-full"
+                      className={`input w-full ${emailInvalid ? "border-red-500 focus:border-red-500" : ""}`}
+                      aria-invalid={emailInvalid}
+                      aria-describedby={emailInvalid ? "estimator-email-error" : undefined}
                     />
+                    {emailInvalid && (
+                      <p id="estimator-email-error" className="text-sm text-red-600" role="alert">
+                        {EMAIL_ERROR}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -377,7 +448,7 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
         <p className="text-xs text-[var(--text-muted)] text-center mt-3">Free, no obligations. Results in under 10 seconds.</p>
       </div>
 
-      {/* Result modal */}
+      {/* Result modal — lead-gen for guests; full breakdown + dashboard CTA for logged-in customers */}
       {showModal && result && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75"
@@ -409,20 +480,48 @@ export default function EstimatorForm({ variant = "default" }: EstimatorFormProp
                 <span className="text-[var(--text-muted)]">Square feet</span>
                 <span className="font-semibold text-[var(--foreground)]">{result.breakdown.squareFeet}</span>
               </div>
+              {isLoggedInCustomer && result.breakdown.ratePerSqFt != null && (
+                <>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-[var(--text-muted)]">Rate (₹/sq ft)</span>
+                    <span className="font-semibold text-[var(--foreground)]">{result.breakdown.ratePerSqFt.toLocaleString()}</span>
+                  </div>
+                  {result.breakdown.adjusted != null && (
+                    <div className="flex justify-between mb-2">
+                      <span className="text-[var(--text-muted)]">Adjusted base</span>
+                      <span className="font-semibold text-[var(--foreground)]">₹{result.breakdown.adjusted.toLocaleString()}</span>
+                    </div>
+                  )}
+                </>
+              )}
               <div className="flex justify-between pt-2 border-t border-[var(--border)]">
                 <span className="text-[var(--text-muted)]">Range</span>
                 <span className="font-semibold text-[var(--brand)]">₹{result.min.toLocaleString()} – ₹{result.max.toLocaleString()}</span>
               </div>
             </div>
-            <p className="text-sm text-[var(--text-muted)] mb-5">
-              Based on your property details and location. Final costs depend on scope and materials.
-            </p>
-            <a
-              href="/login?role=customer"
-              className="block w-full py-3 rounded-xl border-2 border-[var(--brand)] text-[var(--brand)] font-semibold text-center hover:bg-[var(--brand-light)] transition-colors"
-            >
-              Sign in / Sign up to know more details
-            </a>
+            {isLoggedInCustomer ? (
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/customer/dashboard"
+                  className="block w-full py-3 rounded-xl bg-[var(--brand)] text-white font-semibold text-center hover:opacity-90 transition-opacity"
+                >
+                  Go to dashboard
+                </Link>
+                <Link
+                  href="/designers"
+                  className="block w-full py-3 rounded-xl border-2 border-[var(--brand)] text-[var(--brand)] font-semibold text-center hover:bg-[var(--brand-light)] transition-colors"
+                >
+                  Browse designers
+                </Link>
+              </div>
+            ) : (
+              <a
+                href="/login?role=customer"
+                className="block w-full py-3 rounded-xl border-2 border-[var(--brand)] text-[var(--brand)] font-semibold text-center hover:bg-[var(--brand-light)] transition-colors"
+              >
+                Sign up for more details
+              </a>
+            )}
           </div>
         </div>
       )}

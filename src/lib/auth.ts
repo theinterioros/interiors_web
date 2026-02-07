@@ -7,6 +7,13 @@ export async function getCurrentUser() {
   return getSessionUser();
 }
 
+/** Role slug for login page: admin, designer (firm), or customer */
+function loginRoleParam(allowedRoles: Role[]): string {
+  if (allowedRoles.includes("ADMIN")) return "admin";
+  if (allowedRoles.includes("FIRM")) return "designer";
+  return "customer";
+}
+
 export async function requireUser() {
   const user = await getSessionUser();
   if (!user) {
@@ -16,7 +23,10 @@ export async function requireUser() {
 }
 
 export async function requireRole(allowedRoles: Role[]) {
-  const user = await requireUser();
+  const user = await getSessionUser();
+  if (!user) {
+    redirect(`/login?role=${loginRoleParam(allowedRoles)}`);
+  }
   if (!allowedRoles.includes(user.role)) {
     redirect("/unauthorized");
   }

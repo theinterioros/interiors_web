@@ -304,10 +304,18 @@ export async function approveFirmAction(formData: FormData) {
 
   const profileId = String(formData.get("profileId") ?? "");
   const addVerifiedBadge = formData.get("addVerifiedBadge") === "on";
+  const platformMarginPct = formData.get("platformMarginPct");
+  const marginPct =
+    platformMarginPct !== null && platformMarginPct !== ""
+      ? Math.min(100, Math.max(0, Number(platformMarginPct)))
+      : null;
+
   await sql`
     update firm_profiles
     set status = ${DesignerStatusValues.APPROVED},
         verified_at = ${addVerifiedBadge ? new Date() : null},
+        platform_margin_pct = ${marginPct},
+        margin_accepted_at = null,
         updated_at = now()
     where id = ${profileId}
   `;
@@ -321,12 +329,14 @@ export async function approveFirmAction(formData: FormData) {
   `;
 
   if (profileUser) {
+    const marginText =
+      marginPct != null ? ` Platform margin: ${marginPct}%. Please accept in your dashboard to go live.` : "";
     await notifyUser({
       userId: profileUser.user_id,
       email: profileUser.email,
       type: "FIRM_APPROVED",
       title: "Firm profile approved",
-      message: "Your firm profile has been approved and is now publicly visible.",
+      message: `Your firm profile has been approved.${marginText}`,
     });
   }
 
@@ -399,32 +409,49 @@ export async function releasePaymentAction(formData: FormData) {
   }
 
   const paymentId = String(formData.get("paymentId") ?? "");
-  await sql`
-    update payment_ledger
-    set status = ${PaymentStatusValues.RELEASED}, updated_at = now()
-    where id = ${paymentId}
-  `;
 
   const [payment] = await sql<{
+    type: string;
     amount: number;
     customer_id: string | null;
     firm_id: string | null;
     customer_email: string | null;
     firm_email: string | null;
   }>`
-    select p.amount,
-           p.customer_id,
-           p.firm_id,
-           cu.email as customer_email,
-           fu.email as firm_email
+    select p.type, p.amount,
+           p.customer_id, p.firm_id,
+           cu.email as customer_email, fu.email as firm_email
     from payment_ledger p
     left join users cu on cu.id = p.customer_id
     left join users fu on fu.id = p.firm_id
-    where p.id = ${paymentId}
+    where p.id = ${paymentId} and p.status = ${PaymentStatusValues.HELD}
     limit 1
   `;
 
-  if (payment?.customer_id && payment.customer_email) {
+  if (!payment) {
+    throw new Error("Payment not found or not in HELD status.");
+  }
+
+  let platformMarginAmount: number | null = null;
+  if (payment.type === "MILESTONE" && payment.firm_id) {
+    const [firm] = await sql<{ platform_margin_pct: number | null }>`
+      select platform_margin_pct from firm_profiles where user_id = ${payment.firm_id} limit 1
+    `;
+    const pct = firm?.platform_margin_pct ?? 0;
+    platformMarginAmount = Math.round((payment.amount * Number(pct)) / 100);
+  }
+
+  await sql`
+    update payment_ledger
+    set status = ${PaymentStatusValues.RELEASED},
+        platform_margin_amount = ${platformMarginAmount},
+        updated_at = now()
+    where id = ${paymentId}
+  `;
+
+  const designerAmount = payment.amount - (platformMarginAmount ?? 0);
+
+  if (payment.customer_id && payment.customer_email) {
     await notifyUser({
       userId: payment.customer_id,
       email: payment.customer_email,
@@ -434,13 +461,13 @@ export async function releasePaymentAction(formData: FormData) {
     });
   }
 
-  if (payment?.firm_id && payment.firm_email) {
+  if (payment.firm_id && payment.firm_email) {
     await notifyUser({
       userId: payment.firm_id,
       email: payment.firm_email,
       type: "PAYMENT_RELEASED",
-      title: "Payment released",
-      message: `Payment of ₹${payment.amount} has been released.`,
+      title: "Payment released to designer",
+      message: `₹${designerAmount.toLocaleString()} has been released to you (platform margin deducted).`,
     });
   }
 

@@ -1,5 +1,6 @@
-import { updateFirmProfileAction, uploadFirmPortfolioAction } from "@/app/actions/designer";
+import { updateFirmProfileAction, uploadFirmPortfolioAction, acceptMarginAction } from "@/app/actions/designer";
 import { Building2 } from "lucide-react";
+import AcceptMarginBanner from "./AcceptMarginBanner";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
@@ -24,21 +25,14 @@ export default async function FirmProfilePage() {
     city: string;
     pincode: string;
     about: string;
+    google_review_links: string | null;
+    status: string;
+    platform_margin_pct: number | null;
+    margin_accepted_at: Date | null;
   }>`
-    select id,
-           name,
-           firm_name,
-           owner_name,
-           office_address,
-           gst,
-           business_type,
-           ticket_size,
-           designers_count,
-           comments,
-           experience_years,
-           city,
-           pincode,
-           about
+    select id, name, firm_name, owner_name, office_address, gst, business_type, ticket_size,
+           designers_count, comments, experience_years, city, pincode, about,
+           google_review_links, status, platform_margin_pct, margin_accepted_at
     from firm_profiles
     where user_id = ${user.id}
     limit 1
@@ -63,7 +57,7 @@ export default async function FirmProfilePage() {
         <FadeIn className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Building2 className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">Firm Profile</p>
+            <p className="eyebrow">Designer Profile</p>
           </div>
           <h1 className="heading-lg mb-3">Manage your profile</h1>
           <p className="text-[var(--text-muted)]">
@@ -71,6 +65,14 @@ export default async function FirmProfilePage() {
           </p>
         </FadeIn>
 
+        {profile?.status === "APPROVED" && !profile?.margin_accepted_at && (
+          <FadeIn delay={0.15}>
+            <AcceptMarginBanner
+              platformMarginPct={profile?.platform_margin_pct ?? undefined}
+              acceptMarginAction={acceptMarginAction}
+            />
+          </FadeIn>
+        )}
         <FadeIn delay={0.2}>
           <form action={updateFirmProfileAction} className="card space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
@@ -141,8 +143,18 @@ export default async function FirmProfilePage() {
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--foreground)]">About</label>
+            <label className="text-sm font-medium text-[var(--foreground)]">About (bio)</label>
             <textarea name="about" rows={4} defaultValue={profile?.about ?? ""} required className="input" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[var(--foreground)]">Google Review links</label>
+            <textarea
+              name="googleReviewLinks"
+              rows={2}
+              defaultValue={profile?.google_review_links ?? ""}
+              className="input"
+              placeholder="One URL per line (e.g. Google Business profile)"
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-[var(--foreground)]">Comments</label>

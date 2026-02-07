@@ -89,6 +89,31 @@ async function main() {
   await sql`CREATE INDEX IF NOT EXISTS trusted_studios_sort_idx ON trusted_studios(sort_order)`;
   console.log("Migration applied: trusted_studios table");
 
+  // Project lifecycle: LEAD status (customer creates -> LEAD; designer initiates -> ACTIVE)
+  try {
+    await sql`ALTER TYPE project_status ADD VALUE IF NOT EXISTS 'LEAD'`;
+    console.log("Migration applied: project_status LEAD");
+  } catch (e) {
+    if (!String(e).includes("already exists")) console.warn("project_status LEAD:", e);
+  }
+  // Additional project fee (₹1000 per extra project for customer)
+  try {
+    await sql`ALTER TYPE payment_type ADD VALUE IF NOT EXISTS 'ADDITIONAL_PROJECT_FEE'`;
+    console.log("Migration applied: payment_type ADDITIONAL_PROJECT_FEE");
+  } catch (e) {
+    if (!String(e).includes("already exists")) console.warn("payment_type ADDITIONAL_PROJECT_FEE:", e);
+  }
+
+  // Designer: platform margin % and acceptance (hidden until accepted)
+  await sql`ALTER TABLE firm_profiles ADD COLUMN IF NOT EXISTS platform_margin_pct numeric`;
+  await sql`ALTER TABLE firm_profiles ADD COLUMN IF NOT EXISTS margin_accepted_at timestamptz`;
+  await sql`ALTER TABLE firm_profiles ADD COLUMN IF NOT EXISTS google_review_links text`;
+  console.log("Migration applied: firm_profiles platform_margin_pct, margin_accepted_at, google_review_links");
+
+  // Payment ledger: platform margin amount when releasing to designer
+  await sql`ALTER TABLE payment_ledger ADD COLUMN IF NOT EXISTS platform_margin_amount int`;
+  console.log("Migration applied: payment_ledger.platform_margin_amount");
+
   // Seed trusted_studios if empty
   const count = await sql`SELECT 1 FROM trusted_studios LIMIT 1`;
   if (count.length === 0) {

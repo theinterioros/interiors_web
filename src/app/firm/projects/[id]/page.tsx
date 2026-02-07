@@ -23,10 +23,11 @@ export default async function FirmProjectPage({
   const [project] = await sql<{
     id: string;
     title: string;
+    status: string;
     customer_name: string | null;
     customer_email: string;
   }>`
-    select p.id, p.title, u.name as customer_name, u.email as customer_email
+    select p.id, p.title, p.status, u.name as customer_name, u.email as customer_email
     from projects p
     join users u on u.id = p.customer_id
     where p.id = ${id} and p.firm_id = ${user.id}
@@ -87,31 +88,47 @@ export default async function FirmProjectPage({
           </div>
           <h1 className="heading-lg mb-3">{project.title}</h1>
           <p className="text-[var(--text-muted)]">
-            Customer: {project.customer_name ?? project.customer_email}
+            Customer: {project.customer_name ?? project.customer_email} • Status: {project.status}
           </p>
         </FadeIn>
 
+        {project.status === "LEAD" && (
+          <FadeIn delay={0.15}>
+            <div className="card border-[var(--accent-amber)]/40 bg-[var(--accent-amber-light)]/30 mb-6">
+              <p className="text-sm text-[var(--foreground)]">
+                <strong>Lead.</strong> After the meetup, go to Dashboard or Leads and click &quot;Initiate Project&quot; to move this project to Active. Milestones can only be created for active projects.
+              </p>
+            </div>
+          </FadeIn>
+        )}
+
         <FadeIn delay={0.2} className="mb-8">
-          <form action={createMilestoneAction} className="card space-y-4">
-            <input type="hidden" name="projectId" value={project.id} />
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--foreground)]">Milestone title</label>
-                <input name="title" required className="input" />
+          {project.status === "ACTIVE" ? (
+            <form action={createMilestoneAction} className="card space-y-4">
+              <input type="hidden" name="projectId" value={project.id} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[var(--foreground)]">Milestone title</label>
+                  <input name="title" required className="input" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[var(--foreground)]">Amount (INR)</label>
+                  <input name="amount" type="number" min={0} required className="input" />
+                </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--foreground)]">Amount (INR)</label>
-                <input name="amount" type="number" min={0} required className="input" />
+                <label className="text-sm font-medium text-[var(--foreground)]">Description</label>
+                <textarea name="description" rows={3} className="input" />
               </div>
+              <button type="submit" className="btn btn-primary">
+                Add milestone
+              </button>
+            </form>
+          ) : (
+            <div className="card text-[var(--text-muted)]">
+              <p className="text-sm">Create milestones after initiating this project (status must be Active).</p>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Description</label>
-              <textarea name="description" rows={3} className="input" />
-            </div>
-            <button type="submit" className="btn btn-primary">
-              Add milestone
-            </button>
-          </form>
+          )}
         </FadeIn>
 
         <FadeIn delay={0.3} className="mb-8">

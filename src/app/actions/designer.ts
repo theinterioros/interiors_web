@@ -25,6 +25,7 @@ export async function updateFirmProfileAction(formData: FormData) {
   const ticketSize = String(formData.get("ticketSize") ?? "").trim();
   const designersCount = Number(formData.get("designersCount") ?? 0) || null;
   const comments = String(formData.get("comments") ?? "").trim();
+  const googleReviewLinks = String(formData.get("googleReviewLinks") ?? "").trim() || null;
 
   if (!name || !city || !pincode || !about) {
     throw new Error("All fields are required.");
@@ -50,6 +51,7 @@ export async function updateFirmProfileAction(formData: FormData) {
           pincode = ${pincode},
           about = ${about},
           experience_years = ${experienceYears},
+          google_review_links = ${googleReviewLinks},
           updated_at = now()
       where id = ${existing.id}
     `;
@@ -70,7 +72,8 @@ export async function updateFirmProfileAction(formData: FormData) {
         city,
         pincode,
         about,
-        experience_years
+        experience_years,
+        google_review_links
       )
       values (
         ${crypto.randomUUID()},
@@ -87,12 +90,26 @@ export async function updateFirmProfileAction(formData: FormData) {
         ${city},
         ${pincode},
         ${about},
-        ${experienceYears}
+        ${experienceYears},
+        ${googleReviewLinks}
       )
     `;
   }
 
   return;
+}
+
+/** Designer accepts the platform margin; profile becomes visible to customers. */
+export async function acceptMarginAction(): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    throw new Error("Unauthorized.");
+  }
+  await sql`
+    update firm_profiles
+    set margin_accepted_at = now(), updated_at = now()
+    where user_id = ${user.id} and status = 'APPROVED' and margin_accepted_at is null
+  `;
 }
 
 export async function uploadFirmPortfolioAction(formData: FormData) {

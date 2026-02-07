@@ -32,10 +32,10 @@ drop type if exists role;
 
 create type role as enum ('CUSTOMER', 'FIRM', 'ADMIN');
 create type firm_status as enum ('PENDING', 'APPROVED', 'REJECTED');
-create type project_status as enum ('REQUESTED', 'ACCEPTED', 'REJECTED', 'ACTIVE', 'COMPLETED', 'CANCELLED');
+create type project_status as enum ('LEAD', 'REQUESTED', 'ACCEPTED', 'REJECTED', 'ACTIVE', 'COMPLETED', 'CANCELLED');
 create type milestone_status as enum ('PENDING', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'DISPUTED');
 create type payment_status as enum ('PENDING', 'HELD', 'RELEASED', 'CANCELLED');
-create type payment_type as enum ('ADVANCE', 'MILESTONE', 'DIGITAL_TWIN_RENEWAL', 'FIRM_YEARLY_FEE', 'CUSTOMER_REGISTRATION_FEE', 'FIRM_REGISTRATION_FEE');
+create type payment_type as enum ('ADVANCE', 'MILESTONE', 'DIGITAL_TWIN_RENEWAL', 'FIRM_YEARLY_FEE', 'CUSTOMER_REGISTRATION_FEE', 'FIRM_REGISTRATION_FEE', 'ADDITIONAL_PROJECT_FEE');
 create type notification_type as enum (
   'FIRM_APPROVED',
   'PROJECT_REQUEST',
@@ -95,6 +95,9 @@ create table firm_profiles (
   about text not null,
   status firm_status not null default 'PENDING',
   verified_at timestamptz,
+  platform_margin_pct numeric,
+  margin_accepted_at timestamptz,
+  google_review_links text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -176,6 +179,7 @@ create table payment_ledger (
   firm_id uuid references users(id) on delete set null,
   project_id uuid references projects(id) on delete set null,
   milestone_id uuid references milestones(id) on delete set null,
+  platform_margin_amount int,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -30,34 +30,34 @@ export default async function AdminFirmsPendingPaymentPage() {
       <FadeIn className="mb-8">
         <div className="flex items-center gap-2 mb-3">
           <IndianRupee className="h-4 w-4 text-[var(--brand)]" />
-          <p className="eyebrow">Firms pending payment</p>
+          <p className="eyebrow">Designers pending payment</p>
         </div>
         <h1 className="heading-lg mb-3">Registration fee not paid</h1>
         <p className="text-[var(--text-muted)]">
-          These firms have registered but not completed the one-time ₹3,000 payment. Send a nudge email to remind them.
+          These designers have registered but not completed the one-time ₹3,000 payment. Send a nudge email to remind them.
         </p>
       </FadeIn>
 
       {firms.length === 0 ? (
         <FadeIn>
           <div className="card text-center text-[var(--text-muted)]">
-            No firms pending payment.
+            No designers pending payment.
           </div>
         </FadeIn>
       ) : (
         <StaggerChildren className="space-y-4">
-          {firms.map((firm) => (
-            <FadeInItem key={firm.user_id}>
+          {firms.map((designer) => (
+            <FadeInItem key={designer.user_id}>
               <div className="card flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h3 className="heading-md mb-1">{firm.firm_name ?? firm.name ?? "—"}</h3>
+                  <h3 className="heading-md mb-1">{designer.firm_name ?? designer.name ?? "—"}</h3>
                   <p className="text-sm text-[var(--text-muted)] flex items-center gap-1">
                     <Mail className="h-3.5 w-3.5" />
-                    {firm.email}
+                    {designer.email}
                   </p>
                 </div>
                 <form action={sendFirmPaymentNudgeAction}>
-                  <input type="hidden" name="userId" value={firm.user_id} />
+                  <input type="hidden" name="userId" value={designer.user_id} />
                   <button type="submit" className="btn btn-secondary">
                     Send nudge email
                   </button>
