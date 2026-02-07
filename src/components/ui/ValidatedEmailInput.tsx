@@ -54,7 +54,7 @@ export default function ValidatedEmailInput({
         placeholder={placeholder}
         className={`${className} ${invalid ? "border-red-500 focus:border-red-500" : ""}`}
         autoComplete={autoComplete}
-        aria-invalid={invalid}
+        aria-invalid={invalid ? true : undefined}
         aria-describedby={invalid ? errorId : ariaDescribedby}
       />
       {invalid && (

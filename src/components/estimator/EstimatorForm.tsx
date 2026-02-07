@@ -362,7 +362,7 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
                       onBlur={() => setPhoneTouched(true)}
                       placeholder="e.g. 9876543210 or +91 98765 43210"
                       className={`input w-full ${phoneInvalid ? "border-red-500 focus:border-red-500" : ""}`}
-                      aria-invalid={phoneInvalid}
+                      aria-invalid={phoneInvalid ? true : undefined}
                       aria-describedby={phoneInvalid ? "estimator-phone-error" : undefined}
                     />
                     {phoneInvalid && (
@@ -383,7 +383,7 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
                       onBlur={handleEmailBlur}
                       placeholder="priya@example.com"
                       className={`input w-full ${emailInvalid ? "border-red-500 focus:border-red-500" : ""}`}
-                      aria-invalid={emailInvalid}
+                      aria-invalid={emailInvalid ? true : undefined}
                       aria-describedby={emailInvalid ? "estimator-email-error" : undefined}
                     />
                     {emailInvalid && (

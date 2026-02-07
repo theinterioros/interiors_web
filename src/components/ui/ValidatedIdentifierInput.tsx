@@ -61,7 +61,7 @@ export default function ValidatedIdentifierInput({
         className={`${className} ${invalid ? "border-red-500 focus:border-red-500" : ""}`}
         autoComplete={autoComplete}
         title="Enter your email or 10-digit Indian mobile number"
-        aria-invalid={invalid}
+        aria-invalid={invalid ? true : undefined}
         aria-describedby={invalid ? errorId : undefined}
       />
       {invalid && (

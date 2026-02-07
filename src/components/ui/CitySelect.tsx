@@ -45,8 +45,8 @@ export default function CitySelect({
   }, []);
 
   const filtered = query.trim()
-    ? cities.filter((c) => c.toLowerCase().includes(query.toLowerCase())).slice(0, 100)
-    : cities.slice(0, 80);
+    ? cities.filter((c) => c.toLowerCase().includes(query.toLowerCase())).slice(0, 200)
+    : cities;
 
   const selectCity = useCallback((city: string) => {
     setQuery(city);
