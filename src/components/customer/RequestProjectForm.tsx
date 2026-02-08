@@ -131,7 +131,7 @@ export default function RequestProjectForm({
     <>
       <PageBackLink href={`/designers/${profileId}`} label={firmName} />
       <div className="mb-6">
-        <h1 className="heading-lg mb-1">Enter project details</h1>
+        <h1 className="heading-lg mb-1">Enter Project Details</h1>
         <p className="text-sm text-[var(--text-muted)]">
           Describe your project for {firmName}. Your first project is included with your subscription; each additional project is ₹{additionalProjectFeeAmount.toLocaleString()}.
         </p>

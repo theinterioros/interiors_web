@@ -233,7 +233,7 @@ export default async function FirmProfilePage({
               {(filesByWork.get(null)?.length ?? 0) > 0 && (
                 <FadeInItem>
                   <section className="card" aria-labelledby="portfolio-other">
-                    <h3 id="portfolio-other" className="heading-sm mb-4">Other portfolio images</h3>
+                    <h3 id="portfolio-other" className="heading-sm mb-4">Other Portfolio Images</h3>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {filesByWork.get(null)!.map((file) => {
                         const isImage = (file.mime_type || "").startsWith("image/");
@@ -268,7 +268,7 @@ export default async function FirmProfilePage({
           ) : (
             <StaggerChildren className="space-y-8">
               <section className="card">
-                <h3 className="heading-sm mb-4">Portfolio images</h3>
+                <h3 className="heading-sm mb-4">Portfolio Images</h3>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {portfolio.map((file) => {
                     const isImage = (file.mime_type || "").startsWith("image/");

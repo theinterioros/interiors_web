@@ -157,21 +157,26 @@ export default async function DesignerProfilePage() {
         )}
         <form
           action={uploadFirmPortfolioAction}
-          encType="multipart/form-data"
           className="space-y-4 rounded-2xl border border-neutral-200 p-6"
         >
-          <h2 className="text-lg font-semibold text-neutral-900">Portfolio uploads</h2>
-          <input type="file" name="file" required className="text-sm" />
+          <h2 className="text-lg font-semibold text-neutral-900">Upload portfolio file</h2>
+          <p className="text-sm text-neutral-600">Add a PDF or image for review. You can add more after approval.</p>
+          <input type="file" name="file" required accept="image/*,.pdf" className="text-sm block w-full max-w-sm" />
           <button className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-800">
-            Upload portfolio file
+            Upload
           </button>
-          <div className="space-y-2 text-sm text-neutral-600">
-            {portfolio.map((file) => (
-              <a key={file.id} href={file.blob_url} target="_blank" rel="noreferrer" className="block underline">
-                {file.file_name}
-              </a>
-            ))}
-          </div>
+          {portfolio.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-neutral-500 mb-2">Uploaded files</p>
+              <div className="space-y-2 text-sm text-neutral-600">
+                {portfolio.map((file) => (
+                  <a key={file.id} href={file.blob_url} target="_blank" rel="noreferrer" className="block underline text-blue-600 hover:text-blue-800">
+                    {file.file_name}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>

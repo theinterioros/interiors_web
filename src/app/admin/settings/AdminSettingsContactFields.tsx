@@ -17,7 +17,7 @@ export default function AdminSettingsContactFields({
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <div className="space-y-2">
-        <label className="text-sm font-medium text-[var(--foreground)]">Contact email</label>
+        <label className="text-sm font-medium text-[var(--foreground)]">Contact Email</label>
         <ValidatedEmailInput
           name="contactEmail"
           defaultValue={defaultContactEmail}
@@ -26,7 +26,7 @@ export default function AdminSettingsContactFields({
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium text-[var(--foreground)]">Contact phone</label>
+        <label className="text-sm font-medium text-[var(--foreground)]">Contact Phone</label>
         <ValidatedPhoneInput
           name="contactPhone"
           defaultValue={defaultContactPhone}
@@ -35,7 +35,7 @@ export default function AdminSettingsContactFields({
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium text-[var(--foreground)]">Contact address</label>
+        <label className="text-sm font-medium text-[var(--foreground)]">Contact Address</label>
         <input
           name="contactAddress"
           type="text"

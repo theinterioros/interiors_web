@@ -80,7 +80,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
           <Users className="h-4 w-4 text-[var(--brand)]" />
           <p className="eyebrow">Users</p>
         </div>
-        <h1 className="heading-lg mb-3">All users</h1>
+        <h1 className="heading-lg mb-3">All Users</h1>
         <p className="text-sm text-[var(--text-muted)]">
           All platform accounts with contact info, role-specific details (designer: firm name, city, approval status, registration paid; customer: subscription), project count, and join date. Use tabs to filter by role.
         </p>

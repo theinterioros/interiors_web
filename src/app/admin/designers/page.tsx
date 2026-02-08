@@ -5,6 +5,8 @@ import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
 import FadeInItem from "@/components/animations/FadeInItem";
 import PageTabs from "@/components/ui/PageTabs";
+import MarginRequestApproveForm from "@/app/admin/margin-requests/MarginRequestApproveForm";
+import MarginRequestRejectForm from "@/app/admin/margin-requests/MarginRequestRejectForm";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +14,11 @@ type PageProps = { searchParams?: Promise<{ status?: string }> };
 
 const STATUS_TABS = [
   { value: "", label: "All" },
-  { value: "PENDING", label: "Pending approval" },
+  { value: "MARGIN_APPROVAL", label: "Margin Approval" },
+  { value: "PENDING_REGISTRATION", label: "Pending Subscription" },
+  { value: "PENDING", label: "Pending Approval" },
   { value: "APPROVED", label: "Approved" },
   { value: "REJECTED", label: "Rejected" },
-  { value: "PENDING_REGISTRATION", label: "Pending subscription" },
 ];
 
 type DesignerRow = {
@@ -36,9 +39,41 @@ type DesignerRow = {
   has_paid_registration: boolean;
 };
 
+type MarginRow = {
+  id: string;
+  profile_id: string;
+  requested_margin_pct: number;
+  status: string;
+  admin_comment: string | null;
+  created_at: Date;
+  firm_name: string | null;
+  profile_name: string | null;
+  user_email: string;
+};
+
 export default async function AdminDesignersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const filterStatus = params?.status ?? "";
+
+  let pendingMarginCount = 0;
+  let pendingMarginRows: MarginRow[] = [];
+  try {
+    const [countRow] = await sql<{ count: string }>`select count(*)::text as count from margin_requests where status = 'PENDING'`;
+    pendingMarginCount = parseInt(countRow?.count ?? "0", 10);
+    if (filterStatus === "MARGIN_APPROVAL") {
+      pendingMarginRows = await sql<MarginRow>`
+        select mr.id, mr.profile_id, mr.requested_margin_pct, mr.status, mr.admin_comment, mr.created_at,
+               fp.firm_name, fp.name as profile_name, u.email as user_email
+        from margin_requests mr
+        join firm_profiles fp on fp.id = mr.profile_id
+        join users u on u.id = fp.user_id
+        where mr.status = 'PENDING'
+        order by mr.created_at asc
+      `;
+    }
+  } catch {
+    // margin_requests table may not exist
+  }
 
   const all = await sql<DesignerRow>`
     select
@@ -65,18 +100,21 @@ export default async function AdminDesignersPage({ searchParams }: PageProps) {
 
   const counts = {
     all: all.length,
+    MARGIN_APPROVAL: pendingMarginCount,
+    PENDING_REGISTRATION: all.filter((p) => !p.has_paid_registration).length,
     PENDING: all.filter((p) => p.status === "PENDING").length,
     APPROVED: all.filter((p) => p.status === "APPROVED").length,
     REJECTED: all.filter((p) => p.status === "REJECTED").length,
-    PENDING_REGISTRATION: all.filter((p) => !p.has_paid_registration).length,
   };
 
   const filtered =
-    filterStatus === "PENDING_REGISTRATION"
-      ? all.filter((p) => !p.has_paid_registration)
-      : filterStatus
-        ? all.filter((p) => p.status === filterStatus)
-        : all;
+    filterStatus === "MARGIN_APPROVAL"
+      ? []
+      : filterStatus === "PENDING_REGISTRATION"
+        ? all.filter((p) => !p.has_paid_registration)
+        : filterStatus
+          ? all.filter((p) => p.status === filterStatus)
+          : all;
 
   const tabs = STATUS_TABS.map((s) => ({
     label: s.label,
@@ -90,17 +128,50 @@ export default async function AdminDesignersPage({ searchParams }: PageProps) {
       <FadeIn className="mb-6">
         <div className="flex items-center gap-2 mb-3">
           <BadgeCheck className="h-4 w-4 text-[var(--brand)]" />
-          <p className="eyebrow">Designer approvals</p>
+          <p className="eyebrow">Designer Approvals</p>
         </div>
-        <h1 className="heading-lg mb-3">Review applications</h1>
+        <h1 className="heading-lg mb-3">Review Applications</h1>
         <p className="text-sm text-[var(--text-muted)]">
-          Profile can only be approved after the designer has accepted the agreed margin (from Margin requests) and paid the yearly subscription (₹3,000). This process repeats annually. Use tabs to filter.
+          Profile can only be approved after the designer has accepted the agreed margin (Margin approval tab) and paid the yearly subscription (₹3,000). Use tabs to filter.
         </p>
       </FadeIn>
 
       <PageTabs tabs={tabs} />
 
-      {filtered.length === 0 ? (
+      {filterStatus === "MARGIN_APPROVAL" ? (
+        <section>
+          {pendingMarginRows.length === 0 ? (
+            <div className="rounded-lg border border-[var(--border)] bg-white p-8 text-center text-sm text-[var(--text-muted)]">
+              No margin requests pending. Designers submit margin from their dashboard after profile approval.
+            </div>
+          ) : (
+            <ul className="space-y-4">
+              {pendingMarginRows.map((row) => (
+                <li key={row.id} className="card">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-[var(--foreground)]">
+                        {row.firm_name ?? row.profile_name ?? row.user_email}
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)]">{row.user_email}</p>
+                      <p className="text-sm mt-2">
+                        Requested Margin: <strong>{row.requested_margin_pct}%</strong>
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        Submitted {new Date(row.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-end gap-3 shrink-0">
+                      <MarginRequestApproveForm requestId={row.id} requestedPct={row.requested_margin_pct} />
+                      <MarginRequestRejectForm requestId={row.id} />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : filtered.length === 0 ? (
         <div className="rounded-lg border border-[var(--border)] bg-white p-8 text-center text-[var(--text-muted)]">
           {filterStatus === "PENDING_REGISTRATION"
             ? "No designers pending subscription."
@@ -135,7 +206,7 @@ export default async function AdminDesignersPage({ searchParams }: PageProps) {
                       </span>
                       {!row.has_paid_registration && (
                         <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-medium bg-[var(--accent-amber)]/20 text-[var(--accent-amber)]">
-                          Registration unpaid
+                          Registration Unpaid
                         </span>
                       )}
                     </div>
@@ -161,7 +232,7 @@ export default async function AdminDesignersPage({ searchParams }: PageProps) {
                       <input type="hidden" name="userId" value={row.user_id} />
                       <button type="submit" className="btn btn-secondary text-sm inline-flex items-center gap-1">
                         <Mail className="h-3.5 w-3.5" />
-                        Send nudge email
+                        Send Nudge Email
                       </button>
                     </form>
                   )}
@@ -175,10 +246,10 @@ export default async function AdminDesignersPage({ searchParams }: PageProps) {
                           <input type="hidden" name="profileId" value={row.profile_id} />
                           <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
                             <input type="checkbox" name="addVerifiedBadge" className="rounded border-[var(--border)]" />
-                            Add verified badge
+                            Add Verified Badge
                           </label>
                           <button type="submit" className="btn btn-primary">
-                            Approve profile
+                            Approve Profile
                           </button>
                         </form>
                         <form action={rejectFirmAction}>

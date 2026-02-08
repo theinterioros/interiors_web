@@ -3,7 +3,9 @@ import {
   initiateProjectAction,
   submitMilestoneAction,
   uploadMilestoneImageAction,
+  updateMilestoneDescriptionAction,
 } from "@/app/actions/project";
+import AddMilestonePhotoForm from "@/components/firm/AddMilestonePhotoForm";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
@@ -98,103 +100,109 @@ export default async function DesignerProjectPage({
           </div>
         )}
 
-        {project.status === "ACTIVE" ? (
-        <form
-          action={createMilestoneAction}
-          className="space-y-4 rounded-2xl border border-neutral-200 p-6"
-        >
-          <input type="hidden" name="projectId" value={project.id} />
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Milestone title</label>
-              <input
-                name="title"
-                required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-700">Amount (INR)</label>
-              <input
-                name="amount"
-                type="number"
-                min={0}
-                required
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-700">Description</label>
-            <textarea
-              name="description"
-              rows={3}
-              className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
-            />
-          </div>
-          <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
-            Add milestone
-          </button>
-        </form>
-        ) : (
-          <div className="rounded-2xl border border-neutral-200 p-6 text-sm text-neutral-500">
-            Create milestones after initiating this project (status must be Active).
-          </div>
-        )}
-
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-neutral-900">Milestones</h2>
-          {milestones.length === 0 ? (
-            <p className="text-sm text-neutral-500">No milestones created yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {milestones.map((milestone) => (
-                <div key={milestone.id} className="rounded-2xl border border-neutral-200 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
-                        {milestone.status}
-                      </p>
-                      <h3 className="text-lg font-semibold text-neutral-900">{milestone.title}</h3>
-                    </div>
-                    <p className="text-sm font-semibold text-neutral-900">₹{milestone.amount}</p>
-                  </div>
-                  <p className="mt-2 text-sm text-neutral-500">{milestone.description}</p>
-                  {imagesByMilestone[milestone.id]?.length ? (
-                    <div className="mt-3 grid gap-2 md:grid-cols-2">
-                      {imagesByMilestone[milestone.id].map((image) => (
-                        <a
-                          key={image.id}
-                          href={image.blob_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-lg border border-neutral-200 p-3 text-xs text-neutral-600"
-                        >
-                          {image.file_name}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
+          <p className="text-sm text-neutral-500">
+            Add payment stages, attach 1–3 photos per stage as evidence, then submit for approval. Customer approves and pays; admin releases funds to you.
+          </p>
 
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <form action={uploadMilestoneImageAction} encType="multipart/form-data">
-                      <input type="hidden" name="milestoneId" value={milestone.id} />
-                      <input type="file" name="file" required className="text-sm" />
-                      <button className="ml-2 rounded-md border border-neutral-200 px-3 py-2 text-xs font-medium text-neutral-800">
-                        Upload image
-                      </button>
-                    </form>
-                    {milestone.status === "PENDING" && (
-                      <form action={submitMilestoneAction}>
-                        <input type="hidden" name="milestoneId" value={milestone.id} />
-                        <button className="rounded-md bg-black px-3 py-2 text-xs font-medium text-white">
-                          Request approval
-                        </button>
-                      </form>
-                    )}
+          {project.status === "ACTIVE" ? (
+            <details className="rounded-2xl border border-neutral-200 p-4 group">
+              <summary className="cursor-pointer list-none font-medium text-neutral-900">
+                Create milestone
+              </summary>
+              <form action={createMilestoneAction} className="mt-4 pt-4 border-t border-neutral-200 space-y-4">
+                <input type="hidden" name="projectId" value={project.id} />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">Milestone title</label>
+                    <input name="title" required className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm" placeholder="e.g. Concept Design" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">Amount (INR)</label>
+                    <input name="amount" type="number" min={0} required className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm" placeholder="65000" />
                   </div>
                 </div>
-              ))}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-700">Description</label>
+                  <textarea name="description" rows={2} className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm" placeholder="What this stage includes" />
+                </div>
+                <button type="submit" className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+                  Add milestone
+                </button>
+              </form>
+            </details>
+          ) : (
+            <div className="rounded-2xl border border-neutral-200 p-6 text-sm text-neutral-500">
+              Create milestones after initiating this project (status must be Active).
+            </div>
+          )}
+
+          {milestones.length === 0 ? (
+            <p className="text-sm text-neutral-500">No milestones yet. Use &quot;Create milestone&quot; above to add one.</p>
+          ) : (
+            <div className="space-y-4">
+              {milestones.map((milestone) => {
+                const evidenceCount = imagesByMilestone[milestone.id]?.length ?? 0;
+                const canSubmit = evidenceCount >= 1 && evidenceCount <= 3;
+                return (
+                  <div key={milestone.id} className="rounded-2xl border border-neutral-200 p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">{milestone.status}</p>
+                        <h3 className="text-lg font-semibold text-neutral-900">{milestone.title}</h3>
+                      </div>
+                      <p className="text-sm font-semibold text-neutral-900">₹{milestone.amount.toLocaleString()}</p>
+                    </div>
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-neutral-500 mb-1">Description</p>
+                      {(milestone.status === "IN_PROGRESS" || milestone.status === "PENDING") ? (
+                        <form action={updateMilestoneDescriptionAction}>
+                          <input type="hidden" name="milestoneId" value={milestone.id} />
+                          <textarea name="description" rows={2} defaultValue={milestone.description} className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm" placeholder="What this stage includes" />
+                          <button type="submit" className="mt-2 rounded-md border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-800">Save description</button>
+                        </form>
+                      ) : (
+                        <p className="text-sm text-neutral-500">{milestone.description || "—"}</p>
+                      )}
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-neutral-100">
+                      <p className="text-xs font-medium text-neutral-500 mb-1">Evidence — {evidenceCount} of 3 photos</p>
+                      <p className="text-xs text-neutral-500 mb-2">Add 1–3 photos for the customer to review, then submit for approval.</p>
+                      {evidenceCount > 0 && (
+                        <div className="grid gap-2 md:grid-cols-2 mb-3">
+                          {imagesByMilestone[milestone.id].map((image) => (
+                            <a key={image.id} href={image.blob_url} target="_blank" rel="noreferrer" className="rounded-lg border border-neutral-200 p-3 text-xs text-neutral-600 hover:underline">
+                              {image.file_name}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      {(milestone.status === "PENDING" || milestone.status === "IN_PROGRESS") && evidenceCount < 3 && (
+                        <div className="mb-3">
+                          <AddMilestonePhotoForm
+                            milestoneId={milestone.id}
+                            action={uploadMilestoneImageAction}
+                            buttonClassName="rounded-md border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-800"
+                          />
+                        </div>
+                      )}
+                      {(milestone.status === "PENDING" || milestone.status === "IN_PROGRESS") && (
+                        canSubmit ? (
+                          <form action={submitMilestoneAction} className="inline">
+                            <input type="hidden" name="milestoneId" value={milestone.id} />
+                            <button type="submit" className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white">
+                              Submit for approval
+                            </button>
+                          </form>
+                        ) : (
+                          <p className="text-xs text-amber-600">Add at least 1 photo (max 3) to submit this stage.</p>
+                        )
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

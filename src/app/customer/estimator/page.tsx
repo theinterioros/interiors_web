@@ -14,7 +14,7 @@ export default async function CustomerEstimatorPage() {
           <Calculator className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">AI Cost Estimator</p>
         </div>
-        <h1 className="heading-lg mb-1">Detailed cost estimate</h1>
+        <h1 className="heading-lg mb-1">Detailed Cost Estimate</h1>
         <p className="text-sm text-[var(--text-muted)]">
           Enter your property details to get an AI-powered cost range and breakdown. Use this to plan your budget before connecting with a designer.
         </p>

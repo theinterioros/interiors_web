@@ -31,7 +31,7 @@ export default async function FirmLeadsPage() {
           <Inbox className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Leads</p>
         </div>
-        <h1 className="heading-lg mb-1">Incoming leads</h1>
+        <h1 className="heading-lg mb-1">Incoming Leads</h1>
         <p className="text-sm text-[var(--text-muted)] mb-2">
           Leads are created when a customer requests a meetup from your studio (Browse designers → your profile → Request meetup). When you agree to work together, click <strong>Initiate project</strong> to create an active project where you can add milestones and receive payments.
         </p>

@@ -68,7 +68,7 @@ export default function CustomerEstimatorClient() {
   return (
     <div className="grid gap-8 lg:grid-cols-2">
       <div className="card">
-        <h2 className="heading-md mb-4">Input parameters</h2>
+        <h2 className="heading-md mb-4">Input Parameters</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -80,7 +80,7 @@ export default function CustomerEstimatorClient() {
               <input name="pincode" required placeholder="e.g. 560001" className="input w-full" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Property type</label>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Property Type</label>
               <select name="propertyType" className="input w-full">
                 <option value="apartment">Apartment / Flat</option>
                 <option value="villa">Villa / Independent</option>
@@ -97,7 +97,7 @@ export default function CustomerEstimatorClient() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Carpet area</label>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Carpet Area</label>
               <input
                 name="carpetArea"
                 type="number"
@@ -108,7 +108,7 @@ export default function CustomerEstimatorClient() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Area unit</label>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Area Unit</label>
               <select name="areaUnit" className="input w-full">
                 <option value="sqft">Sq.ft</option>
                 <option value="sqyd">Sq.yd</option>
@@ -136,7 +136,7 @@ export default function CustomerEstimatorClient() {
             </div>
             <div className="rounded-lg border border-[var(--border)] bg-white divide-y divide-[var(--border)]">
               <div className="flex justify-between items-center py-3 px-4">
-                <span className="text-sm text-[var(--text-muted)]">Carpet area</span>
+                <span className="text-sm text-[var(--text-muted)]">Carpet Area</span>
                 <span className="text-sm font-medium text-[var(--foreground)]">{result.breakdown.squareFeet} sq.ft</span>
               </div>
               <div className="flex justify-between items-center py-3 px-4">

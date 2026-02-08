@@ -63,7 +63,7 @@ export default async function FirmProjectsPage({ searchParams }: PageProps) {
           <FolderKanban className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Projects</p>
         </div>
-        <h1 className="heading-lg mb-1">Your projects</h1>
+        <h1 className="heading-lg mb-1">Your Projects</h1>
         <p className="text-sm text-[var(--text-muted)]">
           Leads are meetup requests from customers; initiate a project to turn a lead into an active project with milestones and payments. Use tabs to filter.
         </p>

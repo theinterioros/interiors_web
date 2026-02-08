@@ -33,7 +33,7 @@ export default async function FirmsPage() {
           <Building2 className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Designers</p>
         </div>
-        <h1 className="heading-lg mb-1">Browse verified designers</h1>
+        <h1 className="heading-lg mb-1">Browse Verified Designers</h1>
         <p className="text-sm text-[var(--text-muted)]">
           Verified designers on the platform. View profiles and request a meetup to start a project.
         </p>

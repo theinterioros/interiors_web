@@ -74,7 +74,7 @@ export default async function AdminProjectsPage({ searchParams }: PageProps) {
           <FolderKanban className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Projects</p>
         </div>
-        <h1 className="heading-lg mb-1">All projects</h1>
+        <h1 className="heading-lg mb-1">All Projects</h1>
         <p className="text-sm text-[var(--text-muted)]">
           View all projects with status, customer, designer, and milestone counts. Use tabs to filter by status (Active, Leads, Completed, Other).
         </p>

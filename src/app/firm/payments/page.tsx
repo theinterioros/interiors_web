@@ -57,7 +57,7 @@ export default async function FirmPaymentsPage() {
           <CreditCard className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Payments</p>
         </div>
-        <h1 className="heading-lg mb-1">Your earnings</h1>
+        <h1 className="heading-lg mb-1">Your Earnings</h1>
         <p className="text-sm text-[var(--text-muted)] mb-2">
           Track pending milestones, amounts in escrow (awaiting admin release), and payouts already sent to you. The ledger shows date, payment type, particulars, customer, amount, margin, and what you receive.
         </p>
@@ -111,7 +111,7 @@ export default async function FirmPaymentsPage() {
           <>
             {pendingMilestones.length > 0 && (
               <div className="px-4 sm:px-5 py-4 bg-[var(--surface-subtle)]/50 border-b border-[var(--border)]">
-                <p className="eyebrow mb-2">Pending (not yet submitted for approval)</p>
+                <p className="eyebrow mb-2">Pending (Not Yet Submitted for Approval)</p>
                 <ul className="space-y-2">
                   {pendingMilestones.map((m, i) => (
                     <li key={`pending-${i}`} className="flex items-center justify-between gap-3 py-2">

@@ -70,7 +70,7 @@ export default async function DigitalTwinPage() {
           <Cuboid className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Digital Twin</p>
         </div>
-        <h1 className="heading-lg mb-1">Documents by project</h1>
+        <h1 className="heading-lg mb-1">Documents by Project</h1>
         <p className="text-sm text-[var(--text-muted)]">
           Milestone photos and documents for each project. Files stay available after completion.
         </p>

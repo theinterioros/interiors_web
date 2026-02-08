@@ -46,7 +46,7 @@ export default async function CustomerPaymentsPage() {
           <CreditCard className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Payments</p>
         </div>
-        <h1 className="heading-lg mb-1">Payment history</h1>
+        <h1 className="heading-lg mb-1">Payment History</h1>
         <p className="text-sm text-[var(--text-muted)] mb-2">
           View all your payments: registration fee, project fees, and milestone payouts. Each entry shows the date, type, project and milestone details, the designer you paid, amount, and status.
         </p>

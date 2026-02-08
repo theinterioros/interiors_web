@@ -29,15 +29,15 @@ const DEMO_FIRM_GST = "29AABCT1234A1Z5";
 const PORTFOLIO_WORKS = [
   {
     title: "Heritage Home — Full Interior, Koramangala",
-    description: "1,800 sq ft apartment: living, dining, three bedrooms, and pooja room. Warm wood and stone finishes, custom joinery, and concealed storage. Client wanted a blend of traditional and contemporary; we used teak and Indian marble with a neutral palette.",
+    description: "1,800 sq ft apartment: living, dining, three bedrooms, and pooja room. Warm teak and Indian marble, custom joinery, and concealed storage throughout. Client wanted a blend of traditional and contemporary; we used a neutral palette with brass accents and handpicked textiles. Completed with 3D visualisation, material sourcing, and site supervision.",
   },
   {
     title: "Compact 2BHK — Smart Space, Whitefield",
-    description: "1,100 sq ft apartment with open kitchen and living, two bedrooms, and study nook. Space-saving solutions, modular kitchen with breakfast counter, and built-in wardrobes. Delivered within 4 months.",
+    description: "1,100 sq ft apartment with open kitchen–living, two bedrooms, and study nook. Space-saving modular kitchen with breakfast counter, built-in wardrobes, and multipurpose furniture. Delivered within 4 months. Featured in a local design roundup for small-space solutions.",
   },
   {
     title: "Villa Interior — Common Areas & Master Suite, Yemalur",
-    description: "Ground and first floor common areas plus master bedroom and wardrobe. Large-format tiles, false ceiling with cove lighting, and custom furniture. Project included material sourcing and site coordination with the builder.",
+    description: "Ground and first floor common areas plus master bedroom and walk-in wardrobe. Large-format tiles, false ceiling with cove lighting, and custom furniture. Full material sourcing and site coordination with the builder. Client brief: modern, low-maintenance, and family-friendly.",
   },
 ];
 const PORTFOLIO_IMAGES_BY_WORK: { name: string; url: string }[][] = [

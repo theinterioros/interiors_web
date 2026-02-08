@@ -1,10 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ensureAdminSeed } from "@/lib/seedAdmin";
 import { ensureDemoAccounts } from "@/lib/seedDemo";
 import { getCurrentUser } from "@/lib/auth";
 import AuthAwareLayout from "@/components/layout/AuthAwareLayout";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 const inter = Inter({
   variable: "--font-inter",

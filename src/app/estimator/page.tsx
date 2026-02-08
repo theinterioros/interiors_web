@@ -17,7 +17,7 @@ export default async function EstimatorPage() {
             <Zap className="h-4 w-4 text-[var(--brand)]" />
             <p className="eyebrow">AI Cost Estimator</p>
           </div>
-          <h1 className="heading-lg mb-3">Know your interior budget early</h1>
+          <h1 className="heading-lg mb-3">Know Your Interior Budget Early</h1>
           <p className="text-[var(--text-muted)] max-w-2xl">
             Get an AI-powered cost range. Share your property details and contact to see your estimate. Create a free account for a detailed breakdown and to connect with verified designers.
           </p>

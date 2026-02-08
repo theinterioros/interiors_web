@@ -7,7 +7,10 @@ import {
   uploadMilestoneImageAction,
 } from "@/app/actions/project";
 import MilestoneTimeline from "@/components/ui/MilestoneTimeline";
-import { ClipboardList, Info, IndianRupee, FileText, Image, Package, Trash2 } from "lucide-react";
+import PageTabs from "@/components/ui/PageTabs";
+import AddMilestoneModal from "@/components/firm/AddMilestoneModal";
+import AddMilestonePhotoForm from "@/components/firm/AddMilestonePhotoForm";
+import { Plus, FileText, Image, Package, Trash2, HelpCircle, ClipboardList } from "lucide-react";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
@@ -16,12 +19,15 @@ import FadeInItem from "@/components/animations/FadeInItem";
 
 export const dynamic = "force-dynamic";
 
-export default async function FirmProjectPage({
-  params,
-}: {
+type PageProps = {
   params: Promise<{ id: string }>;
-}) {
+  searchParams?: Promise<{ tab?: string }>;
+};
+
+export default async function FirmProjectPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+  const tab = resolvedSearchParams?.tab === "approved" ? "approved" : "in-progress";
   const user = await requireFirmPaid();
 
   const [project] = await sql<{
@@ -103,118 +109,92 @@ export default async function FirmProjectPage({
 
   const MAX_IMAGES = 3;
 
+  const inProgressMilestones = milestones.filter(
+    (m) => m.status === "PENDING" || m.status === "IN_PROGRESS"
+  );
+  const approvedMilestones = milestones.filter((m) => m.status === "APPROVED");
+  const milestoneTabs = [
+    {
+      label: "In progress",
+      href: `/firm/projects/${id}?tab=in-progress`,
+      active: tab === "in-progress",
+      count: inProgressMilestones.length,
+    },
+    {
+      label: "Approved",
+      href: `/firm/projects/${id}?tab=approved`,
+      active: tab === "approved",
+      count: approvedMilestones.length,
+    },
+  ];
+  const displayedMilestones = tab === "approved" ? approvedMilestones : inProgressMilestones;
+
   return (
     <div className="page bg-white">
       <div className="page-inner">
-        <FadeIn className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <ClipboardList className="h-4 w-4 text-[var(--brand)]" />
-            <p className="eyebrow">Project Management</p>
-          </div>
-          <h1 className="heading-lg mb-3">{project.title}</h1>
-          <p className="text-[var(--text-muted)]">
-            Customer: {project.customer_name ?? project.customer_email} • Status: {project.status}
+        <FadeIn className="mb-8">
+          <p className="eyebrow text-[var(--text-muted)] mb-1">
+            {project.customer_name ?? project.customer_email} · {project.status}
+          </p>
+          <h1 className="heading-lg mb-1">{project.title}</h1>
+          <p className="text-sm text-[var(--text-muted)]">
+            Add payment stages below. Customer approves each stage; you get paid after admin releases from escrow.
           </p>
         </FadeIn>
 
         {(project.status === "LEAD" || project.status === "ACCEPTED") && (
-          <FadeIn delay={0.08}>
-            <div className="card border-[var(--accent-amber)]/40 bg-[var(--accent-amber-light)]/30 mb-6">
-              <h3 className="font-semibold text-[var(--foreground)] mb-2">
-                {project.status === "LEAD" ? "This is a lead" : "Project accepted"}
-              </h3>
-              <p className="text-sm text-[var(--foreground)] mb-2">
+          <FadeIn delay={0.05} className="mb-8">
+            <div className="rounded-xl border-2 border-[var(--accent-amber)]/50 bg-[var(--accent-amber)]/5 p-6">
+              <p className="text-sm text-[var(--foreground)] mb-4">
                 {project.status === "LEAD"
-                  ? "The customer requested a meetup with you. After you meet (or agree to work together), click Initiate project below to start adding milestones."
-                  : "You’ve accepted this project. Click Initiate project below to move it to Active and add milestones and request payments."}
+                  ? "The customer requested a meetup. Once you agree to work together, start the project to add payment stages and get paid."
+                  : "You've accepted. Start the project to add milestones and request payments."}
               </p>
-              <form action={initiateProjectAction} className="mt-3">
+              <form action={initiateProjectAction}>
                 <input type="hidden" name="projectId" value={project.id} />
-                <button type="submit" className="btn btn-primary">
-                  Initiate project
+                <button type="submit" className="btn btn-primary inline-flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Start project &amp; add milestones
                 </button>
               </form>
             </div>
           </FadeIn>
         )}
 
-        {project.status === "ACTIVE" && (
-          <FadeIn delay={0.08} className="mb-8">
-            <div className="card border-[var(--brand)]/20 bg-[var(--surface-subtle)]/50">
-              <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-[var(--brand)] shrink-0 mt-0.5" />
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-[var(--foreground)] mb-2">How this project works</h3>
-                  <ul className="text-sm text-[var(--text-muted)] space-y-2 list-disc list-inside">
-                    <li><strong className="text-[var(--foreground)]">Lead → Active:</strong> Customer requested a meetup (lead). You turned it into an active project by clicking &quot;Initiate project&quot;. You can now create milestones and get paid.</li>
-                    <li><strong className="text-[var(--foreground)]">Payment (milestones only):</strong> Create a milestone (e.g. Concept Design ₹65,000). Upload evidence photos, then click &quot;Request approval&quot;. The customer sees it in their project and clicks &quot;Approve &amp; pay&quot;. Money goes to escrow; Admin releases it to you from Admin → Payments.</li>
-                    <li><strong className="text-[var(--foreground)]">No payment:</strong> Design revisions (moodboards for feedback), quotation PDF (for records), and Digital Twin (final handover docs) do not trigger payment. Use milestones above for any billable stage.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </FadeIn>
-        )}
-
-        <FadeIn delay={0.12} className="mb-8">
-          {project.status === "ACTIVE" ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="heading-md">1. Create a milestone</h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--brand)]/15 text-[var(--brand)] px-2.5 py-0.5 text-xs font-medium">
-                  <IndianRupee className="h-3.5 w-3.5" /> Payment
-                </span>
-              </div>
-              <p className="text-sm text-[var(--text-muted)]">
-                Each milestone is a payment stage. Add title, amount, and description. Then upload evidence and request approval; the customer approves &amp; pays from their project page. Admin releases from escrow to you.
-              </p>
-              <form action={createMilestoneAction} className="card space-y-4">
-                <input type="hidden" name="projectId" value={project.id} />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-[var(--foreground)]">Milestone title</label>
-                    <input name="title" required className="input" placeholder="e.g. Concept Design" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-[var(--foreground)]">Amount (INR)</label>
-                    <input name="amount" type="number" min={0} required className="input" placeholder="65000" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[var(--foreground)]">Description</label>
-                  <textarea name="description" rows={3} className="input" placeholder="What this stage includes" />
-                </div>
-                <button type="submit" className="btn btn-primary">
-                  Add milestone
-                </button>
-              </form>
-            </div>
-          ) : (
-            <div className="card text-[var(--text-muted)]">
-              <p className="text-sm">
-                {project.status === "REJECTED"
-                  ? "This project was rejected."
-                  : "Create milestones after initiating this project (status must be Active)."}
-              </p>
-            </div>
-          )}
-        </FadeIn>
-
-        <FadeIn delay={0.18} className="mb-8">
-          <div className="flex items-center gap-2 flex-wrap mb-4">
-            <h2 className="heading-md">2. Milestones</h2>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--brand)]/15 text-[var(--brand)] px-2.5 py-0.5 text-xs font-medium">
-              <IndianRupee className="h-3.5 w-3.5" /> Payment
-            </span>
-          </div>
-          <p className="text-sm text-[var(--text-muted)] mb-4">
-            Upload evidence photos for each milestone, then click &quot;Request approval&quot;. Customer sees it under their project and approves &amp; pays. You get paid after Admin releases from Admin → Payments.
+        <FadeIn delay={0.08} className="mb-8">
+          <h2 className="heading-md mb-1">Payment stages</h2>
+          <p className="text-sm text-[var(--text-muted)] mb-6">
+            Each stage is a billable milestone. Add it, attach 1–3 photos as evidence, then submit for approval. The customer approves and pays; admin releases funds to you.
           </p>
-          {milestones.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">No milestones created yet.</p>
-          ) : (
+
+          {project.status === "ACTIVE" ? (
+            <>
+              <div className="mb-6">
+                <AddMilestoneModal projectId={project.id} action={createMilestoneAction} />
+              </div>
+
+              {milestones.length === 0 ? (
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]/30 p-8 text-center">
+                  <p className="text-[var(--text-muted)] mb-1">No payment stages yet</p>
+                  <p className="text-sm text-[var(--text-muted)]">Open &quot;Add milestone&quot; above to create your first one.</p>
+                </div>
+              ) : (
+            <>
+              <PageTabs tabs={milestoneTabs} />
+              {displayedMilestones.length === 0 ? (
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]/30 p-8 text-center">
+                  <p className="text-[var(--text-muted)] mb-1">
+                    {tab === "approved" ? "No approved stages yet" : "No stages in progress"}
+                  </p>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    {tab === "approved"
+                      ? "Stages you submit for approval will appear here once the customer approves."
+                      : "Add a milestone above or move one back to in progress."}
+                  </p>
+                </div>
+              ) : (
             <StaggerChildren className="space-y-4">
-              {milestones.map((milestone) => (
+              {displayedMilestones.map((milestone) => (
                 <FadeInItem key={milestone.id}>
                   <div className="card">
                     <div className="flex items-center justify-between mb-3">
@@ -226,32 +206,37 @@ export default async function FirmProjectPage({
                         ₹{milestone.amount.toLocaleString()}
                       </p>
                     </div>
-                    {(milestone.status === "IN_PROGRESS" || milestone.status === "PENDING") && (
-                      <form action={updateMilestoneDescriptionAction} className="mb-4">
-                        <input type="hidden" name="milestoneId" value={milestone.id} />
-                        <label className="text-sm font-medium text-[var(--foreground)] block mb-1">Description</label>
-                        <textarea
-                          name="description"
-                          rows={3}
-                          defaultValue={milestone.description}
-                          className="input w-full"
-                          placeholder="What this stage includes"
-                        />
-                        <button type="submit" className="btn btn-secondary text-xs mt-2">
-                          Update description
-                        </button>
-                      </form>
-                    )}
-                    {!(milestone.status === "IN_PROGRESS" || milestone.status === "PENDING") && (
-                      <p className="text-[var(--text-muted)] mb-4">{milestone.description}</p>
-                    )}
 
-                    {imagesByMilestone[milestone.id]?.length ? (
-                      <div className="mb-4">
-                        <p className="text-xs font-medium text-[var(--text-muted)] mb-2">
-                          Images ({imagesByMilestone[milestone.id].length}/{MAX_IMAGES})
-                        </p>
-                        <div className="grid gap-2 md:grid-cols-2">
+                    <div className="mb-4">
+                      <p className="text-xs font-medium text-[var(--text-muted)] mb-1">Description</p>
+                      {(milestone.status === "IN_PROGRESS" || milestone.status === "PENDING") ? (
+                        <form action={updateMilestoneDescriptionAction}>
+                          <input type="hidden" name="milestoneId" value={milestone.id} />
+                          <textarea
+                            name="description"
+                            rows={2}
+                            defaultValue={milestone.description}
+                            className="input w-full text-sm"
+                            placeholder="What this stage includes"
+                          />
+                          <button type="submit" className="btn btn-ghost text-xs mt-1 text-[var(--brand)]">
+                            Save description
+                          </button>
+                        </form>
+                      ) : (
+                        <p className="text-sm text-[var(--text-muted)]">{milestone.description || "—"}</p>
+                      )}
+                    </div>
+
+                    <div className="mb-4 pt-3 border-t border-[var(--border)]">
+                      <p className="text-xs font-medium text-[var(--text-muted)] mb-2">
+                        Evidence — {(imagesByMilestone[milestone.id]?.length ?? 0)} of {MAX_IMAGES} photos
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)] mb-2">
+                        Add 1–3 photos for the customer to review. They approve and pay this stage after you submit.
+                      </p>
+                      {imagesByMilestone[milestone.id]?.length > 0 && (
+                        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 mb-3">
                           {imagesByMilestone[milestone.id].map((image) => (
                             <div
                               key={image.id}
@@ -268,11 +253,7 @@ export default async function FirmProjectPage({
                               {(milestone.status === "PENDING" || milestone.status === "IN_PROGRESS") && (
                                 <form action={deleteMilestoneImageAction} className="shrink-0">
                                   <input type="hidden" name="imageId" value={image.id} />
-                                  <button
-                                    type="submit"
-                                    className="p-1.5 rounded text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--foreground)]"
-                                    title="Remove image"
-                                  >
+                                  <button type="submit" className="p-1.5 rounded text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--foreground)]" title="Remove">
                                     <Trash2 className="h-3.5 w-3.5" />
                                   </button>
                                 </form>
@@ -280,45 +261,29 @@ export default async function FirmProjectPage({
                             </div>
                           ))}
                         </div>
-                      </div>
-                    ) : null}
-
-                    {(milestone.status === "PENDING" || milestone.status === "IN_PROGRESS") && (
-                      <div className="flex flex-wrap gap-3 mb-4">
-                        {(imagesByMilestone[milestone.id]?.length ?? 0) < MAX_IMAGES && (
-                          <form action={uploadMilestoneImageAction} encType="multipart/form-data" className="flex flex-wrap items-center gap-2">
-                            <input type="hidden" name="milestoneId" value={milestone.id} />
-                            <input
-                              type="file"
-                              name="file"
-                              accept="image/*"
-                              required
-                              className="block w-full max-w-[200px] text-sm text-[var(--text-muted)] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-[var(--brand)] file:text-white file:cursor-pointer hover:file:opacity-90"
-                            />
-                            <button type="submit" className="btn btn-secondary text-xs">
-                              Upload image
-                            </button>
-                          </form>
+                      )}
+                      {(milestone.status === "PENDING" || milestone.status === "IN_PROGRESS") &&
+                        (imagesByMilestone[milestone.id]?.length ?? 0) < MAX_IMAGES && (
+                          <AddMilestonePhotoForm
+                            milestoneId={milestone.id}
+                            action={uploadMilestoneImageAction}
+                          />
                         )}
-                        <span className="text-xs text-[var(--text-muted)] self-center">
-                          {(imagesByMilestone[milestone.id]?.length ?? 0)} / {MAX_IMAGES} images
-                        </span>
-                      </div>
-                    )}
+                    </div>
 
                     {(milestone.status === "PENDING" || milestone.status === "IN_PROGRESS") && (() => {
-                      const imageCount = imagesByMilestone[milestone.id]?.length ?? 0;
-                      const canSubmit = imageCount >= 1 && imageCount <= MAX_IMAGES;
+                      const count = imagesByMilestone[milestone.id]?.length ?? 0;
+                      const canSubmit = count >= 1 && count <= MAX_IMAGES;
                       return canSubmit ? (
                         <form action={submitMilestoneAction} className="mb-4">
                           <input type="hidden" name="milestoneId" value={milestone.id} />
-                          <button type="submit" className="btn btn-primary text-xs">
-                            Request approval
+                          <button type="submit" className="btn btn-primary">
+                            Submit for approval
                           </button>
                         </form>
                       ) : (
                         <p className="text-xs text-[var(--accent-amber)] mb-4">
-                          Upload at least one image (max {MAX_IMAGES}) to request approval.
+                          Add at least 1 photo (max {MAX_IMAGES}) to submit this stage for approval.
                         </p>
                       );
                     })()}
@@ -331,68 +296,67 @@ export default async function FirmProjectPage({
                 </FadeInItem>
               ))}
             </StaggerChildren>
+              )}
+            </>
+              )}
+            </>
+          ) : (
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]/30 p-6">
+              <p className="text-sm text-[var(--text-muted)]">
+                {project.status === "REJECTED"
+                  ? "This project was rejected."
+                  : "Start the project first (use the button above when the project is a lead or accepted) to add payment stages."}
+              </p>
+            </div>
           )}
         </FadeIn>
 
         {project.status === "ACTIVE" && (
-          <FadeIn delay={0.24} className="mt-8">
-            <h2 className="heading-md mb-3">3. Other steps (no payment)</h2>
-            <p className="text-sm text-[var(--text-muted)] mb-4">
-              These steps support the project but do not trigger payment. Use <strong>Milestones</strong> above for any billable stage.
+          <FadeIn delay={0.12} className="mt-12 pt-10 border-t border-[var(--border)]">
+            <h2 className="heading-md mb-2 flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-[var(--text-muted)]" />
+              Common questions
+            </h2>
+            <p className="text-sm text-[var(--text-muted)] mb-6">
+              Quick answers about design revisions, quotes, site photos, and handover. For anything you charge for, use a payment stage above.
             </p>
             <div className="space-y-4">
-              <div className="card border-[var(--border)]">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--text-muted)]">
-                    <Image className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <h3 className="font-semibold text-[var(--foreground)] mb-1">Design revision</h3>
-                    <p className="text-sm text-[var(--text-muted)]">
-                      Share moodboards or layout options with the customer for feedback. No payment. When you are ready to bill for a design phase, create a milestone (e.g. &quot;Concept Design&quot;), upload the design files as milestone evidence, then request approval.
-                    </p>
-                  </div>
+              <details className="group rounded-xl border border-[var(--border)] bg-white overflow-hidden">
+                <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--surface-subtle)]/50 flex items-center gap-3">
+                  <Image className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
+                  How do I share design revisions or moodboards?
+                </summary>
+                <div className="px-5 pb-4 pt-3 text-sm text-[var(--text-muted)] border-t border-[var(--border)] leading-relaxed">
+                  Share files with the customer for feedback anytime (no payment). To bill for a design phase, create a payment stage (e.g. &quot;Concept Design&quot;), add 1–3 photos as evidence, then submit for approval.
                 </div>
-              </div>
-              <div className="card border-[var(--border)]">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--text-muted)]">
-                    <FileText className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <h3 className="font-semibold text-[var(--foreground)] mb-1">Quotation</h3>
-                    <p className="text-sm text-[var(--text-muted)]">
-                      Your formal quote (PDF) for the customer&apos;s records. Create milestones above to match the quote amounts. Quotation upload for this project is coming soon; for now, create milestones that reflect your quote.
-                    </p>
-                  </div>
+              </details>
+              <details className="group rounded-xl border border-[var(--border)] bg-white overflow-hidden">
+                <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--surface-subtle)]/50 flex items-center gap-3">
+                  <FileText className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
+                  Where do I add my quotation?
+                </summary>
+                <div className="px-5 pb-4 pt-3 text-sm text-[var(--text-muted)] border-t border-[var(--border)] leading-relaxed">
+                  Create payment stages that match your quote amounts. The customer approves and pays each stage. Quotation PDF upload for this project is coming soon.
                 </div>
-              </div>
-              <div className="card border-[var(--border)]">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--text-muted)]">
-                    <ClipboardList className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <h3 className="font-semibold text-[var(--foreground)] mb-1">Execution / site progress</h3>
-                    <p className="text-sm text-[var(--text-muted)]">
-                      Site photos and progress updates go in <strong>Milestones</strong> above. Upload images to the relevant milestone (e.g. &quot;Carpentry &amp; finishing&quot;), then click &quot;Request approval&quot; when that stage is complete. The customer approves and pays for that milestone.
-                    </p>
-                  </div>
+              </details>
+              <details className="group rounded-xl border border-[var(--border)] bg-white overflow-hidden">
+                <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--surface-subtle)]/50 flex items-center gap-3">
+                  <ClipboardList className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
+                  Where do site photos and progress updates go?
+                </summary>
+                <div className="px-5 pb-4 pt-3 text-sm text-[var(--text-muted)] border-t border-[var(--border)] leading-relaxed">
+                  Add them to the right payment stage (e.g. &quot;Carpentry &amp; finishing&quot;). Add photos as evidence for that stage, then click Submit for approval. The customer pays for that stage.
                 </div>
-              </div>
-              <div className="card border-[var(--border)]">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--text-muted)]">
-                    <Package className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <h3 className="font-semibold text-[var(--foreground)] mb-1">Digital Twin (handover)</h3>
-                    <p className="text-sm text-[var(--text-muted)]">
-                      Final handover documents (as-built drawings, warranties, manuals) go to the customer&apos;s Digital Twin vault. They see these under Customer → Digital Twin. Designer upload to vault for this project is coming soon.
-                    </p>
-                  </div>
+              </details>
+              <details className="group rounded-xl border border-[var(--border)] bg-white overflow-hidden">
+                <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--surface-subtle)]/50 flex items-center gap-3">
+                  <Package className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
+                  What about handover documents (Digital Twin)?
+                </summary>
+                <div className="px-5 pb-4 pt-3 text-sm text-[var(--text-muted)] border-t border-[var(--border)] leading-relaxed">
+                  Final as-built drawings, warranties, and manuals go to the customer&apos;s Digital Twin vault (Customer → Digital Twin). Designer upload for this project is coming soon.
                 </div>
-              </div>
+              </details>
             </div>
           </FadeIn>
         )}

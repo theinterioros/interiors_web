@@ -81,7 +81,7 @@ export default async function FirmDashboardPage() {
           <LayoutDashboard className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Dashboard</p>
         </div>
-        <h1 className="heading-lg mb-1">Your workstream</h1>
+        <h1 className="heading-lg mb-1">Your Workstream</h1>
         <p className="text-sm text-[var(--text-muted)]">
           Incoming leads (meetup requests), active projects, and quick links to payments and profile.
         </p>

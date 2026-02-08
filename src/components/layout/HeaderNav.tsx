@@ -28,7 +28,6 @@ const adminNavItems = [
   { href: "/admin/leads", label: "Leads", icon: MessageSquare },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/designers", label: "Designer Approvals", icon: BadgeCheck },
-  { href: "/admin/margin-requests", label: "Margin Requests", icon: BadgeCheck },
   { href: "/admin/firms-pending-payment", label: "Designers Pending Payment", icon: IndianRupee },
   { href: "/admin/pricing", label: "AI Estimator Pricing", icon: MapPin },
   { href: "/admin/trusted-studios", label: "Trusted Studios", icon: Building2 },

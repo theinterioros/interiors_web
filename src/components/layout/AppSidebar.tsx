@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Menu, X } from "lucide-react";
+import MobileBottomNav from "./MobileBottomNav";
 import {
   LayoutDashboard,
   Users,
@@ -30,19 +31,18 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/projects", label: "Projects", icon: FolderKanban },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/designers", label: "Designer approvals", icon: BadgeCheck },
-  { href: "/admin/margin-requests", label: "Margin requests", icon: BadgeCheck },
+  { href: "/admin/designers", label: "Designer Approvals", icon: BadgeCheck },
   { href: "/admin/leads", label: "Leads", icon: MessageSquare },
-  { href: "/admin/pricing", label: "AI Estimator pricing", icon: MapPin },
-  { href: "/admin/trusted-studios", label: "Trusted studios", icon: Building2 },
+  { href: "/admin/pricing", label: "AI Estimator Pricing", icon: MapPin },
+  { href: "/admin/trusted-studios", label: "Trusted Studios", icon: Building2 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 const CUSTOMER_NAV: NavItem[] = [
   { href: "/customer/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/designers", label: "Browse designers", icon: Palette },
-  { href: "/customer/estimator", label: "Cost estimator", icon: Calculator },
-  { href: "/customer/payments", label: "Payment history", icon: CreditCard },
+  { href: "/designers", label: "Browse Designers", icon: Palette },
+  { href: "/customer/estimator", label: "Cost Estimator", icon: Calculator },
+  { href: "/customer/payments", label: "Payment History", icon: CreditCard },
   { href: "/customer/digital-twin", label: "Digital Twin", icon: Layers },
 ];
 
@@ -50,7 +50,7 @@ const DESIGNER_NAV: NavItem[] = [
   { href: "/firm/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/firm/leads", label: "Leads", icon: MessageSquare },
   { href: "/firm/projects", label: "Projects", icon: FolderKanban },
-  { href: "/firm/payments", label: "Payment ledger", icon: CreditCard },
+  { href: "/firm/payments", label: "Payment Ledger", icon: CreditCard },
   { href: "/firm/profile", label: "Profile", icon: User },
 ];
 
@@ -109,15 +109,11 @@ export default function AppSidebar({ role }: { role: Role }) {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <button
-        type="button"
-        onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed bottom-4 left-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-white border border-[var(--border)] shadow-lg text-[var(--foreground)] hover:bg-[var(--surface-subtle)]"
-        aria-label="Open menu"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
+      {/* Mobile bottom navigation (app-style) */}
+      <MobileBottomNav
+        role={role}
+        onOpenMenu={role === "admin" ? () => setMobileOpen(true) : undefined}
+      />
 
       {/* Desktop sidebar — fixed so it doesn't scroll with page */}
       <aside

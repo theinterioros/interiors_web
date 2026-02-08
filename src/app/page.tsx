@@ -406,7 +406,7 @@ export default async function Home() {
               </div>
               <FadeInItem className="min-w-0">
                 <div className="card-subtle p-5 md:p-6">
-                  <p className="eyebrow mb-4">Status flow</p>
+                  <p className="eyebrow mb-4">Status Flow</p>
                   <div className="space-y-5">
                     <div className="flex gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-light)] text-[var(--brand)]">
@@ -500,7 +500,7 @@ export default async function Home() {
             <FadeIn className="grid gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16 items-center relative min-w-0">
               <FadeInItem className="order-2 lg:order-1 min-w-0">
                 <div className="card-subtle p-5 md:p-6">
-                  <p className="eyebrow mb-4">Document vault</p>
+                  <p className="eyebrow mb-4">Document Vault</p>
                   <div className="space-y-5">
                     <div className="flex gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-light)] text-[var(--brand)]">
@@ -533,7 +533,7 @@ export default async function Home() {
                 </div>
               </FadeInItem>
               <div className="order-1 lg:order-2 min-w-0">
-                <p className="eyebrow mb-3 text-[var(--accent-teal)]">Digital twin</p>
+                <p className="eyebrow mb-3 text-[var(--accent-teal)]">Digital Twin</p>
                 <h2 className="heading-lg mb-4">Every home document in <span className="text-[var(--brand)]">one place</span></h2>
                 <p className="text-lg text-[var(--text-muted)] mb-6 leading-relaxed">
                   Store wiring, plumbing, floor plans, and handover files <span className="text-[var(--accent-teal)] font-medium">securely</span> — for maintenance, resale, or future upgrades.
@@ -547,7 +547,7 @@ export default async function Home() {
                   ))}
                 </ul>
                 <Link href="/digital-twin" className="btn btn-secondary">
-                  Explore digital twin
+                  Explore Digital Twin
                 </Link>
               </div>
             </FadeIn>
@@ -558,7 +558,7 @@ export default async function Home() {
         <section className="section section-compact section-alt section-bg-pattern section-bg-gradient-alt text-center">
           <div className="page-inner min-w-0">
             <FadeIn className="mx-auto max-w-2xl text-center mb-6">
-              <p className="eyebrow mb-3">Who it’s for</p>
+              <p className="eyebrow mb-3">Who It's For</p>
               <h2 className="heading-lg"><span className="text-[var(--brand)]">Homeowners</span> and growing <span className="text-[var(--brand)]">studios</span></h2>
             </FadeIn>
             <WhoItsForIllo />

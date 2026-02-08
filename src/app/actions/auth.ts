@@ -339,6 +339,8 @@ export async function requestOtpAction(_prevState: unknown, formData: FormData) 
 export async function verifyOtpAction(_prevState: unknown, formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const code = String(formData.get("code") ?? "").trim();
+  const intendedRoleRaw = String(formData.get("intendedRole") ?? "").trim().toLowerCase();
+  const intendedRole = INTENDED_ROLE_TO_DB[intendedRoleRaw] ?? null;
 
   if (!email || !code) {
     return { ok: false, error: "Email and code are required." };
@@ -364,7 +366,32 @@ export async function verifyOtpAction(_prevState: unknown, formData: FormData) {
     return { ok: false, error: "No account found for this email." };
   }
 
+  if (intendedRole != null && user.role !== intendedRole) {
+    const roleLabels: Record<Role, string> = {
+      [RoleValues.ADMIN]: "Admin",
+      [RoleValues.CUSTOMER]: "Customer",
+      [RoleValues.FIRM]: "Designer",
+    };
+    return {
+      ok: false,
+      error: `This email is registered as ${roleLabels[user.role]}. Please sign in as ${roleLabels[user.role]} to continue.`,
+    };
+  }
+
   await createSession(user.id);
+  if (user.role === RoleValues.FIRM) {
+    const paid = await hasFirmPaidRegistration(user.id);
+    if (!paid) {
+      redirect("/firm/register/pay");
+    }
+  }
+  if (user.role === RoleValues.CUSTOMER) {
+    const { hasCustomerPaidSubscription } = await import("@/lib/registrationPayments");
+    const paid = await hasCustomerPaidSubscription(user.id);
+    if (!paid) {
+      redirect("/customer/subscribe");
+    }
+  }
   return redirectByRole(user.role);
 }
 

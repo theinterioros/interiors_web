@@ -96,7 +96,7 @@ export default async function FirmProfilePage() {
           <Building2 className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Profile</p>
         </div>
-        <h1 className="heading-lg mb-1">Manage your profile</h1>
+        <h1 className="heading-lg mb-1">Manage Your Profile</h1>
         <p className="text-sm text-[var(--text-muted)]">
           Update your details and upload portfolio for customers to view.
         </p>
@@ -106,11 +106,11 @@ export default async function FirmProfilePage() {
         <form action={updateFirmProfileAction} className="p-5 sm:p-6 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Firm name</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Firm Name</label>
               <input name="firmName" defaultValue={profile?.firm_name ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Owner name</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Owner Name</label>
               <input name="ownerName" defaultValue={profile?.owner_name ?? ""} className="input" />
             </div>
           </div>
@@ -120,7 +120,7 @@ export default async function FirmProfilePage() {
               <input name="name" defaultValue={profile?.name ?? ""} required className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Experience (years)</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Experience (Years)</label>
               <input
                 name="experienceYears"
                 type="number"
@@ -142,7 +142,7 @@ export default async function FirmProfilePage() {
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--foreground)]">Office address</label>
+            <label className="text-sm font-medium text-[var(--foreground)]">Office Address</label>
             <input name="officeAddress" defaultValue={profile?.office_address ?? ""} className="input" />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -151,17 +151,17 @@ export default async function FirmProfilePage() {
               <input name="gst" defaultValue={profile?.gst ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Business type</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Business Type</label>
               <input name="businessType" defaultValue={profile?.business_type ?? ""} className="input" />
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Ticket size</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Ticket Size</label>
               <input name="ticketSize" defaultValue={profile?.ticket_size ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Designers count</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Designers Count</label>
               <input
                 name="designersCount"
                 type="number"
@@ -172,11 +172,11 @@ export default async function FirmProfilePage() {
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--foreground)]">About (bio)</label>
+            <label className="text-sm font-medium text-[var(--foreground)]">About (Bio)</label>
             <textarea name="about" rows={4} defaultValue={profile?.about ?? ""} required className="input" />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--foreground)]">Google Review links</label>
+            <label className="text-sm font-medium text-[var(--foreground)]">Google Review Links</label>
             <textarea
               name="googleReviewLinks"
               rows={2}
@@ -190,14 +190,14 @@ export default async function FirmProfilePage() {
             <textarea name="comments" rows={3} defaultValue={profile?.comments ?? ""} className="input" />
           </div>
           <button type="submit" className="btn btn-primary">
-            Save profile
+            Save Profile
           </button>
         </form>
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border)]">
-            <h2 className="font-semibold text-[var(--foreground)]">Portfolio works</h2>
+            <h2 className="font-semibold text-[var(--foreground)]">Portfolio Works</h2>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">Max 3 works, 3 images each</p>
           </div>
           <div className="p-5 space-y-6">
@@ -217,13 +217,13 @@ export default async function FirmProfilePage() {
                         <label className="block text-sm font-medium mb-1">Description</label>
                         <textarea name="description" rows={2} defaultValue={work?.description ?? ""} placeholder="Brief description" className="input w-full" />
                       </div>
-                      <button type="submit" className="btn btn-secondary">Save work</button>
+                      <button type="submit" className="btn btn-secondary">Save Work</button>
                     </form>
                     {work && workFiles.length < 3 && (
-                      <form action={uploadFirmPortfolioAction} encType="multipart/form-data" className="flex flex-wrap items-end gap-3 pt-2 border-t border-[var(--border)]">
+                      <form action={uploadFirmPortfolioAction} className="flex flex-wrap items-end gap-3 pt-2 border-t border-[var(--border)]">
                         <input type="hidden" name="workId" value={work.id} />
                         <input type="file" name="file" required accept="image/*" className="input flex-1 min-w-0" />
-                        <button type="submit" className="btn btn-secondary">Add image ({workFiles.length}/3)</button>
+                        <button type="submit" className="btn btn-secondary">Add Image ({workFiles.length}/3)</button>
                       </form>
                     )}
                     {work && workFiles.length > 0 && (
@@ -240,13 +240,13 @@ export default async function FirmProfilePage() {
                 );
               })}
             </div>
-          <p className="text-xs text-[var(--text-muted)] mt-2 px-5 pb-5">Save a work first (title + description), then add up to 3 images per work.</p>
+          <p className="text-xs text-[var(--text-muted)] mt-2 px-5 pb-5">For each work: enter title and description, save, then add up to 3 images.</p>
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border)]">
-            <h2 className="font-semibold text-[var(--foreground)]">Portfolio uploads</h2>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">General files or use Portfolio works above.</p>
+            <h2 className="font-semibold text-[var(--foreground)]">Portfolio Uploads</h2>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">Add PDF or images for customers to view. For curated projects with titles and descriptions, use Portfolio Works above.</p>
           </div>
           {registrationPortfolio.length > 0 && (
             <div className="p-5 border-b border-[var(--border)]">
@@ -268,26 +268,33 @@ export default async function FirmProfilePage() {
           )}
           <form
             action={uploadFirmPortfolioAction}
-            encType="multipart/form-data"
             className="p-5 space-y-4"
           >
-            <input type="file" name="file" required className="input" />
+            <label className="block">
+              <span className="text-sm font-medium text-[var(--foreground)]">Upload Portfolio File</span>
+              <input type="file" name="file" required className="input mt-1 block w-full max-w-sm" accept="image/*,.pdf" />
+            </label>
             <button type="submit" className="btn btn-secondary">
-              Upload portfolio file
+              Upload
             </button>
-            <div className="space-y-2 text-sm">
-              {portfolio.filter((f) => !f.work_id).map((file) => (
-                <a
-                  key={file.id}
-                  href={file.blob_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block text-[var(--brand)] hover:underline"
-                >
-                  {file.file_name}
-                </a>
-              ))}
-            </div>
+            {portfolio.filter((f) => !f.work_id).length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-[var(--text-muted)] mb-2">Uploaded Files (Not Linked to a Work)</p>
+                <div className="space-y-2 text-sm">
+                  {portfolio.filter((f) => !f.work_id).map((file) => (
+                    <a
+                      key={file.id}
+                      href={file.blob_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block text-[var(--brand)] hover:underline"
+                    >
+                      {file.file_name}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </form>
       </div>
     </div>

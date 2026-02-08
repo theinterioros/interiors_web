@@ -170,7 +170,7 @@ export function TrustIllo() {
 export function StartWithClarityIllo() {
   const steps = [
     { label: "Estimate", icon: "calc" },
-    { label: "Choose firm", icon: "building" },
+    { label: "Choose Firm", icon: "building" },
     { label: "Track", icon: "check" },
   ];
   return (

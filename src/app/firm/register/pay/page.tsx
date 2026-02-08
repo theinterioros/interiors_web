@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function FirmRegisterPayPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "FIRM") {
-    redirect("/login?role=firm");
+    redirect("/login?role=designer");
   }
   const paid = await hasFirmPaidRegistration(user.id);
   if (paid) {
@@ -32,7 +32,7 @@ export default async function FirmRegisterPayPage() {
                   <LayoutDashboard className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="eyebrow">Complete margin step first</p>
+                  <p className="eyebrow">Complete Margin Step First</p>
                   <h1 className="heading-md">Accept platform margin on your dashboard</h1>
                 </div>
               </div>

@@ -25,7 +25,7 @@ export default function MarginRequestRejectForm({ requestId }: Props) {
       <button
         type="button"
         onClick={() => setShowComment(true)}
-        className="btn btn-secondary text-sm inline-flex items-center gap-1"
+        className="btn btn-secondary text-sm inline-flex items-center gap-1 shrink-0 h-[34px]"
       >
         <XCircle className="h-3.5 w-3.5" />
         Reject
@@ -34,22 +34,22 @@ export default function MarginRequestRejectForm({ requestId }: Props) {
   }
 
   return (
-    <form action={handleSubmit} className="flex flex-wrap items-end gap-2">
+    <form action={handleSubmit} className="inline-flex flex-wrap items-end gap-2">
       <input type="hidden" name="requestId" value={requestId} />
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-[var(--text-muted)]">Comment (designer will see this)</span>
+      <label className="flex flex-col gap-1 shrink-0">
+        <span className="text-xs text-[var(--text-muted)]">Comment (Designer Will See This)</span>
         <input
           type="text"
           name="adminComment"
           placeholder="e.g. We need at least 8%"
-          className="input min-w-[200px]"
+          className="input min-w-[180px] h-[34px]"
         />
       </label>
-      <button type="submit" disabled={loading} className="btn btn-secondary text-sm inline-flex items-center gap-1">
+      <button type="submit" disabled={loading} className="btn btn-secondary text-sm inline-flex items-center gap-1 shrink-0 h-[34px]">
         <XCircle className="h-3.5 w-3.5" />
         {loading ? "Rejecting…" : "Reject"}
       </button>
-      <button type="button" onClick={() => setShowComment(false)} className="btn btn-ghost text-sm">
+      <button type="button" onClick={() => setShowComment(false)} className="btn btn-ghost text-sm shrink-0 h-[34px]">
         Cancel
       </button>
     </form>

@@ -28,7 +28,7 @@ export default async function AdminSettingsPage() {
         <FadeIn delay={0.2}>
           <form action={updateSettingsAction} className="card space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--foreground)]">Enable email OTP login</label>
+            <label className="text-sm font-medium text-[var(--foreground)]">Enable Email OTP Login</label>
             <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
               <input type="checkbox" name="otpEnabled" defaultChecked={settings.otpEnabled} />
               <span>Allow OTP login/signup</span>
@@ -37,7 +37,7 @@ export default async function AdminSettingsPage() {
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Customer registration fee</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Customer Registration Fee</label>
               <input
                 type="number"
                 name="customerRegistrationFee"
@@ -46,7 +46,7 @@ export default async function AdminSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Firm yearly fee</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Firm Yearly Fee</label>
               <input
                 type="number"
                 name="designerYearlyFee"
@@ -55,7 +55,7 @@ export default async function AdminSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Digital Twin yearly fee</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">Digital Twin Yearly Fee</label>
               <input
                 type="number"
                 name="digitalTwinYearlyFee"
@@ -66,7 +66,7 @@ export default async function AdminSettingsPage() {
           </div>
 
           <div className="space-y-2 pt-4 border-t border-[var(--border)]">
-            <h3 className="text-sm font-semibold text-[var(--foreground)]">Contact info (Get in touch)</h3>
+            <h3 className="text-sm font-semibold text-[var(--foreground)]">Contact Info (Get in Touch)</h3>
             <p className="text-xs text-[var(--text-muted)]">Shown beside the contact form and in Reach us.</p>
           </div>
           <AdminSettingsContactFields
@@ -77,23 +77,23 @@ export default async function AdminSettingsPage() {
 
           <div className="grid gap-4 md:grid-cols-2 pt-4 border-t border-[var(--border)]">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">SMTP host</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">SMTP Host</label>
               <input name="smtpHost" defaultValue={settings.smtpHost ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">SMTP port</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">SMTP Port</label>
               <input name="smtpPort" type="number" defaultValue={settings.smtpPort ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">SMTP user</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">SMTP User</label>
               <input name="smtpUser" defaultValue={settings.smtpUser ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">SMTP password</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">SMTP Password</label>
               <input name="smtpPass" type="password" defaultValue={settings.smtpPass ?? ""} className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">SMTP secure</label>
+              <label className="text-sm font-medium text-[var(--foreground)]">SMTP Secure</label>
               <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
                 <input type="checkbox" name="smtpSecure" defaultChecked={settings.smtpSecure ?? false} />
                 <span>Use TLS/SSL</span>

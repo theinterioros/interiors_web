@@ -90,7 +90,7 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
           <CreditCard className="h-4 w-4 text-[var(--brand)]" />
           <p className="eyebrow">Payments</p>
         </div>
-        <h1 className="heading-lg mb-3">Payment control</h1>
+        <h1 className="heading-lg mb-3">Payment Control</h1>
         <p className="text-sm text-[var(--text-muted)] max-w-2xl">
           Release milestone payouts from escrow to designers (platform margin is deducted at release). Designers who have not paid the yearly subscription (₹3,000/year) are under Admin → Designer approvals → Pending subscription.
         </p>
@@ -203,7 +203,7 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
           )}
 
           <FadeIn delay={0.15} className="mb-8">
-            <h2 className="heading-md mb-2">Payment ledger</h2>
+            <h2 className="heading-md mb-2">Payment Ledger</h2>
             <p className="text-sm text-[var(--text-muted)] mb-4">
               All payments with date, type, particulars, customer, designer, amount, and margin. Use tabs to filter by status.
             </p>

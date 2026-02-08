@@ -91,7 +91,7 @@ export default async function AdminProjectDetailPage({
         <PageBackLink href="/admin/projects" label="All projects" />
         <div className="flex items-center gap-2 mb-1">
           <FolderKanban className="h-4 w-4 text-[var(--text-muted)]" />
-          <p className="eyebrow">Project detail</p>
+          <p className="eyebrow">Project Detail</p>
         </div>
         <h1 className="heading-lg mb-3">{project.title}</h1>
         <span

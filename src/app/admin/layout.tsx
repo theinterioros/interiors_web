@@ -11,9 +11,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <>
       <AppSidebar role="admin" />
-      <div className="md:pl-[260px] min-h-[calc(100vh-var(--header-height))] bg-[var(--surface-subtle)]">
+      <div className="md:pl-[260px] min-h-[calc(100vh-var(--header-height))] bg-[var(--surface-subtle)] app-content-mobile">
         <PendingActionsBanner items={pendingActions} />
-        <div className="mx-auto w-full max-w-6xl min-w-0 px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto w-full max-w-6xl min-w-0 px-4 py-4 sm:py-6 sm:px-6 md:py-8">
           {children}
         </div>
       </div>

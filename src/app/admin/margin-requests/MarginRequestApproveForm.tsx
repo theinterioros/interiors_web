@@ -20,10 +20,10 @@ export default function MarginRequestApproveForm({ requestId, requestedPct }: Pr
   };
 
   return (
-    <form action={handleSubmit} className="flex flex-wrap items-end gap-2">
+    <form action={handleSubmit} className="inline-flex flex-wrap items-end gap-2">
       <input type="hidden" name="requestId" value={requestId} />
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-[var(--text-muted)]">Final % (optional)</span>
+      <label className="flex flex-col gap-1 shrink-0">
+        <span className="text-xs text-[var(--text-muted)]">Final % (Optional)</span>
         <input
           type="number"
           name="adminSetMarginPct"
@@ -34,7 +34,7 @@ export default function MarginRequestApproveForm({ requestId, requestedPct }: Pr
           className="input w-20"
         />
       </label>
-      <button type="submit" disabled={loading} className="btn btn-primary text-sm inline-flex items-center gap-1">
+      <button type="submit" disabled={loading} className="btn btn-primary text-sm inline-flex items-center gap-1 shrink-0 h-[34px]">
         <CheckCircle className="h-3.5 w-3.5" />
         {loading ? "Approving…" : "Approve"}
       </button>
