@@ -7,6 +7,7 @@ import { RoleValues, DesignerStatusValues, PaymentStatusValues } from "@/lib/typ
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications";
+import { runCleanupProduction, type CleanupResult } from "@/lib/cleanupProduction";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -529,4 +530,11 @@ export async function deleteTrustedStudioAction(formData: FormData): Promise<voi
   await sql`delete from trusted_studios where id = ${id}`;
   revalidatePath("/");
   revalidatePath("/admin/trusted-studios");
+}
+
+/** Production DB cleanup: keep only Mira Kapoor, Aarav Sharma, and all admins. Admin-only. */
+export async function runCleanupProductionAction(): Promise<CleanupResult> {
+  const admin = await requireAdmin();
+  if (!admin) throw new Error("Unauthorized.");
+  return runCleanupProduction();
 }

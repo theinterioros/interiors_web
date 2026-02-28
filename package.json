@@ -12,7 +12,8 @@
     "db:migrate": "node scripts/run-migration.mjs",
     "db:setup:psql": "psql \"$DATABASE_URL\" -f sql/schema.sql",
     "seed:demo": "node scripts/seed-demo.mjs",
-    "seed:clean": "node scripts/seed-clean.mjs"
+    "seed:clean": "node scripts/seed-clean.mjs",
+    "cleanup:production": "node scripts/cleanup-production-users.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

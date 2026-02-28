@@ -59,6 +59,10 @@ export async function registerAction(_prevState: unknown, formData: FormData): P
     const firmName = String(formData.get("firmName") ?? "").trim();
     const ownerName = String(formData.get("ownerName") ?? "").trim();
     const officeAddress = String(formData.get("officeAddress") ?? "").trim();
+    const experienceYearsRaw = String(formData.get("experienceYears") ?? "").trim();
+    const experienceYears = experienceYearsRaw === "" ? NaN : Number(experienceYearsRaw);
+    const altPhone = String(formData.get("altPhone") ?? "").trim();
+
     const missing: string[] = [];
     if (!city) missing.push("City");
     if (!pincode) missing.push("Pincode");
@@ -66,6 +70,19 @@ export async function registerAction(_prevState: unknown, formData: FormData): P
     if (missing.length > 0) {
       return { error: `Please fill in: ${missing.join(", ")}.` };
     }
+    if (!/^[0-9]{6}$/.test(pincode)) {
+      return { error: "Pincode must be exactly 6 digits." };
+    }
+    if (Number.isNaN(experienceYears) || experienceYears < 0 || experienceYears > 99) {
+      return { error: "Experience (years) is required and must be between 0 and 99." };
+    }
+    if (about.length < 50) {
+      return { error: "About your firm must be at least 50 characters." };
+    }
+    if (altPhone && !isValidIndianMobile(altPhone)) {
+      return { error: "Alternate mobile must be a valid 10-digit Indian number." };
+    }
+
     const missingFirm: string[] = [];
     if (!firmName) missingFirm.push("Firm name");
     if (!ownerName) missingFirm.push("Owner / contact name");

@@ -33,6 +33,14 @@
 - [ ] **Payments**: Registration/subscription flows use real or test payment config as intended.
 - [ ] **Blob storage**: Vercel Blob (or other) configured for portfolio uploads and assets.
 
+## Production DB cleanup (optional)
+
+To keep **only** Mira Kapoor (designer), Aarav Sharma (customer), and all admins, and remove all other users and their data:
+
+**Easiest:** Log in as admin → **Settings** (bottom of page) → click **Clean up database**. Confirm when prompted. No env vars or curl needed.
+
+**CLI (local):** `npm run cleanup:production` with `DATABASE_URL` in `.env.local`. Same behavior. Use when you want to run against a local or remote DB from your machine.
+
 ## Post-deploy smoke test
 
 1. **Login** as customer, designer, admin (or demo accounts).

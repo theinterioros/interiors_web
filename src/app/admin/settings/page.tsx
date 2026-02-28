@@ -8,6 +8,7 @@ import { Settings } from "lucide-react";
 import { getAdminSettings } from "@/lib/settings";
 import FadeIn from "@/components/animations/FadeIn";
 import AdminSettingsContactFields from "./AdminSettingsContactFields";
+import AdminCleanupProduction from "./AdminCleanupProduction";
 
 export const dynamic = "force-dynamic";
 
@@ -198,6 +199,10 @@ export default async function AdminSettingsPage() {
             </form>
           </FadeIn>
         </div>
+
+        <FadeIn delay={0.5} className="mt-8">
+          <AdminCleanupProduction />
+        </FadeIn>
     </div>
   );
 }
