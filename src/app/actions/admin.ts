@@ -7,7 +7,7 @@ import { RoleValues, DesignerStatusValues, PaymentStatusValues } from "@/lib/typ
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications";
-import { runCleanupProduction, type CleanupResult } from "@/lib/cleanupProduction";
+import { runCleanupProduction, deleteUserAndRelatedData, type CleanupResult } from "@/lib/cleanupProduction";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -537,4 +537,19 @@ export async function runCleanupProductionAction(): Promise<CleanupResult> {
   const admin = await requireAdmin();
   if (!admin) throw new Error("Unauthorized.");
   return runCleanupProduction();
+}
+
+/** Remove a user (customer or designer) and all related data. Admin-only; cannot remove self. */
+export async function deleteUserAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  if (!admin) throw new Error("Unauthorized.");
+  const userId = String(formData.get("userId") ?? "").trim();
+  if (!userId) throw new Error("User ID required.");
+  if (userId === admin.id) throw new Error("You cannot remove yourself.");
+  await deleteUserAndRelatedData(userId);
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/designers");
+  revalidatePath("/admin/projects");
+  revalidatePath("/admin/payments");
+  redirect("/admin/users");
 }

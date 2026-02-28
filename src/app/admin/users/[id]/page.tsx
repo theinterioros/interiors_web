@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sql } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireRole, getCurrentUser } from "@/lib/auth";
 import { RoleValues } from "@/lib/types";
 import {
   User,
@@ -12,12 +12,14 @@ import {
 } from "lucide-react";
 import FadeIn from "@/components/animations/FadeIn";
 import { paymentTypeLabel } from "@/lib/paymentLabels";
+import RemoveUserButton from "./RemoveUserButton";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function AdminUserDetailPage({ params }: PageProps) {
+  const currentUser = await getCurrentUser();
   await requireRole([RoleValues.ADMIN]);
   const { id: userId } = await params;
 
@@ -111,22 +113,31 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           <ArrowLeft className="h-4 w-4" />
           Back to users
         </Link>
-        <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface-subtle)] text-[var(--text-muted)]">
-            {user.role === "FIRM" ? <Building2 className="h-6 w-6" /> : <User className="h-6 w-6" />}
-          </span>
-          <div>
-            <h1 className="heading-lg">{user.name ?? user.email}</h1>
-            <p className="text-sm text-[var(--text-muted)]">
-              {user.email}
-              {user.phone && ` · ${user.phone}`}
-            </p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">
-              {user.role === "FIRM" ? "Designer" : user.role === "CUSTOMER" ? "Customer" : "Admin"}
-              {" · Joined "}
-              {new Date(user.created_at).toLocaleDateString()}
-            </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface-subtle)] text-[var(--text-muted)]">
+              {user.role === "FIRM" ? <Building2 className="h-6 w-6" /> : <User className="h-6 w-6" />}
+            </span>
+            <div>
+              <h1 className="heading-lg">{user.name ?? user.email}</h1>
+              <p className="text-sm text-[var(--text-muted)]">
+                {user.email}
+                {user.phone && ` · ${user.phone}`}
+              </p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                {user.role === "FIRM" ? "Designer" : user.role === "CUSTOMER" ? "Customer" : "Admin"}
+                {" · Joined "}
+                {new Date(user.created_at).toLocaleDateString()}
+              </p>
+            </div>
           </div>
+          {currentUser?.id !== user.id && (
+            <RemoveUserButton
+              userId={user.id}
+              role={user.role}
+              label={user.role === "FIRM" ? "Remove designer" : user.role === "CUSTOMER" ? "Remove customer" : "Remove user"}
+            />
+          )}
         </div>
       </FadeIn>
 

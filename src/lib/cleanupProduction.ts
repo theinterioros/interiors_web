@@ -16,6 +16,34 @@ export type CleanupResult = {
   message: string;
 };
 
+/** Delete one user and all related data (payment_ledger, projects, notifications, etc.). Use from admin only. */
+export async function deleteUserAndRelatedData(userId: string): Promise<void> {
+  await sql`delete from payment_ledger where customer_id = ${userId} or firm_id = ${userId}`;
+  try {
+    await sql`delete from digital_twin_files where customer_id = ${userId} or uploaded_by = ${userId}`;
+  } catch {}
+  try {
+    await sql`delete from digital_twin_subscriptions where customer_id = ${userId}`;
+  } catch {}
+  try {
+    await sql`delete from notifications where user_id = ${userId}`;
+  } catch {}
+  try {
+    await sql`delete from milestone_comments where author_id = ${userId}`;
+  } catch {}
+  try {
+    await sql`update milestone_trail set actor_id = null where actor_id = ${userId}`;
+  } catch {}
+  try {
+    await sql`update margin_requests set decided_by = null where decided_by = ${userId}`;
+  } catch {}
+  await sql`delete from projects where customer_id = ${userId}`;
+  await sql`update projects set firm_id = null where firm_id = ${userId}`;
+  await sql`delete from firm_profiles where user_id = ${userId}`;
+  await sql`delete from sessions where user_id = ${userId}`;
+  await sql`delete from users where id = ${userId}`;
+}
+
 export async function runCleanupProduction(): Promise<CleanupResult> {
   const allUsers = (await sql`
     select id, email, name, role from users
