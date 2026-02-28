@@ -3,10 +3,20 @@ import { Users, User, Building2, Shield, ExternalLink } from "lucide-react";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 import PageTabs from "@/components/ui/PageTabs";
+import TableFilterBar from "@/components/ui/TableFilterBar";
 
 export const dynamic = "force-dynamic";
 
-type PageProps = { searchParams?: Promise<{ role?: string }> };
+type PageProps = { searchParams?: Promise<{ role?: string; q?: string }> };
+
+function matchSearch(row: { name: string | null; email: string; firm_name: string | null }, q: string) {
+  const s = q.toLowerCase();
+  return (
+    (row.name ?? "").toLowerCase().includes(s) ||
+    row.email.toLowerCase().includes(s) ||
+    (row.firm_name ?? "").toLowerCase().includes(s)
+  );
+}
 
 const ROLES = [
   { value: "", label: "All", role: null as string | null },
@@ -18,6 +28,7 @@ const ROLES = [
 export default async function AdminUsersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const filterRole = params?.role ?? "";
+  const q = (params?.q ?? "").trim();
 
   const users = await sql<{
     id: string;
@@ -62,13 +73,22 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
     ADMIN: users.filter((u) => u.role === "ADMIN").length,
   };
 
-  const filtered = filterRole
+  const roleFiltered = filterRole
     ? users.filter((u) => u.role === filterRole)
     : users;
+  const filtered = q ? roleFiltered.filter((u) => matchSearch(u, q)) : roleFiltered;
 
+  const base = "/admin/users";
+  const queryString = (role: string) => {
+    const sp = new URLSearchParams();
+    if (role) sp.set("role", role);
+    if (q) sp.set("q", q);
+    const s = sp.toString();
+    return s ? `?${s}` : "";
+  };
   const tabs = ROLES.map((r) => ({
     label: r.label,
-    href: r.value ? `/admin/users?role=${r.value}` : "/admin/users",
+    href: base + queryString(r.value),
     active: (filterRole || "") === r.value,
     count: r.value === "" ? counts.all : counts[r.value as keyof typeof counts],
   }));
@@ -80,20 +100,31 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
           <Users className="h-4 w-4 text-[var(--brand)]" />
           <p className="eyebrow">Users</p>
         </div>
-        <h1 className="heading-lg mb-3">All Users</h1>
+        <h1 className="heading-lg mb-3">All users</h1>
         <p className="text-sm text-[var(--text-muted)]">
-          All platform accounts with contact info, role-specific details (designer: firm name, city, approval status, registration paid; customer: subscription), project count, and join date. Use tabs to filter by role.
+          All accounts: contact info, role, firm or subscription status, and project count. Filter by role or search by name or email.
         </p>
       </FadeIn>
 
-      <PageTabs tabs={tabs} />
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between mb-4">
+        <PageTabs tabs={tabs} className="mb-0 sm:flex-1 sm:min-w-0 order-2 sm:order-1" />
+        <div className="w-full sm:w-auto order-1 sm:order-2">
+          <TableFilterBar
+            value={q}
+            placeholder="Search by name or email…"
+            preserveParams={filterRole ? { role: filterRole } : {}}
+          />
+        </div>
+      </div>
 
       <FadeIn delay={0.05}>
         {filtered.length === 0 ? (
           <div className="rounded-lg border border-[var(--border)] bg-white p-6 sm:p-8 text-center text-[var(--text-muted)]">
-            {filterRole
-              ? `No ${ROLES.find((r) => r.value === filterRole)?.label.toLowerCase() ?? "users"} yet.`
-              : "No users yet."}
+            {q
+              ? "No users match your search."
+              : filterRole
+                ? `No ${ROLES.find((r) => r.value === filterRole)?.label.toLowerCase() ?? "users"} yet.`
+                : "No users yet."}
           </div>
         ) : (
           <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">

@@ -5,16 +5,24 @@ import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
 import FadeInItem from "@/components/animations/FadeInItem";
 import PageTabs from "@/components/ui/PageTabs";
-import MarginRequestApproveForm from "@/app/admin/margin-requests/MarginRequestApproveForm";
-import MarginRequestRejectForm from "@/app/admin/margin-requests/MarginRequestRejectForm";
+import TableFilterBar from "@/components/ui/TableFilterBar";
 
 export const dynamic = "force-dynamic";
 
-type PageProps = { searchParams?: Promise<{ status?: string }> };
+type PageProps = { searchParams?: Promise<{ status?: string; q?: string }> };
+
+function matchSearch(row: DesignerRow, q: string) {
+  const s = q.toLowerCase();
+  return (
+    (row.firm_name ?? "").toLowerCase().includes(s) ||
+    (row.profile_name ?? "").toLowerCase().includes(s) ||
+    (row.name ?? "").toLowerCase().includes(s) ||
+    row.email.toLowerCase().includes(s)
+  );
+}
 
 const STATUS_TABS = [
   { value: "", label: "All" },
-  { value: "MARGIN_APPROVAL", label: "Margin Approval" },
   { value: "PENDING_REGISTRATION", label: "Pending Subscription" },
   { value: "PENDING", label: "Pending Approval" },
   { value: "APPROVED", label: "Approved" },
@@ -39,41 +47,10 @@ type DesignerRow = {
   has_paid_registration: boolean;
 };
 
-type MarginRow = {
-  id: string;
-  profile_id: string;
-  requested_margin_pct: number;
-  status: string;
-  admin_comment: string | null;
-  created_at: Date;
-  firm_name: string | null;
-  profile_name: string | null;
-  user_email: string;
-};
-
 export default async function AdminDesignersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const filterStatus = params?.status ?? "";
-
-  let pendingMarginCount = 0;
-  let pendingMarginRows: MarginRow[] = [];
-  try {
-    const [countRow] = await sql<{ count: string }>`select count(*)::text as count from margin_requests where status = 'PENDING'`;
-    pendingMarginCount = parseInt(countRow?.count ?? "0", 10);
-    if (filterStatus === "MARGIN_APPROVAL") {
-      pendingMarginRows = await sql<MarginRow>`
-        select mr.id, mr.profile_id, mr.requested_margin_pct, mr.status, mr.admin_comment, mr.created_at,
-               fp.firm_name, fp.name as profile_name, u.email as user_email
-        from margin_requests mr
-        join firm_profiles fp on fp.id = mr.profile_id
-        join users u on u.id = fp.user_id
-        where mr.status = 'PENDING'
-        order by mr.created_at asc
-      `;
-    }
-  } catch {
-    // margin_requests table may not exist
-  }
+  const q = (params?.q ?? "").trim();
 
   const all = await sql<DesignerRow>`
     select
@@ -100,25 +77,31 @@ export default async function AdminDesignersPage({ searchParams }: PageProps) {
 
   const counts = {
     all: all.length,
-    MARGIN_APPROVAL: pendingMarginCount,
     PENDING_REGISTRATION: all.filter((p) => !p.has_paid_registration).length,
     PENDING: all.filter((p) => p.status === "PENDING").length,
     APPROVED: all.filter((p) => p.status === "APPROVED").length,
     REJECTED: all.filter((p) => p.status === "REJECTED").length,
   };
 
-  const filtered =
-    filterStatus === "MARGIN_APPROVAL"
-      ? []
-      : filterStatus === "PENDING_REGISTRATION"
-        ? all.filter((p) => !p.has_paid_registration)
-        : filterStatus
-          ? all.filter((p) => p.status === filterStatus)
-          : all;
+  const statusFiltered =
+    filterStatus === "PENDING_REGISTRATION"
+      ? all.filter((p) => !p.has_paid_registration)
+      : filterStatus
+        ? all.filter((p) => p.status === filterStatus)
+        : all;
+  const filtered = q ? statusFiltered.filter((p) => matchSearch(p, q)) : statusFiltered;
 
+  const base = "/admin/designers";
+  const query = (status: string) => {
+    const sp = new URLSearchParams();
+    if (status) sp.set("status", status);
+    if (q) sp.set("q", q);
+    const s = sp.toString();
+    return s ? `?${s}` : "";
+  };
   const tabs = STATUS_TABS.map((s) => ({
     label: s.label,
-    href: s.value ? `/admin/designers?status=${s.value}` : "/admin/designers",
+    href: base + query(s.value),
     active: (filterStatus || "") === s.value,
     count: s.value === "" ? counts.all : counts[s.value as keyof typeof counts],
   }));
@@ -130,54 +113,32 @@ export default async function AdminDesignersPage({ searchParams }: PageProps) {
           <BadgeCheck className="h-4 w-4 text-[var(--brand)]" />
           <p className="eyebrow">Designer Approvals</p>
         </div>
-        <h1 className="heading-lg mb-3">Review Applications</h1>
+        <h1 className="heading-lg mb-3">Designer applications</h1>
         <p className="text-sm text-[var(--text-muted)]">
-          Profile can only be approved after the designer has accepted the agreed margin (Margin approval tab) and paid the yearly subscription (₹3,000). Use tabs to filter.
+          Review and approve designer profiles after they pay the yearly subscription. Filter by status or search by firm name or email.
         </p>
       </FadeIn>
 
-      <PageTabs tabs={tabs} />
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between mb-4">
+        <PageTabs tabs={tabs} className="mb-0 sm:flex-1 sm:min-w-0 order-2 sm:order-1" />
+        <div className="w-full sm:w-auto order-1 sm:order-2">
+          <TableFilterBar
+            value={q}
+            placeholder="Search by firm name or email…"
+            preserveParams={filterStatus ? { status: filterStatus } : {}}
+          />
+        </div>
+      </div>
 
-      {filterStatus === "MARGIN_APPROVAL" ? (
-        <section>
-          {pendingMarginRows.length === 0 ? (
-            <div className="rounded-lg border border-[var(--border)] bg-white p-8 text-center text-sm text-[var(--text-muted)]">
-              No margin requests pending. Designers submit margin from their dashboard after profile approval.
-            </div>
-          ) : (
-            <ul className="space-y-4">
-              {pendingMarginRows.map((row) => (
-                <li key={row.id} className="card">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-[var(--foreground)]">
-                        {row.firm_name ?? row.profile_name ?? row.user_email}
-                      </p>
-                      <p className="text-xs text-[var(--text-muted)]">{row.user_email}</p>
-                      <p className="text-sm mt-2">
-                        Requested Margin: <strong>{row.requested_margin_pct}%</strong>
-                      </p>
-                      <p className="text-xs text-[var(--text-muted)] mt-1">
-                        Submitted {new Date(row.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-end gap-3 shrink-0">
-                      <MarginRequestApproveForm requestId={row.id} requestedPct={row.requested_margin_pct} />
-                      <MarginRequestRejectForm requestId={row.id} />
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="rounded-lg border border-[var(--border)] bg-white p-8 text-center text-[var(--text-muted)]">
-          {filterStatus === "PENDING_REGISTRATION"
-            ? "No designers pending subscription."
-            : filterStatus
-              ? `No ${STATUS_TABS.find((s) => s.value === filterStatus)?.label.toLowerCase() ?? "designers"} yet.`
-              : "No designers yet."}
+          {q
+            ? "No designers match your search. Try a different term or clear the filter."
+            : filterStatus === "PENDING_REGISTRATION"
+              ? "No designers pending subscription payment."
+              : filterStatus
+                ? `No ${STATUS_TABS.find((s) => s.value === filterStatus)?.label.toLowerCase() ?? "designers"} yet.`
+                : "No designer applications yet."}
         </div>
       ) : (
         <StaggerChildren className="space-y-4">
@@ -240,7 +201,7 @@ export default async function AdminDesignersPage({ searchParams }: PageProps) {
 
                 {row.profile_id && row.status === "PENDING" && (
                   <>
-                    {row.margin_accepted_at && row.has_paid_registration ? (
+                    {row.has_paid_registration ? (
                       <div className="flex flex-wrap gap-3 items-center">
                         <form action={approveFirmAction} className="flex flex-wrap gap-3 items-end">
                           <input type="hidden" name="profileId" value={row.profile_id} />
@@ -261,9 +222,7 @@ export default async function AdminDesignersPage({ searchParams }: PageProps) {
                       </div>
                     ) : (
                       <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 text-sm text-amber-800 dark:text-amber-200">
-                        Profile can be approved only after designer has accepted the agreed margin (Margin requests) and paid the yearly subscription (₹3,000).
-                        {!row.margin_accepted_at && " Designer has not accepted margin yet."}
-                        {row.margin_accepted_at && !row.has_paid_registration && " Designer has not paid subscription yet."}
+                        Profile can be approved after the designer has paid the yearly subscription (₹3,000).
                       </div>
                     )}
                   </>

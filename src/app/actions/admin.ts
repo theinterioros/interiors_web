@@ -307,14 +307,11 @@ export async function approveFirmAction(formData: FormData) {
   const profileId = String(formData.get("profileId") ?? "");
   const addVerifiedBadge = formData.get("addVerifiedBadge") === "on";
 
-  const [profile] = await sql<{ margin_accepted_at: Date | null; user_id: string }>`
-    select margin_accepted_at, user_id from firm_profiles where id = ${profileId} limit 1
+  const [profile] = await sql<{ user_id: string }>`
+    select user_id from firm_profiles where id = ${profileId} limit 1
   `;
   if (!profile) {
     throw new Error("Profile not found.");
-  }
-  if (profile.margin_accepted_at == null) {
-    throw new Error("Designer must accept the agreed margin in their dashboard before profile can be approved.");
   }
   const [paid] = await sql<{ id: string }>`
     select id from payment_ledger
@@ -328,6 +325,8 @@ export async function approveFirmAction(formData: FormData) {
   await sql`
     update firm_profiles
     set status = ${DesignerStatusValues.APPROVED},
+        platform_margin_pct = coalesce(platform_margin_pct, 5),
+        margin_accepted_at = coalesce(margin_accepted_at, now()),
         verified_at = ${addVerifiedBadge ? new Date() : null},
         updated_at = now()
     where id = ${profileId}
@@ -375,65 +374,6 @@ export async function rejectFirmAction(formData: FormData) {
   revalidatePath("/admin/designers");
   revalidatePath("/admin/payments");
   revalidatePath("/designers");
-  return;
-}
-
-export async function approveMarginRequestAction(formData: FormData) {
-  const admin = await requireAdmin();
-  if (!admin) {
-    throw new Error("Unauthorized.");
-  }
-  const requestId = String(formData.get("requestId") ?? "");
-  const adminSetPctRaw = formData.get("adminSetMarginPct");
-  const adminSetPct =
-    adminSetPctRaw !== null && adminSetPctRaw !== "" ? Math.min(100, Math.max(0, Number(adminSetPctRaw))) : null;
-
-  const [req] = await sql<{ profile_id: string; requested_margin_pct: number }>`
-    select profile_id, requested_margin_pct from margin_requests where id = ${requestId} and status = 'PENDING' limit 1
-  `;
-  if (!req) {
-    throw new Error("Margin request not found or already decided.");
-  }
-  const finalPct = adminSetPct ?? req.requested_margin_pct;
-
-  await sql`
-    update margin_requests
-    set status = 'APPROVED', admin_set_margin_pct = ${adminSetPct}, decided_at = now(), decided_by = ${admin.id}
-    where id = ${requestId}
-  `;
-  await sql`
-    update firm_profiles
-    set platform_margin_pct = ${finalPct}, updated_at = now()
-    where id = ${req.profile_id}
-  `;
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/designers");
-  revalidatePath("/admin/margin-requests");
-  revalidatePath("/firm/dashboard");
-  revalidatePath("/designer/dashboard");
-  return;
-}
-
-export async function rejectMarginRequestAction(formData: FormData) {
-  const admin = await requireAdmin();
-  if (!admin) {
-    throw new Error("Unauthorized.");
-  }
-  const requestId = String(formData.get("requestId") ?? "");
-  const comment = String(formData.get("adminComment") ?? "").trim() || null;
-
-  await sql`
-    update margin_requests
-    set status = 'REJECTED', admin_comment = ${comment}, decided_at = now(), decided_by = ${admin.id}
-    where id = ${requestId} and status = 'PENDING'
-  `;
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/designers");
-  revalidatePath("/admin/margin-requests");
-  revalidatePath("/firm/dashboard");
-  revalidatePath("/designer/dashboard");
   return;
 }
 
@@ -517,7 +457,7 @@ export async function releasePaymentAction(formData: FormData) {
     const [firm] = await sql<{ platform_margin_pct: number | null }>`
       select platform_margin_pct from firm_profiles where user_id = ${payment.firm_id} limit 1
     `;
-    const pct = firm?.platform_margin_pct ?? 0;
+    const pct = firm?.platform_margin_pct ?? 5;
     platformMarginAmount = Math.round((payment.amount * Number(pct)) / 100);
   }
 
@@ -554,7 +494,7 @@ export async function releasePaymentAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/payments");
   revalidatePath("/customer/payments");
-  revalidatePath("/firm/payments");
+  revalidatePath("/designer/payments");
   return;
 }
 

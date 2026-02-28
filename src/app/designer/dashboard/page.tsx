@@ -1,136 +1,189 @@
 import Link from "next/link";
+import { FolderKanban, LayoutDashboard, UserCheck, Users } from "lucide-react";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { hasFirmPaidRegistration } from "@/lib/registrationPayments";
-import DashboardMarginSection from "@/components/firm/DashboardMarginSection";
+import { initiateProjectAction } from "@/app/actions/project";
 
 export const dynamic = "force-dynamic";
 
 export default async function DesignerDashboardPage() {
   const user = await requireFirmPaid();
 
-  const [profile] = await sql<{
-    id: string;
-    status: string;
-    platform_margin_pct: number | null;
-    margin_accepted_at: Date | null;
-    about: string | null;
-    name: string | null;
-    firm_name: string | null;
-  }>`
-    select id, status, platform_margin_pct, margin_accepted_at, about, name, firm_name
-    from firm_profiles where user_id = ${user.id} limit 1
-  `;
-
-  let latestRequest: { id: string; requested_margin_pct: number; status: string; admin_comment: string | null; created_at: Date } | null = null;
-  let marginHistory: { id: string; requested_margin_pct: number; status: string; admin_comment: string | null; created_at: Date }[] = [];
-  if (profile?.id) {
-    try {
-      const rows = await sql<{ id: string; requested_margin_pct: number; status: string; admin_comment: string | null; created_at: Date }>`
-        select id, requested_margin_pct, status, admin_comment, created_at
-        from margin_requests
-        where profile_id = ${profile.id}
-        order by created_at desc
-      `;
-      marginHistory = rows;
-      latestRequest = rows[0] ?? null;
-    } catch {
-      // margin_requests table may not exist yet
-    }
-  }
-
-  const hasPaid = await hasFirmPaidRegistration(user.id);
-  const profileComplete = Boolean(profile?.about?.trim() && (profile?.name?.trim() || profile?.firm_name?.trim()));
-
-  const pendingRequests = await sql<{
+  const leads = await sql<{
     id: string;
     title: string;
     customer_name: string | null;
     customer_email: string;
+    status: string;
   }>`
-    select p.id, p.title, u.name as customer_name, u.email as customer_email
+    select p.id, p.title, u.name as customer_name, u.email as customer_email, p.status
     from projects p
     join users u on u.id = p.customer_id
-    where p.firm_id = ${user.id} and p.status = 'REQUESTED'
+    where p.firm_id = ${user.id} and p.status = 'LEAD'
     order by p.created_at desc
+  `;
+
+  const acceptedProjects = await sql<{
+    id: string;
+    title: string;
+    customer_name: string | null;
+    customer_email: string;
+    status: string;
+    updated_at: Date;
+  }>`
+    select p.id, p.title, u.name as customer_name, u.email as customer_email, p.status, p.updated_at
+    from projects p
+    join users u on u.id = p.customer_id
+    where p.firm_id = ${user.id} and p.status = 'ACCEPTED'
+    order by p.updated_at desc
   `;
 
   const activeProjects = await sql<{
     id: string;
     title: string;
     status: string;
+    updated_at: Date;
+    milestone_count: string;
+    submitted_count: string;
   }>`
-    select id, title, status
-    from projects
-    where firm_id = ${user.id} and status in ('ACCEPTED', 'ACTIVE')
-    order by created_at desc
+    select p.id, p.title, p.status, p.updated_at,
+           (select count(*)::text from milestones m where m.project_id = p.id) as milestone_count,
+           (select count(*)::text from milestones m where m.project_id = p.id and m.status = 'SUBMITTED') as submitted_count
+    from projects p
+    where p.firm_id = ${user.id} and p.status = 'ACTIVE'
+    order by p.updated_at desc
   `;
 
   return (
-    <div className="min-h-screen bg-white px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-8">
-        <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-neutral-400">Designer Dashboard</p>
-          <h1 className="text-3xl font-semibold text-neutral-900">Your workstream</h1>
-          <p className="text-sm text-neutral-500">
-            Manage incoming requests, milestones, and approvals.
-          </p>
+    <div className="space-y-8">
+      <header>
+        <div className="flex items-center gap-2 mb-1">
+          <LayoutDashboard className="h-4 w-4 text-[var(--text-muted)]" />
+          <p className="eyebrow">Dashboard</p>
         </div>
+        <h1 className="heading-lg mb-1">Your dashboard</h1>
+        <p className="text-sm text-[var(--text-muted)]">
+          Incoming meetup requests, accepted projects, and active work. Respond to leads and manage milestones from here.
+        </p>
+      </header>
 
-        <DashboardMarginSection
-          profileStatus={profile?.status ?? "PENDING"}
-          platformMarginPct={profile?.platform_margin_pct ?? null}
-          marginAcceptedAt={profile?.margin_accepted_at ?? null}
-          latestRequest={latestRequest}
-          marginHistory={marginHistory}
-          hasPaid={hasPaid}
-          profileComplete={profileComplete}
-        />
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-neutral-900">Incoming requests</h2>
-            <Link href="/designer/leads" className="text-sm text-neutral-600 underline">
-              View all leads
-            </Link>
+      <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-[var(--text-muted)]" />
+            <h2 className="font-semibold text-[var(--foreground)]">Leads</h2>
           </div>
-          {pendingRequests.length === 0 ? (
-            <p className="text-sm text-neutral-500">No pending requests.</p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {pendingRequests.map((project) => (
-                <div key={project.id} className="rounded-2xl border border-neutral-200 p-6">
-                  <p className="text-sm font-semibold text-neutral-900">{project.title}</p>
-                  <p className="text-xs text-neutral-500">
-                    Requested by {project.customer_name ?? project.customer_email}
-                  </p>
+          <Link href="/designer/leads" className="text-sm text-[var(--brand)] hover:underline">
+            View all
+          </Link>
+        </div>
+        {leads.length === 0 ? (
+          <div className="p-6 text-center text-sm text-[var(--text-muted)]">
+            No new leads yet. When a customer sends a meetup request, it will appear here.
+          </div>
+        ) : (
+          <ul className="divide-y divide-[var(--border)]">
+            {leads.map((project) => (
+              <li key={project.id} className="px-4 py-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="badge text-xs mb-2">LEAD</span>
+                    <p className="font-medium text-[var(--foreground)]">{project.title}</p>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      {project.customer_name ?? project.customer_email}
+                    </p>
+                  </div>
+                  <form action={initiateProjectAction} className="shrink-0">
+                    <input type="hidden" name="projectId" value={project.id} />
+                    <button type="submit" className="btn btn-primary text-sm w-full sm:w-auto">
+                      Initiate project
+                    </button>
+                  </form>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-neutral-900">Active projects</h2>
-          {activeProjects.length === 0 ? (
-            <p className="text-sm text-neutral-500">No active projects yet.</p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {activeProjects.map((project) => (
-                <Link
-                  key={project.id}
-                  href={`/designer/projects/${project.id}`}
-                  className="rounded-2xl border border-neutral-200 p-6 hover:border-neutral-400"
-                >
-                  <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">
-                    {project.status}
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900">{project.title}</p>
-                </Link>
-              ))}
-            </div>
-          )}
+      <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-[var(--text-muted)]" />
+            <h2 className="font-semibold text-[var(--foreground)]">Accepted projects</h2>
+          </div>
+          <Link href="/designer/projects" className="text-sm text-[var(--brand)] hover:underline">
+            View all
+          </Link>
         </div>
+        {acceptedProjects.length === 0 ? (
+          <div className="p-6 text-center text-sm text-[var(--text-muted)]">
+            No accepted projects. When you accept a lead, it appears here until you start the project.
+          </div>
+        ) : (
+          <ul className="divide-y divide-[var(--border)]">
+            {acceptedProjects.map((project) => (
+              <li key={project.id}>
+                <Link
+                  href={`/designer/projects/${project.id}`}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-[var(--surface-subtle)] transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-[var(--foreground)]">{project.title}</p>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      {project.customer_name ?? project.customer_email}
+                    </p>
+                  </div>
+                  <span className="badge shrink-0">{project.status}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FolderKanban className="h-4 w-4 text-[var(--text-muted)]" />
+            <h2 className="font-semibold text-[var(--foreground)]">Active projects</h2>
+          </div>
+          <Link href="/designer/projects" className="text-sm text-[var(--brand)] hover:underline">
+            View all
+          </Link>
+        </div>
+        {activeProjects.length === 0 ? (
+          <div className="p-6 text-center text-sm text-[var(--text-muted)]">
+            No active projects. Start a project from a lead to see it here.
+          </div>
+        ) : (
+          <ul className="divide-y divide-[var(--border)]">
+            {activeProjects.map((project) => (
+              <li key={project.id}>
+                <Link
+                  href={`/designer/projects/${project.id}`}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-[var(--surface-subtle)] transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-[var(--foreground)]">{project.title}</p>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      {project.milestone_count} milestone{project.milestone_count !== "1" ? "s" : ""}
+                      {project.submitted_count !== "0" && (
+                        <span className="text-[var(--accent-amber)] ml-2">· {project.submitted_count} pending customer approval</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-[var(--text-muted)]">
+                      Updated {new Date(project.updated_at).toLocaleDateString()}
+                    </span>
+                    <span className="badge">{project.status}</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

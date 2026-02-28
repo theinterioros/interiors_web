@@ -24,8 +24,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Interior OS",
-  description: "Premium interior design tracking platform for India.",
+  title: {
+    default: "Interior OS — Interior Design Platform for India",
+    template: "%s | Interior OS",
+  },
+  description:
+    "Plan budgets with AI cost estimates, choose verified interior designers, track projects by milestone, and pay securely with escrow. One platform for homeowners and design studios in India.",
+  keywords: ["interior design", "India", "verified designers", "escrow payments", "project tracking", "AI cost estimate", "home renovation"],
+  openGraph: {
+    title: "Interior OS — Interior Design Platform for India",
+    description: "Plan budgets, choose verified designers, track projects, and pay securely with escrow.",
+    type: "website",
+  },
 };
 
 export default async function RootLayout({

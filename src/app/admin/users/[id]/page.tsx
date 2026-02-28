@@ -8,7 +8,6 @@ import {
   Building2,
   CreditCard,
   FolderKanban,
-  Percent,
   ArrowLeft,
 } from "lucide-react";
 import FadeIn from "@/components/animations/FadeIn";
@@ -43,7 +42,6 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
     pincode: string;
     status: string;
     platform_margin_pct: number | null;
-    margin_accepted_at: Date | null;
   } | null = null;
   let payments: {
     id: string;
@@ -59,15 +57,6 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
     customer_name: string | null;
     created_at: Date;
   }[] = [];
-  let marginHistory: {
-    id: string;
-    requested_margin_pct: number;
-    status: string;
-    admin_comment: string | null;
-    created_at: Date;
-    decided_at: Date | null;
-  }[] = [];
-
   if (user.role === "FIRM") {
     const [p] = await sql<{
       id: string;
@@ -77,9 +66,8 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
       pincode: string;
       status: string;
       platform_margin_pct: number | null;
-      margin_accepted_at: Date | null;
     }>`
-      select id, firm_name, name, city, pincode, status, platform_margin_pct, margin_accepted_at
+      select id, firm_name, name, city, pincode, status, platform_margin_pct
       from firm_profiles where user_id = ${userId} limit 1
     `;
     profile = p ?? null;
@@ -111,25 +99,6 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
       order by p.created_at desc
     `;
 
-    if (profile?.id) {
-      try {
-        marginHistory = await sql<{
-          id: string;
-          requested_margin_pct: number;
-          status: string;
-          admin_comment: string | null;
-          created_at: Date;
-          decided_at: Date | null;
-        }>`
-          select id, requested_margin_pct, status, admin_comment, created_at, decided_at
-          from margin_requests
-          where profile_id = ${profile.id}
-          order by created_at desc
-        `;
-      } catch {
-        // margin_requests table may not exist
-      }
-    }
   }
 
   return (
@@ -183,59 +152,11 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
                   </span>
                 </p>
                 <p><span className="text-[var(--text-muted)]">Platform margin</span> {profile.platform_margin_pct != null ? `${profile.platform_margin_pct}%` : "—"}</p>
-                <p><span className="text-[var(--text-muted)]">Margin accepted</span> {profile.margin_accepted_at ? new Date(profile.margin_accepted_at).toLocaleString() : "—"}</p>
               </div>
             </section>
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <section className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
-              <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Percent className="h-4 w-4 text-[var(--text-muted)]" />
-                  <h2 className="font-semibold text-[var(--foreground)]">Margin history</h2>
-                </div>
-              </div>
-              {marginHistory.length === 0 ? (
-                <div className="p-6 text-center text-sm text-[var(--text-muted)]">No margin requests yet.</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-[var(--border)] bg-[var(--surface-subtle)]/50">
-                        <th className="text-left py-2 px-4 font-medium text-[var(--text-muted)]">Requested %</th>
-                        <th className="text-left py-2 px-4 font-medium text-[var(--text-muted)]">Status</th>
-                        <th className="text-left py-2 px-4 font-medium text-[var(--text-muted)]">Submitted</th>
-                        <th className="text-left py-2 px-4 font-medium text-[var(--text-muted)]">Decided</th>
-                        <th className="text-left py-2 px-4 font-medium text-[var(--text-muted)]">Admin comment</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {marginHistory.map((r) => (
-                        <tr key={r.id} className="border-b border-[var(--border)] last:border-0">
-                          <td className="py-2 px-4 font-medium">{r.requested_margin_pct}%</td>
-                          <td className="py-2 px-4">
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                              r.status === "APPROVED" ? "bg-[var(--accent-emerald)]/20 text-[var(--accent-emerald)]" :
-                              r.status === "REJECTED" ? "bg-red-100 text-red-700" :
-                              "bg-[var(--accent-amber)]/20 text-[var(--accent-amber)]"
-                            }`}>
-                              {r.status}
-                            </span>
-                          </td>
-                          <td className="py-2 px-4 text-[var(--text-muted)]">{new Date(r.created_at).toLocaleString()}</td>
-                          <td className="py-2 px-4 text-[var(--text-muted)]">{r.decided_at ? new Date(r.decided_at).toLocaleString() : "—"}</td>
-                          <td className="py-2 px-4 text-[var(--text-muted)] max-w-xs truncate">{r.admin_comment ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
-          </FadeIn>
-
-          <FadeIn delay={0.15}>
             <section className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
                 <div className="flex items-center gap-2">

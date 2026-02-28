@@ -38,10 +38,12 @@ export default function AuthLoginForm({
   role,
   otpEnabled,
   isDesigner,
+  redirectTo,
 }: {
   role: "customer" | "firm" | "admin";
   otpEnabled: boolean;
   isDesigner?: boolean;
+  redirectTo?: string;
 }) {
   const [state, formAction] = useActionState<{ ok: boolean; error: string }, FormData>(
     loginAction as (prev: { ok: boolean; error: string }, formData: FormData) => Promise<{ ok: boolean; error: string }>,
@@ -61,6 +63,7 @@ export default function AuthLoginForm({
     <div className="space-y-6">
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="intendedRole" value={role} />
+        {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
         <div className="space-y-2">
           <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
           <ValidatedEmailInput name="email" placeholder="you@example.com" className="input w-full" />

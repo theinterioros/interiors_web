@@ -3,10 +3,11 @@ import { BarChart3, PlusCircle, Users } from "lucide-react";
 import { requireCustomerPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import PageTabs from "@/components/ui/PageTabs";
+import TableFilterBar from "@/components/ui/TableFilterBar";
 
 export const dynamic = "force-dynamic";
 
-type PageProps = { searchParams?: Promise<{ status?: string }> };
+type PageProps = { searchParams?: Promise<{ status?: string; q?: string }> };
 
 const STATUS_TABS = [
   { value: "", label: "All" },
@@ -14,10 +15,20 @@ const STATUS_TABS = [
   { value: "LEAD", label: "Leads" },
 ];
 
+function matchSearch(row: { title: string; designer_name: string | null; designer_email: string | null }, q: string) {
+  const s = q.toLowerCase();
+  return (
+    row.title.toLowerCase().includes(s) ||
+    (row.designer_name ?? "").toLowerCase().includes(s) ||
+    (row.designer_email ?? "").toLowerCase().includes(s)
+  );
+}
+
 export default async function CustomerDashboardPage({ searchParams }: PageProps) {
   const user = await requireCustomerPaid();
   const params = await searchParams;
   const filterStatus = params?.status ?? "";
+  const q = (params?.q ?? "").trim();
 
   const projects = await sql<{
     id: string;
@@ -48,14 +59,23 @@ export default async function CustomerDashboardPage({ searchParams }: PageProps)
     LEAD: projects.filter((p) => p.status === "LEAD").length,
   };
 
-  const filtered =
+  const statusFiltered =
     filterStatus
       ? projects.filter((p) => p.status === filterStatus)
       : projects;
+  const filtered = q ? statusFiltered.filter((p) => matchSearch(p, q)) : statusFiltered;
 
+  const base = "/customer/dashboard";
+  const query = (status: string) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (q) params.set("q", q);
+    const s = params.toString();
+    return s ? `?${s}` : "";
+  };
   const tabs = STATUS_TABS.map((s) => ({
     label: s.label,
-    href: s.value ? `/customer/dashboard?status=${s.value}` : "/customer/dashboard",
+    href: base + query(s.value),
     active: (filterStatus || "") === s.value,
     count: s.value === "" ? counts.all : counts[s.value as keyof typeof counts],
   }));
@@ -67,9 +87,9 @@ export default async function CustomerDashboardPage({ searchParams }: PageProps)
           <BarChart3 className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Dashboard</p>
         </div>
-        <h1 className="heading-lg mb-1">Overview</h1>
+        <h1 className="heading-lg mb-1">Your dashboard</h1>
         <p className="text-sm text-[var(--text-muted)]">
-          Your projects, leads, and active work. Start a project from Browse designers, then track milestones and payments. Use tabs to filter (All, Active, Leads).
+          Your projects and design leads in one place. Start a project from Browse designers; then track milestones and payments. Use the tabs to filter by status.
         </p>
       </div>
 
@@ -83,16 +103,23 @@ export default async function CustomerDashboardPage({ searchParams }: PageProps)
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-[var(--foreground)]">Start a project</p>
-            <p className="text-sm text-[var(--text-muted)]">Browse verified designers and request a meetup.</p>
+            <p className="text-sm text-[var(--text-muted)]">Browse verified designers and send a meetup request.</p>
           </div>
           <Users className="h-5 w-5 text-[var(--text-muted)] shrink-0" />
         </Link>
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
-        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between flex-wrap gap-2">
+        <div className="px-4 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-semibold text-[var(--foreground)]">Your projects</h2>
-          <Link href="/designers" className="text-sm text-[var(--brand)] hover:underline">Browse designers</Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <TableFilterBar
+              value={q}
+              placeholder="Search by title or designer…"
+              preserveParams={filterStatus ? { status: filterStatus } : {}}
+            />
+            <Link href="/designers" className="text-sm text-[var(--brand)] hover:underline">Browse designers</Link>
+          </div>
         </div>
         <div className="px-4">
           <PageTabs tabs={tabs} className="mb-4" />
@@ -100,16 +127,18 @@ export default async function CustomerDashboardPage({ searchParams }: PageProps)
         {filtered.length === 0 ? (
           <div className="p-8 text-center text-sm text-[var(--text-muted)]">
             <p className="mb-3">
-              {filterStatus === "ACTIVE"
-                ? "No active projects."
-                : filterStatus === "LEAD"
-                  ? "No leads."
-                  : "No projects yet."}
+              {q
+                ? "No projects match your search. Try a different term or clear the search."
+                : filterStatus === "ACTIVE"
+                  ? "You have no active projects. Start one from Browse designers."
+                  : filterStatus === "LEAD"
+                    ? "No new leads at the moment."
+                    : "You don’t have any projects yet. Browse designers to get started."}
             </p>
-            {!filterStatus && (
-              <Link href="/designers" className="btn btn-primary inline-flex items-center gap-2 text-sm">
+            {!filterStatus && !q && (
+              <Link href="/designers" className="btn btn-primary inline-flex items-center gap-2 text-sm mt-3">
                 <PlusCircle className="h-4 w-4" />
-                Start a project
+                Browse designers
               </Link>
             )}
           </div>
@@ -124,7 +153,7 @@ export default async function CustomerDashboardPage({ searchParams }: PageProps)
                   <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">Designer</th>
                   <th className="text-right py-3 px-4 font-medium text-[var(--text-muted)]">Milestones</th>
                   <th className="text-right py-3 px-4 font-medium text-[var(--text-muted)]">Approved</th>
-                  <th className="text-right py-3 px-4 font-medium text-[var(--text-muted)]">Awaiting you</th>
+                  <th className="text-right py-3 px-4 font-medium text-[var(--text-muted)]">Pending your approval</th>
                   <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">Status</th>
                   <th className="text-right py-3 px-4 font-medium text-[var(--text-muted)]">Action</th>
                 </tr>

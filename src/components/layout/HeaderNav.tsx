@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { createPortal } from "react-dom";
-import { Menu, X, LogIn, LogOut, Loader2, Users, BadgeCheck, MapPin, Settings, IndianRupee, LayoutDashboard, CreditCard, Layers, FolderKanban, User, MessageSquare, Building2, HelpCircle } from "lucide-react";
+import { Menu, X, LogIn, LogOut, Loader2, HelpCircle } from "lucide-react";
+import { APP_NAV, type AppRole } from "@/lib/appNav";
 
 type SessionUser = {
   id: string;
@@ -20,34 +21,15 @@ type HeaderNavProps = {
   logoutAction: () => Promise<void>;
 };
 
-/** Public nav — when not logged in: only sign-in CTAs (no links in navbar per requirements) */
-const navItems: { href: string; label: string; icon: typeof User }[] = [];
+const roleToAppRole = (role: string): AppRole | null =>
+  role === "ADMIN" ? "admin" : role === "CUSTOMER" ? "customer" : role === "FIRM" ? "designer" : null;
 
-const adminNavItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/leads", label: "Leads", icon: MessageSquare },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/designers", label: "Designer Approvals", icon: BadgeCheck },
-  { href: "/admin/firms-pending-payment", label: "Designers Pending Payment", icon: IndianRupee },
-  { href: "/admin/pricing", label: "AI Estimator Pricing", icon: MapPin },
-  { href: "/admin/trusted-studios", label: "Trusted Studios", icon: Building2 },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
-] as const;
-
-/** Customer portal nav — only customer-persona features (/customer/*) */
-const customerNavItems = [
-  { href: "/customer/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/customer/digital-twin", label: "Digital Twin", icon: Layers },
-  { href: "/customer/payments", label: "Payment Ledger", icon: CreditCard },
-] as const;
-
-/** Designer portal nav — designer = firm in backend */
-const designerNavItems = [
-  { href: "/firm/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/firm/leads", label: "Leads", icon: FolderKanban },
-  { href: "/firm/profile", label: "Profile", icon: User },
-  { href: "/firm/payments", label: "Payment Ledger", icon: CreditCard },
-] as const;
+function roleToDesignation(role: string): string {
+  if (role === "ADMIN") return "Admin";
+  if (role === "CUSTOMER") return "Customer";
+  if (role === "FIRM") return "Designer";
+  return "User";
+}
 
 function SignOutButton() {
   const { pending } = useFormStatus();
@@ -89,10 +71,11 @@ function SignOutButtonMobile() {
 
 export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderNavProps) {
   const pathname = usePathname();
-  const isAppRoute =
-    pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/customer") ||
-    pathname?.startsWith("/firm");
+  const isAppRoute = pathname
+    ? ["/admin", "/customer", "/designer", "/designers"].some(
+        (base) => pathname === base || pathname.startsWith(base + "/")
+      )
+    : false;
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -115,23 +98,16 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, close]);
 
-  const isAdmin = user?.role === "ADMIN";
-  const isCustomer = user?.role === "CUSTOMER";
-  const isFirm = user?.role === "FIRM";
-
-  const desktopLinks = isAdmin
-    ? adminNavItems
-    : isCustomer
-      ? customerNavItems
-      : isFirm
-        ? designerNavItems
-        : navItems;
+  const appRole = user ? roleToAppRole(user.role) : null;
+  const desktopLinks = appRole ? APP_NAV[appRole].filter((item) => !item.isMore) : [];
+  /** In-app (dashboard) routes: sidebar/bottom nav handle navigation; header only shows Help + Sign out */
+  const showNavInHeader = !isAppRoute;
 
   return (
     <>
-      {/* Desktop: nav links (hidden on app routes; sidebar shows there) + Help + Sign out / CTAs */}
+      {/* Desktop: nav links only when not in app (in app, sidebar is the nav) + Help + Sign out / CTAs */}
       <div className="hidden md:flex items-center gap-2 lg:gap-3">
-        {!isAppRoute &&
+        {showNavInHeader &&
           desktopLinks.map(({ href, label }) => (
             <Link
               key={href}
@@ -143,6 +119,10 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
           ))}
         {user ? (
           <>
+            <span className="hidden sm:inline text-sm text-[var(--text-muted)] truncate max-w-[180px]" title={`${user.name || user.email} · ${roleToDesignation(user.role)}`}>
+              {user.name || user.email}
+              <span className="text-[var(--foreground)] font-medium ml-1">· {roleToDesignation(user.role)}</span>
+            </span>
             <Link
               href="/#contact"
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors"
@@ -201,32 +181,40 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
               className="absolute top-0 right-0 bottom-0 w-full max-w-[min(320px,85vw)] bg-white border-l border-[var(--border)] shadow-2xl flex flex-col min-h-0"
               style={{ transform: open ? "translateX(0)" : "translateX(100%)", transition: "transform 0.3s ease-out" }}
             >
-              <div className="flex shrink-0 items-center justify-between p-4 border-b border-[var(--border)]">
-                <span className="text-sm font-semibold text-[var(--foreground)]">Menu</span>
+              <div className="flex shrink-0 items-center justify-between gap-2 p-4 border-b border-[var(--border)]">
+                <div>
+                  <span className="text-sm font-semibold text-[var(--foreground)]">Menu</span>
+                  {user && (
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">{user.name || user.email} · {roleToDesignation(user.role)}</p>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={close}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition-colors"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition-colors"
                   aria-label="Close menu"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-2">
-                {desktopLinks.map(({ href, label, icon: Icon }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={close}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--brand)]">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <span className="font-medium">{label}</span>
-                  </Link>
-                ))}
-                <div className="my-2 h-px shrink-0 bg-[var(--border)]" />
+                {showNavInHeader &&
+                  desktopLinks.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={close}
+                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-subtle)] text-[var(--brand)]">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="font-medium">{label}</span>
+                    </Link>
+                  ))}
+                {showNavInHeader && desktopLinks.length > 0 && (
+                  <div className="my-2 h-px shrink-0 bg-[var(--border)]" />
+                )}
                 {user ? (
                   <div className="flex flex-col gap-2 shrink-0">
                     <Link

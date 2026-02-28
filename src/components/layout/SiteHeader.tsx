@@ -10,7 +10,7 @@ type SessionUser = {
   name: string | null;
 };
 
-const APP_ROUTES = ["/admin", "/customer", "/firm", "/designers"];
+const APP_ROUTES = ["/admin", "/customer", "/designer", "/designers"];
 
 function isAppRoute(pathname: string | null): boolean {
   if (!pathname) return false;
@@ -28,7 +28,7 @@ export default function SiteHeader({
     user?.role === "ADMIN"
       ? "/admin"
       : user?.role === "FIRM"
-        ? "/firm/dashboard"
+        ? "/designer/dashboard"
         : user?.role === "CUSTOMER"
           ? "/customer/dashboard"
           : null;
@@ -42,7 +42,7 @@ export default function SiteHeader({
     >
       <div className={appChrome ? "w-full px-4 sm:px-6 min-w-0" : "page-inner min-w-0"}>
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Link href={appChrome && dashboardHref ? dashboardHref : "/"} className="flex items-center gap-2 shrink-0">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-[var(--foreground)] text-sm font-semibold text-white shrink-0">
               IO
             </div>

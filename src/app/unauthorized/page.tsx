@@ -11,9 +11,9 @@ export default function UnauthorizedPage() {
             <Lock className="h-4 w-4 text-[var(--brand)]" />
             <p className="eyebrow">Restricted</p>
           </div>
-          <h1 className="heading-lg mb-3">Access restricted</h1>
+          <h1 className="heading-lg mb-3">Access denied</h1>
           <p className="text-[var(--text-muted)] mb-6">
-            You do not have permission to view this page.
+            You don’t have permission to view this page. If you believe this is an error, please sign in with the correct account or contact support.
           </p>
           <Link href="/" className="btn btn-secondary">
             Return to home

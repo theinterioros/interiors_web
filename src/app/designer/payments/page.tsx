@@ -2,8 +2,22 @@ import { CreditCard, Clock, Lock, CheckCircle, Info } from "lucide-react";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { paymentTypeLabel } from "@/lib/paymentLabels";
+import PageTabs from "@/components/ui/PageTabs";
+import TableFilterBar from "@/components/ui/TableFilterBar";
 
 export const dynamic = "force-dynamic";
+
+type PageProps = { searchParams?: Promise<{ status?: string; q?: string }> };
+
+function matchSearch(row: LedgerRow, q: string): boolean {
+  const s = q.toLowerCase();
+  return (
+    (row.project_title ?? "").toLowerCase().includes(s) ||
+    (row.milestone_title ?? "").toLowerCase().includes(s) ||
+    (row.customer_name ?? "").toLowerCase().includes(s) ||
+    (row.customer_email ?? "").toLowerCase().includes(s)
+  );
+}
 
 type LedgerRow = {
   id: string;
@@ -18,8 +32,11 @@ type LedgerRow = {
   created_at: Date;
 };
 
-export default async function FirmPaymentsPage() {
+export default async function FirmPaymentsPage({ searchParams }: PageProps) {
   const user = await requireFirmPaid();
+  const params = await searchParams;
+  const filterStatus = params?.status ?? "";
+  const q = (params?.q ?? "").trim();
 
   const [ledger, pendingMilestones] = await Promise.all([
     sql<LedgerRow>`
@@ -33,6 +50,7 @@ export default async function FirmPaymentsPage() {
       left join milestones m on m.id = p.milestone_id
       left join users cu on cu.id = p.customer_id
       where p.firm_id = ${user.id}
+        and p.type <> 'FIRM_REGISTRATION_FEE'
       order by p.created_at desc
     `,
     sql<{ title: string; amount: number; project_title: string }>`
@@ -50,6 +68,29 @@ export default async function FirmPaymentsPage() {
   const releasedRows = ledger.filter((r) => r.status === "RELEASED");
   const dispatchedToDesigner = releasedRows.reduce((s, r) => s + (r.amount - (r.platform_margin_amount ?? 0)), 0);
 
+  const statusFiltered =
+    filterStatus === "HELD"
+      ? heldRows
+      : filterStatus === "RELEASED"
+        ? releasedRows
+        : ledger;
+
+  const ledgerFiltered = q ? statusFiltered.filter((row) => matchSearch(row, q)) : statusFiltered;
+
+  const base = "/designer/payments";
+  const query = (status: string) => {
+    const sp = new URLSearchParams();
+    if (status) sp.set("status", status);
+    if (q) sp.set("q", q);
+    const s = sp.toString();
+    return s ? `?${s}` : "";
+  };
+  const ledgerTabs = [
+    { label: "All", href: base + query(""), active: !filterStatus, count: ledger.length },
+    { label: "In escrow", href: base + query("HELD"), active: filterStatus === "HELD", count: heldRows.length },
+    { label: "Dispatched", href: base + query("RELEASED"), active: filterStatus === "RELEASED", count: releasedRows.length },
+  ];
+
   return (
     <div className="space-y-8">
       <header>
@@ -57,15 +98,15 @@ export default async function FirmPaymentsPage() {
           <CreditCard className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Payments</p>
         </div>
-        <h1 className="heading-lg mb-1">Your Earnings</h1>
+        <h1 className="heading-lg mb-1">Your earnings</h1>
         <p className="text-sm text-[var(--text-muted)] mb-2">
-          Track pending milestones, amounts in escrow (awaiting admin release), and payouts already sent to you. The ledger shows date, payment type, particulars, customer, amount, margin, and what you receive.
+          Pending milestones, amounts in escrow (awaiting release), and payouts already sent to you. Ledger shows date, type, project or milestone, customer, amount, platform margin, and your net.
         </p>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-subtle)]/50 p-4 flex items-start gap-3">
           <Info className="h-4 w-4 text-[var(--brand)] shrink-0 mt-0.5" />
-          <div className="text-sm text-[var(--text-muted)]">
-            <strong className="text-[var(--foreground)]">Flow:</strong> Pending = not yet submitted for approval. In escrow = customer approved; admin will release. Dispatched = paid to you after platform margin is deducted.
-          </div>
+          <p className="text-sm text-[var(--text-muted)]">
+            <strong className="text-[var(--foreground)]">Flow:</strong> Pending = not yet submitted. In escrow = customer approved; platform will release after review. Dispatched = paid to you (after margin).
+          </p>
         </div>
       </header>
 
@@ -100,12 +141,22 @@ export default async function FirmPaymentsPage() {
         <div className="px-4 sm:px-5 py-4 border-b border-[var(--border)]">
           <h2 className="font-semibold text-[var(--foreground)]">Payment ledger</h2>
           <p className="text-sm text-[var(--text-muted)] mt-1">
-            Date, payment type, particulars, customer, amount, margin, you receive, and status.
+            Date, type, project or milestone, customer, amount, platform margin, your net, and status.
           </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <PageTabs tabs={ledgerTabs} className="mb-0 sm:flex-1 sm:min-w-0 order-2 sm:order-1" />
+            <div className="w-full sm:w-auto order-1 sm:order-2">
+              <TableFilterBar
+                value={q}
+                placeholder="Search by project, milestone, customer…"
+                preserveParams={filterStatus ? { status: filterStatus } : {}}
+              />
+            </div>
+          </div>
         </div>
         {ledger.length === 0 && pendingMilestones.length === 0 ? (
           <div className="p-8 text-center text-sm text-[var(--text-muted)]">
-            No payments or pending milestones yet. Create milestones on a project; when the customer approves, amounts appear here as In escrow until admin releases them to you.
+            No payments or pending milestones yet. Add milestones to a project; when the customer approves, amounts appear here in escrow until released to you.
           </div>
         ) : (
           <>
@@ -125,7 +176,15 @@ export default async function FirmPaymentsPage() {
                 </ul>
               </div>
             )}
-            {ledger.length > 0 && (
+            {ledgerFiltered.length === 0 ? (
+              <div className="p-8 text-center text-sm text-[var(--text-muted)]">
+                {q
+                  ? "No payments match your search. Try a different term or clear the search."
+                  : filterStatus
+                    ? `No ${filterStatus === "HELD" ? "escrow" : "dispatched"} payments.`
+                    : "No ledger entries yet."}
+              </div>
+            ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -141,7 +200,7 @@ export default async function FirmPaymentsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {ledger.map((row) => {
+                    {ledgerFiltered.map((row) => {
                       const margin = row.platform_margin_amount ?? 0;
                       const netToDesigner = row.amount - margin;
                       return (

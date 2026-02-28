@@ -4,6 +4,11 @@ import AuthLoginForm from "@/components/forms/AuthLoginForm";
 import { getAdminSettings } from "@/lib/settings";
 import LoginRoleSelector from "./LoginRoleSelector";
 
+export const metadata = {
+  title: "Sign in",
+  description: "Sign in to Interior OS as a customer, designer, or admin.",
+};
+
 const PERSONAS = [
   {
     role: "customer" as const,
@@ -31,11 +36,14 @@ const PERSONAS = [
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ role?: string; reset?: string }>;
+  searchParams?: Promise<{ role?: string; reset?: string; redirect?: string }>;
 }) {
   const settings = await getAdminSettings();
   const resolvedParams = await searchParams;
   const resetSuccess = resolvedParams?.reset === "1";
+  const redirectTo = typeof resolvedParams?.redirect === "string" && resolvedParams.redirect.startsWith("/") && !resolvedParams.redirect.startsWith("//")
+    ? resolvedParams.redirect
+    : undefined;
   const role =
     resolvedParams?.role === "firm" || resolvedParams?.role === "designer"
       ? "firm"
@@ -84,7 +92,7 @@ export default async function LoginPage({
                 Sign in to your account
               </h2>
               <p className="text-[15px] text-[var(--text-muted)] leading-relaxed max-w-[320px]">
-                Choose your account type to continue. One platform for customers, designers, and admins.
+                Sign in with your customer, designer, or admin account.
               </p>
             </div>
 
@@ -166,6 +174,7 @@ export default async function LoginPage({
                 role={role}
                 otpEnabled={settings.otpEnabled}
                 isDesigner={role === "firm"}
+                redirectTo={redirectTo}
               />
 
               <div className="mt-6 pt-6 border-t border-[var(--border)] space-y-2">
@@ -180,7 +189,7 @@ export default async function LoginPage({
                 <p className="text-sm text-[var(--text-muted)]">
                   New here?{" "}
                   <Link href={role === "admin" ? "/register?role=customer" : `/register?role=${role}`} className="text-[var(--brand)] font-medium hover:underline">
-                    {role === "firm" ? "Apply as a designer" : role === "admin" ? "Create account" : "Create an account"}
+                    {role === "firm" ? "Apply as a designer" : role === "admin" ? "Customers: create account" : "Create an account"}
                   </Link>
                 </p>
               </div>

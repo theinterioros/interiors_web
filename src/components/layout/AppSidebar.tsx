@@ -4,61 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Menu, X } from "lucide-react";
+import { X } from "lucide-react";
 import MobileBottomNav from "./MobileBottomNav";
-import {
-  LayoutDashboard,
-  Users,
-  BadgeCheck,
-  FolderKanban,
-  CreditCard,
-  Settings,
-  MapPin,
-  Building2,
-  MessageSquare,
-  Calculator,
-  Layers,
-  User,
-  Palette,
-} from "lucide-react";
-
-type Role = "admin" | "customer" | "designer";
-
-type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
-
-const ADMIN_NAV: NavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/projects", label: "Projects", icon: FolderKanban },
-  { href: "/admin/payments", label: "Payments", icon: CreditCard },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/designers", label: "Designer Approvals", icon: BadgeCheck },
-  { href: "/admin/leads", label: "Leads", icon: MessageSquare },
-  { href: "/admin/pricing", label: "AI Estimator Pricing", icon: MapPin },
-  { href: "/admin/trusted-studios", label: "Trusted Studios", icon: Building2 },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
-];
-
-const CUSTOMER_NAV: NavItem[] = [
-  { href: "/customer/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/designers", label: "Browse Designers", icon: Palette },
-  { href: "/customer/estimator", label: "Cost Estimator", icon: Calculator },
-  { href: "/customer/payments", label: "Payment History", icon: CreditCard },
-  { href: "/customer/digital-twin", label: "Digital Twin", icon: Layers },
-];
-
-const DESIGNER_NAV: NavItem[] = [
-  { href: "/firm/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/firm/leads", label: "Leads", icon: MessageSquare },
-  { href: "/firm/projects", label: "Projects", icon: FolderKanban },
-  { href: "/firm/payments", label: "Payment Ledger", icon: CreditCard },
-  { href: "/firm/profile", label: "Profile", icon: User },
-];
-
-const NAV: Record<Role, NavItem[]> = {
-  admin: ADMIN_NAV,
-  customer: CUSTOMER_NAV,
-  designer: DESIGNER_NAV,
-};
+import { APP_NAV, type AppRole, type NavItem } from "@/lib/appNav";
 
 function NavList({
   items,
@@ -71,7 +19,7 @@ function NavList({
 }) {
   return (
     <ul className="space-y-1">
-      {items.map(({ href, label, icon: Icon }) => {
+      {items.filter((item) => !item.isMore).map(({ href, label, icon: Icon }) => {
         const active =
           pathname === href || (pathname.startsWith(href + "/") && href !== pathname);
         return (
@@ -95,9 +43,9 @@ function NavList({
   );
 }
 
-export default function AppSidebar({ role }: { role: Role }) {
+export default function AppSidebar({ role }: { role: AppRole }) {
   const pathname = usePathname();
-  const items = NAV[role];
+  const items = APP_NAV[role];
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -109,7 +57,6 @@ export default function AppSidebar({ role }: { role: Role }) {
 
   return (
     <>
-      {/* Mobile bottom navigation (app-style) */}
       <MobileBottomNav
         role={role}
         onOpenMenu={role === "admin" ? () => setMobileOpen(true) : undefined}

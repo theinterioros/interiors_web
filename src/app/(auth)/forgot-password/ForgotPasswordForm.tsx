@@ -103,7 +103,7 @@ export default function ForgotPasswordForm({ role }: { role: string }) {
         </>
       )}
       <p className="text-sm text-[var(--text-muted)]">
-        <Link href={role ? `/login?role=${role}` : "/login"} className="font-medium text-[var(--brand)] hover:underline">
+        <Link href={role ? `/login?role=${role === "firm" ? "designer" : role}` : "/login"} className="font-medium text-[var(--brand)] hover:underline">
           Back to sign in
         </Link>
       </p>

@@ -33,6 +33,7 @@ import {
   TrendingUp,
   Box,
 } from "lucide-react";
+import { redirect } from "next/navigation";
 import { getAdminSettings } from "@/lib/settings";
 import { getTrustedStudios } from "@/lib/trustedStudios";
 import { getCurrentUser } from "@/lib/auth";
@@ -53,6 +54,14 @@ import EstimatorForm from "@/components/estimator/EstimatorForm";
 
 export default async function Home() {
   const [settings, user] = await Promise.all([getAdminSettings(), getCurrentUser()]);
+
+  // Logged-in users go straight to their dashboard instead of the marketing landing
+  if (user) {
+    if (user.role === "ADMIN") redirect("/admin");
+    if (user.role === "FIRM") redirect("/designer/dashboard");
+    if (user.role === "CUSTOMER") redirect("/customer/dashboard");
+  }
+
   const isCustomer = user?.role === "CUSTOMER";
   type LinkItem = {
     label: string;
@@ -558,7 +567,7 @@ export default async function Home() {
         <section className="section section-compact section-alt section-bg-pattern section-bg-gradient-alt text-center">
           <div className="page-inner min-w-0">
             <FadeIn className="mx-auto max-w-2xl text-center mb-6">
-              <p className="eyebrow mb-3">Who It's For</p>
+              <p className="eyebrow mb-3">Who it’s for</p>
               <h2 className="heading-lg"><span className="text-[var(--brand)]">Homeowners</span> and growing <span className="text-[var(--brand)]">studios</span></h2>
             </FadeIn>
             <WhoItsForIllo />

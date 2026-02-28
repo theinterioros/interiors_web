@@ -19,9 +19,8 @@ export default async function DesignerRequestPage({
     firm_name: string | null;
     name: string | null;
     status: string;
-    margin_accepted_at: Date | null;
   }>`
-    select user_id, firm_name, name, status, margin_accepted_at
+    select user_id, firm_name, name, status
     from firm_profiles
     where id = ${profileId}
     limit 1
@@ -30,7 +29,7 @@ export default async function DesignerRequestPage({
   if (!firm) {
     redirect("/designers");
   }
-  if (firm.status !== "APPROVED" || !firm.margin_accepted_at) {
+  if (firm.status !== "APPROVED") {
     redirect(`/designers/${profileId}`);
   }
 

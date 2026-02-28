@@ -2,62 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  FolderKanban,
-  CreditCard,
-  Calculator,
-  Layers,
-  User,
-  Palette,
-  MessageSquare,
-  Menu,
-} from "lucide-react";
-
-type Role = "admin" | "customer" | "designer";
-
-type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
-
-const ADMIN_BOTTOM: (NavItem & { isMore?: boolean })[] = [
-  { href: "/admin", label: "Home", icon: LayoutDashboard },
-  { href: "/admin/projects", label: "Projects", icon: FolderKanban },
-  { href: "/admin/payments", label: "Payments", icon: CreditCard },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "#", label: "More", icon: Menu, isMore: true },
-];
-
-const CUSTOMER_BOTTOM: NavItem[] = [
-  { href: "/customer/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/designers", label: "Designers", icon: Palette },
-  { href: "/customer/estimator", label: "Estimate", icon: Calculator },
-  { href: "/customer/payments", label: "Payments", icon: CreditCard },
-  { href: "/customer/digital-twin", label: "Twin", icon: Layers },
-];
-
-const DESIGNER_BOTTOM: NavItem[] = [
-  { href: "/firm/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/firm/leads", label: "Leads", icon: MessageSquare },
-  { href: "/firm/projects", label: "Projects", icon: FolderKanban },
-  { href: "/firm/payments", label: "Payments", icon: CreditCard },
-  { href: "/firm/profile", label: "Profile", icon: User },
-];
-
-const BOTTOM_NAV: Record<Role, (NavItem & { isMore?: boolean })[]> = {
-  admin: ADMIN_BOTTOM,
-  customer: CUSTOMER_BOTTOM,
-  designer: DESIGNER_BOTTOM,
-};
+import { APP_NAV_MOBILE, type AppRole } from "@/lib/appNav";
 
 export default function MobileBottomNav({
   role,
   onOpenMenu,
 }: {
-  role: Role;
+  role: AppRole;
   onOpenMenu?: () => void;
 }) {
   const pathname = usePathname();
-  const items = BOTTOM_NAV[role];
+  const items = APP_NAV_MOBILE[role];
 
   return (
     <nav
@@ -70,6 +25,7 @@ export default function MobileBottomNav({
             !item.isMore &&
             (pathname === item.href || pathname.startsWith(item.href + "/"));
           const Icon = item.icon;
+          const label = item.shortLabel ?? item.label;
 
           if (item.isMore && onOpenMenu) {
             return (
@@ -81,7 +37,7 @@ export default function MobileBottomNav({
                 aria-label="Open menu"
               >
                 <Icon className="h-5 w-5 shrink-0" />
-                <span className="text-[10px] font-medium truncate w-full text-center">More</span>
+                <span className="text-[10px] font-medium truncate w-full text-center">{label}</span>
               </button>
             );
           }
@@ -95,7 +51,7 @@ export default function MobileBottomNav({
               }`}
             >
               <Icon className="h-5 w-5 shrink-0" />
-              <span className="text-[10px] font-medium truncate w-full text-center">{item.label}</span>
+              <span className="text-[10px] font-medium truncate w-full text-center">{label}</span>
             </Link>
           );
         })}

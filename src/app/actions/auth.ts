@@ -100,14 +100,6 @@ export async function registerAction(_prevState: unknown, formData: FormData): P
     const designersCount = Number(formData.get("designersCount") ?? 0) || null;
     const comments = String(formData.get("comments") ?? "").trim();
 
-    const portfolioFile = formData.get("portfolio");
-    if (portfolioFile instanceof File && portfolioFile.size > 0) {
-      const validated = validatePortfolioFile(portfolioFile);
-      if (!validated.valid) {
-        return { error: validated.error };
-      }
-    }
-
     const profileId = crypto.randomUUID();
     await sql`
       insert into firm_profiles (
@@ -125,7 +117,9 @@ export async function registerAction(_prevState: unknown, formData: FormData): P
         experience_years,
         city,
         pincode,
-        about
+        about,
+        platform_margin_pct,
+        margin_accepted_at
       )
       values (
         ${profileId},
@@ -142,30 +136,52 @@ export async function registerAction(_prevState: unknown, formData: FormData): P
         ${Number(formData.get("experienceYears") ?? 0)},
         ${String(formData.get("city") ?? "").trim()},
         ${String(formData.get("pincode") ?? "").trim()},
-        ${String(formData.get("about") ?? "").trim()}
+        ${String(formData.get("about") ?? "").trim()},
+        5,
+        now()
       )
     `;
 
-    if (portfolioFile instanceof File && portfolioFile.size > 0) {
-      const blobUrl = await uploadBlob(portfolioFile, `firm-documents/${profileId}`);
-      await sql`
-        insert into firm_documents (id, profile_id, doc_type, blob_url, file_name, mime_type, size_bytes)
-        values (
-          ${crypto.randomUUID()},
-          ${profileId},
-          'portfolio',
-          ${blobUrl},
-          ${portfolioFile.name},
-          ${portfolioFile.type},
-          ${portfolioFile.size}
-        )
-      `;
+    // Optional portfolio project: one work with up to 5 images (titles max 50 chars)
+    const projectTitle = String(formData.get("portfolioProjectTitle") ?? "").trim();
+    const projectDescription = String(formData.get("portfolioProjectDescription") ?? "").trim();
+    const portfolioImages: { file: File; title: string }[] = [];
+    for (let i = 1; i <= 5; i++) {
+      const file = formData.get(`portfolioImage${i}`);
+      if (file instanceof File && file.size > 0) {
+        const titleRaw = String(formData.get(`portfolioImageTitle${i}`) ?? "").trim();
+        portfolioImages.push({ file, title: titleRaw.slice(0, 50) || file.name.slice(0, 50) });
+      }
+    }
+    if (portfolioImages.length > 0 && !projectTitle) {
+      return { error: "Please enter a project title when adding portfolio images." };
+    }
+    if (portfolioImages.length > 0 && projectTitle) {
+      try {
+        const workId = crypto.randomUUID();
+        await sql`
+          insert into firm_portfolio_works (id, profile_id, title, description, display_order)
+          values (${workId}, ${profileId}, ${projectTitle}, ${projectDescription || null}, 0)
+        `;
+        for (const { file, title } of portfolioImages) {
+          const blobUrl = await uploadBlob(file, `firm-portfolio/${profileId}`);
+          await sql`
+            insert into firm_portfolio_files (id, profile_id, work_id, blob_url, file_name, mime_type, size_bytes)
+            values (${crypto.randomUUID()}, ${profileId}, ${workId}, ${blobUrl}, ${title}, ${file.type}, ${file.size})
+          `;
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!msg.includes("firm_portfolio_works") && !msg.includes("firm_portfolio_files") && !msg.includes("does not exist")) {
+          throw e;
+        }
+      }
     }
   }
 
   await createSession(userId);
   if (role === RoleValues.FIRM) {
-    return { redirect: "/firm/dashboard" };
+    return { redirect: "/designer/dashboard" };
   }
   if (role === RoleValues.CUSTOMER) {
     return { redirect: "/customer/dashboard" };
@@ -224,7 +240,7 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
   if (user.role === RoleValues.FIRM) {
     const paid = await hasFirmPaidRegistration(user.id);
     if (!paid) {
-      redirect("/firm/register/pay");
+      redirect("/designer/register/pay");
     }
   }
   if (user.role === RoleValues.CUSTOMER) {
@@ -234,6 +250,10 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
       redirect("/customer/subscribe");
     }
   }
+  const redirectUrlRaw = String(formData.get("redirect") ?? "").trim();
+  const safeRedirect =
+    redirectUrlRaw.startsWith("/") && !redirectUrlRaw.startsWith("//") ? redirectUrlRaw : null;
+  if (safeRedirect) redirect(safeRedirect);
   return redirectByRole(user.role);
 }
 
@@ -246,7 +266,7 @@ export async function payFirmRegistrationAction(): Promise<PayFirmRegistrationRe
   }
   const paid = await hasFirmPaidRegistration(user.id);
   if (paid) {
-    return { redirect: "/firm/dashboard" };
+    return { redirect: "/designer/dashboard" };
   }
   const id = crypto.randomUUID();
   await sql`
@@ -267,9 +287,41 @@ export async function payFirmRegistrationAction(): Promise<PayFirmRegistrationRe
   }
   revalidatePath("/admin");
   revalidatePath("/admin/payments");
-  revalidatePath("/firm/dashboard");
-  revalidatePath("/firm/payments");
-  return { redirect: "/firm/dashboard" };
+  revalidatePath("/designer/dashboard");
+  revalidatePath("/designer/payments");
+  revalidatePath("/designer/profile");
+  return { redirect: "/designer/dashboard" };
+}
+
+/** Renew designer subscription (extends expiry by 1 year). Use when expired or for early renewal. */
+export async function renewFirmSubscriptionAction(): Promise<PayFirmRegistrationResult> {
+  const user = await getSessionUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    return { error: "Unauthorized." };
+  }
+  const id = crypto.randomUUID();
+  await sql`
+    insert into payment_ledger (id, type, status, amount, currency, firm_id)
+    values (${id}, 'FIRM_REGISTRATION_FEE', 'RELEASED', ${FIRM_REGISTRATION_AMOUNT}, 'INR', ${user.id})
+  `;
+  try {
+    await sql`
+      update firm_profiles
+      set subscription_expires_at = coalesce(
+        case when subscription_expires_at > now() then subscription_expires_at + interval '1 year' else now() + interval '1 year' end,
+        now() + interval '1 year'
+      )
+      where user_id = ${user.id}
+    `;
+  } catch {
+    // column may not exist
+  }
+  revalidatePath("/admin");
+  revalidatePath("/admin/payments");
+  revalidatePath("/designer/dashboard");
+  revalidatePath("/designer/profile");
+  revalidatePath("/designer/payments");
+  return { redirect: "/designer/profile" };
 }
 
 export type PayCustomerSubscriptionResult = { redirect?: string; error?: string };
@@ -382,7 +434,7 @@ export async function verifyOtpAction(_prevState: unknown, formData: FormData) {
   if (user.role === RoleValues.FIRM) {
     const paid = await hasFirmPaidRegistration(user.id);
     if (!paid) {
-      redirect("/firm/register/pay");
+      redirect("/designer/register/pay");
     }
   }
   if (user.role === RoleValues.CUSTOMER) {
@@ -400,7 +452,7 @@ function redirectByRole(role: Role) {
     redirect("/admin");
   }
   if (role === RoleValues.FIRM) {
-    redirect("/firm/dashboard");
+    redirect("/designer/dashboard");
   }
   redirect("/customer/dashboard");
 }
@@ -454,6 +506,7 @@ export async function verifyOtpAndResetPasswordAction(_prevState: unknown, formD
   const passwordHash = await hashPassword(newPassword);
   await sql`update users set password_hash = ${passwordHash}, updated_at = now() where id = ${user.id}`;
 
-  const role = String(formData.get("role") ?? "customer");
+  let role = String(formData.get("role") ?? "customer").toLowerCase();
+  if (role === "firm") role = "designer"; // match login persona URL
   redirect(`/login?role=${role}&reset=1`);
 }

@@ -55,11 +55,11 @@ export async function requestProjectAction(
     return { ok: false, error: "Firm and title are required." };
   }
 
-  const [firmProfile] = await sql<{ id: string; status: string; margin_accepted_at: Date | null }>`
-    select id, status, margin_accepted_at from firm_profiles where user_id = ${firmId} limit 1
+  const [firmProfile] = await sql<{ id: string; status: string }>`
+    select id, status from firm_profiles where user_id = ${firmId} limit 1
   `;
 
-  if (!firmProfile || firmProfile.status !== "APPROVED" || !firmProfile.margin_accepted_at) {
+  if (!firmProfile || firmProfile.status !== "APPROVED") {
     return { ok: false, error: "Firm is not available." };
   }
 
@@ -105,8 +105,8 @@ export async function requestProjectAction(
 
   revalidatePath("/customer/dashboard");
   revalidatePath("/admin/projects");
-  revalidatePath("/firm/leads");
-  revalidatePath("/firm/dashboard");
+  revalidatePath("/designer/leads");
+  revalidatePath("/designer/dashboard");
   return { ok: true, projectId };
 }
 
@@ -127,10 +127,10 @@ export async function initiateProjectAction(formData: FormData): Promise<void> {
   `;
   if (!updated) throw new Error("Project not found or not in LEAD/ACCEPTED status.");
 
-  revalidatePath("/firm/leads");
-  revalidatePath("/firm/projects");
-  revalidatePath(`/firm/projects/${projectId}`);
-  revalidatePath("/firm/dashboard");
+  revalidatePath("/designer/leads");
+  revalidatePath("/designer/projects");
+  revalidatePath(`/designer/projects/${projectId}`);
+  revalidatePath("/designer/dashboard");
   revalidatePath("/customer/dashboard");
   revalidatePath("/admin/projects");
   revalidatePath("/admin");
@@ -161,8 +161,8 @@ export async function respondProjectRequestAction(formData: FormData) {
     throw new Error("Project not found.");
   }
 
-  revalidatePath("/firm/projects");
-  revalidatePath("/firm/dashboard");
+  revalidatePath("/designer/projects");
+  revalidatePath("/designer/dashboard");
   revalidatePath("/customer/dashboard");
   revalidatePath("/admin/projects");
   return;
@@ -206,8 +206,8 @@ export async function createMilestoneAction(formData: FormData) {
     )
   `;
 
-  revalidatePath("/firm/projects");
-  revalidatePath(`/firm/projects/${projectId}`);
+  revalidatePath("/designer/projects");
+  revalidatePath(`/designer/projects/${projectId}`);
   return;
 }
 
@@ -280,7 +280,7 @@ export async function submitMilestoneAction(formData: FormData) {
     message: `Milestone "${milestone.title}" is ready for approval.`,
   });
 
-  revalidatePath(`/firm/projects/${milestone.project_id}`);
+  revalidatePath(`/designer/projects/${milestone.project_id}`);
   revalidatePath(`/customer/projects/${milestone.project_id}`);
   return;
 }
@@ -360,9 +360,9 @@ export async function approveMilestoneAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/payments");
   revalidatePath("/customer/payments");
-  revalidatePath("/firm/payments");
+  revalidatePath("/designer/payments");
   revalidatePath(`/customer/projects/${milestone.project_id}`);
-  revalidatePath(`/firm/projects/${milestone.project_id}`);
+  revalidatePath(`/designer/projects/${milestone.project_id}`);
   return;
 }
 
@@ -413,7 +413,7 @@ export async function uploadMilestoneImageAction(formData: FormData) {
     )
   `;
 
-  revalidatePath(`/firm/projects/${milestone.project_id}`);
+  revalidatePath(`/designer/projects/${milestone.project_id}`);
   revalidatePath(`/customer/projects/${milestone.project_id}`);
   return;
 }
@@ -444,7 +444,7 @@ export async function deleteMilestoneImageAction(formData: FormData) {
 
   await sql`delete from milestone_images where id = ${imageId}`;
 
-  revalidatePath(`/firm/projects/${row.project_id}`);
+  revalidatePath(`/designer/projects/${row.project_id}`);
   revalidatePath(`/customer/projects/${row.project_id}`);
   return;
 }
@@ -506,7 +506,7 @@ export async function rejectMilestoneAction(formData: FormData) {
   }
 
   revalidatePath(`/customer/projects/${milestone.project_id}`);
-  revalidatePath(`/firm/projects/${milestone.project_id}`);
+  revalidatePath(`/designer/projects/${milestone.project_id}`);
   return;
 }
 
@@ -545,7 +545,7 @@ export async function updateMilestoneDescriptionAction(formData: FormData) {
     where id = ${milestone.id}
   `;
 
-  revalidatePath(`/firm/projects/${milestone.project_id}`);
+  revalidatePath(`/designer/projects/${milestone.project_id}`);
   revalidatePath(`/customer/projects/${milestone.project_id}`);
   return;
 }

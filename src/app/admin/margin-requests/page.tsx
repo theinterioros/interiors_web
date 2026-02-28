@@ -4,8 +4,8 @@ import { RoleValues } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-/** Margin approvals are now in Designer approvals → Margin approval tab. */
+/** Platform margin is fixed at 5% for all designers. Redirect to designer approvals. */
 export default async function AdminMarginRequestsPage() {
   await requireRole([RoleValues.ADMIN]);
-  redirect("/admin/designers?status=MARGIN_APPROVAL");
+  redirect("/admin/designers");
 }

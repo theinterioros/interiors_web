@@ -4,6 +4,11 @@ import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Browse Verified Designers",
+  description: "View verified interior designers and studios. Check portfolios and send a meetup request to start your project.",
+};
+
 export default async function FirmsPage() {
   const firms = await sql<{
     id: string;
@@ -14,16 +19,14 @@ export default async function FirmsPage() {
     rating: number | null;
     status: string;
     verified_at: Date | null;
-    margin_accepted_at: Date | null;
     customers_count: string;
   }>`
-    select fp.id, fp.name, fp.firm_name, fp.city, fp.experience_years, fp.rating, fp.status, fp.verified_at, fp.margin_accepted_at,
+    select fp.id, fp.name, fp.firm_name, fp.city, fp.experience_years, fp.rating, fp.status, fp.verified_at,
            (select count(distinct p.customer_id)::text from projects p where p.firm_id = fp.user_id and p.status in ('ACCEPTED', 'ACTIVE')) as customers_count
     from firm_profiles fp
     where fp.status = 'APPROVED'
-      and fp.margin_accepted_at is not null
       and exists (select 1 from payment_ledger pl where pl.firm_id = fp.user_id and pl.type = 'FIRM_REGISTRATION_FEE' and pl.status = 'RELEASED')
-    order by fp.margin_accepted_at desc, fp.verified_at desc nulls last, fp.created_at desc
+    order by fp.verified_at desc nulls last, fp.created_at desc
   `;
 
   return (
@@ -35,13 +38,13 @@ export default async function FirmsPage() {
         </div>
         <h1 className="heading-lg mb-1">Browse Verified Designers</h1>
         <p className="text-sm text-[var(--text-muted)]">
-          Verified designers on the platform. View profiles and request a meetup to start a project.
+          Verified interior designers and studios. View portfolios and send a meetup request to start your project.
         </p>
       </header>
 
       {firms.length === 0 ? (
         <div className="rounded-lg border border-[var(--border)] bg-white p-10 text-center text-sm text-[var(--text-muted)]">
-          No verified designers yet. Please check back soon.
+          No verified designers are listed yet. Check back later or contact us.
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

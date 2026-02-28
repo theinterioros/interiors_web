@@ -2,6 +2,11 @@ import Link from "next/link";
 import { KeyRound } from "lucide-react";
 import ForgotPasswordForm from "./ForgotPasswordForm";
 
+export const metadata = {
+  title: "Forgot password",
+  description: "Reset your Interior OS account password. Enter your email to receive a verification code.",
+};
+
 export default async function ForgotPasswordPage({
   searchParams,
 }: {
@@ -24,8 +29,8 @@ export default async function ForgotPasswordPage({
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-light)] text-[var(--brand)]">
                 <KeyRound className="h-7 w-7" />
               </div>
-              <p className="eyebrow mb-2">Reset Password</p>
-              <h1 className="heading-lg mb-4">Forgot Password?</h1>
+              <p className="eyebrow mb-2">Reset password</p>
+              <h1 className="heading-lg mb-4">Forgot password?</h1>
               <ForgotPasswordForm role={role} />
             </div>
           </div>

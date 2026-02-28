@@ -2,18 +2,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Redirect /designer/* to /firm/* so designers use a single portal.
- * Fixes 404 when viewing ACCEPTED projects from designer dashboard.
+ * Redirect legacy /firm/* to /designer/*. Designers use /designer only.
  */
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  if (pathname.startsWith("/designer")) {
-    const newPath = pathname.replace(/^\/designer/, "/firm");
-    return NextResponse.redirect(new URL(newPath + request.nextUrl.search, request.url));
+  if (pathname.startsWith("/firm")) {
+    const newPath = (pathname.replace(/^\/firm/, "/designer") || "/designer") + request.nextUrl.search;
+    return NextResponse.redirect(new URL(newPath, request.url));
   }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/designer/:path*"],
+  matcher: ["/firm", "/firm/:path*"],
 };

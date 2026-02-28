@@ -4,12 +4,9 @@ import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { registerAction } from "@/app/actions/auth";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import ValidatedEmailInput from "@/components/ui/ValidatedEmailInput";
 import ValidatedPhoneInput from "@/components/ui/ValidatedPhoneInput";
-import { validatePortfolioFile } from "@/lib/validation";
-
-const ACCEPT_PORTFOLIO = ".pdf,image/jpeg,image/png,image/webp";
 
 function SubmitButton({ label, disabled }: { label: string; disabled?: boolean }) {
   const { pending } = useFormStatus();
@@ -38,31 +35,15 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
   const [role, setRole] = useState<"CUSTOMER" | "FIRM">(fixedRole ?? "CUSTOMER");
   const [portfolioError, setPortfolioError] = useState("");
   const [serverError, setServerError] = useState("");
-  const portfolioInputRef = useRef<HTMLInputElement>(null);
 
   const effectiveRole = fixedRole ?? role;
   const displayError = serverError || errorFromUrl;
 
-  const handlePortfolioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    const result = validatePortfolioFile(file);
-    setPortfolioError(result.valid ? "" : result.error);
-  };
-
-  const hasPortfolioError = Boolean(portfolioError);
-
   const isDesigner = effectiveRole === "FIRM";
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = () => {
     setServerError("");
-    if (isDesigner && portfolioInputRef.current?.files?.length) {
-      const result = validatePortfolioFile(portfolioInputRef.current.files[0]);
-      if (!result.valid) {
-        e.preventDefault();
-        setPortfolioError(result.error);
-        portfolioInputRef.current.focus();
-      }
-    }
+    setPortfolioError("");
   };
 
   const handleAction = async (formData: FormData): Promise<void> => {
@@ -255,31 +236,38 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
 
             {/* Right column: Portfolio + About */}
             <div className="space-y-8 lg:pt-0">
-          {/* Section: Portfolio */}
+          {/* Section: Portfolio project (optional) */}
           <section className="space-y-4 pt-6 border-t border-[var(--border)] lg:pt-0 lg:border-t-0">
             <div className="pb-0.5">
               <h3 className="text-[12px] font-semibold uppercase tracking-widest text-[var(--text-subtle)]">
-                Portfolio
+                Portfolio project (optional)
               </h3>
-              <p className="text-xs text-[var(--text-muted)] mt-1">One file now; add more from your dashboard later</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">Add one project with up to 5 images. You can add more projects later from Profile → Update portfolio.</p>
             </div>
-            <div className="rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--surface-subtle)]/40 px-4 py-5 transition-all duration-150 focus-within:border-[var(--brand)]/60 focus-within:bg-[var(--surface-subtle)]/60 focus-within:ring-2 focus-within:ring-[var(--brand)]/10">
-              <label className="block cursor-pointer">
-                <span className="text-sm font-medium text-[var(--foreground)] block mb-0.5">Upload PDF or image</span>
-                <span className="text-xs text-[var(--text-muted)] block mb-3">Max 10 MB · PDF, JPEG, PNG or WebP</span>
-                <input
-                  ref={portfolioInputRef}
-                  type="file"
-                  name="portfolio"
-                  accept={ACCEPT_PORTFOLIO}
-                  className={`block w-full text-sm text-[var(--foreground)] file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[var(--brand)] file:text-white file:cursor-pointer hover:file:opacity-90 ${hasPortfolioError ? "ring-2 ring-red-500 rounded-lg" : ""}`}
-                  onChange={handlePortfolioChange}
-                  aria-invalid={hasPortfolioError}
-                  aria-describedby={hasPortfolioError ? "portfolio-error" : undefined}
-                />
-              </label>
+            <div className="space-y-3 rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--surface-subtle)]/40 px-4 py-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--foreground)] mb-1">Project title</label>
+                <input type="text" name="portfolioProjectTitle" maxLength={120} placeholder="e.g. Living room makeover" className="input w-full" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--foreground)] mb-1">Short description</label>
+                <textarea name="portfolioProjectDescription" rows={2} maxLength={500} placeholder="Brief description of this project" className="input w-full resize-y" />
+              </div>
+              <p className="text-xs text-[var(--text-muted)]">Add up to 5 images; each can have a title (max 50 characters).</p>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex flex-wrap items-end gap-2 sm:gap-3">
+                  <div className="flex-1 min-w-0">
+                    <label className="block text-xs font-medium text-[var(--text-muted)] mb-0.5">Image {i}</label>
+                    <input type="file" name={`portfolioImage${i}`} accept="image/jpeg,image/png,image/webp" className="input w-full text-sm" />
+                  </div>
+                  <div className="w-36 sm:w-44">
+                    <label className="block text-xs font-medium text-[var(--text-muted)] mb-0.5">Title (50 chars)</label>
+                    <input type="text" name={`portfolioImageTitle${i}`} maxLength={50} placeholder="e.g. Living area" className="input w-full" />
+                  </div>
+                </div>
+              ))}
               {portfolioError && (
-                <p id="portfolio-error" className="text-sm text-red-600 mt-2" role="alert">
+                <p id="portfolio-error" className="text-sm text-red-600" role="alert">
                   {portfolioError}
                 </p>
               )}
@@ -331,7 +319,7 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
       <div className="pt-1">
         <SubmitButton
           label={effectiveRole === "FIRM" ? "Create designer account" : "Create account"}
-          disabled={hasPortfolioError}
+          disabled={false}
         />
       </div>
     </form>

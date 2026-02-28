@@ -4,11 +4,11 @@ export function paymentTypeLabel(type: string): string {
     case "MILESTONE":
       return "Milestone payment";
     case "CUSTOMER_REGISTRATION_FEE":
-      return "Customer registration";
+      return "Customer registration (platform)";
     case "ADDITIONAL_PROJECT_FEE":
       return "Additional project slot";
     case "FIRM_REGISTRATION_FEE":
-      return "Designer yearly subscription";
+      return "Designer subscription (platform)";
     case "DIGITAL_TWIN_RENEWAL":
       return "Digital Twin renewal";
     case "FIRM_YEARLY_FEE":

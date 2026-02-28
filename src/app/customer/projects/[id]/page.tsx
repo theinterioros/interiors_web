@@ -64,8 +64,9 @@ export default async function CustomerProjectPage({
         milestone_id: string;
         blob_url: string;
         file_name: string;
+        mime_type: string;
       }>`
-        select id, milestone_id, blob_url, file_name
+        select id, milestone_id, blob_url, file_name, mime_type
         from milestone_images
         where milestone_id = any(${milestoneIds})
         order by created_at asc
@@ -163,26 +164,48 @@ export default async function CustomerProjectPage({
                         ₹{milestone.amount.toLocaleString()}
                       </p>
                     </div>
-                    <p className="text-[var(--text-muted)] mb-4">{milestone.description}</p>
-                    {milestone.status === "SUBMITTED" && imagesByMilestone[milestone.id]?.length ? (
-                      <div className="mb-6">
-                        <BeforeAfterSlider images={imagesByMilestone[milestone.id]} />
-                      </div>
-                    ) : imagesByMilestone[milestone.id]?.length ? (
-                      <div className="grid gap-2 md:grid-cols-2 mb-4">
-                        {imagesByMilestone[milestone.id].map((image) => (
-                          <a
-                            key={image.id}
-                            href={image.blob_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-lg border border-[var(--border)] p-3 text-xs text-[var(--text-muted)] hover:border-[var(--border-strong)] transition-colors"
-                          >
-                            {image.file_name}
-                          </a>
-                        ))}
-                      </div>
-                    ) : null}
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-2">What was completed</p>
+                      {milestone.description && (
+                        <p className="text-[var(--text-muted)] mb-3">{milestone.description}</p>
+                      )}
+                      {milestone.status === "SUBMITTED" && imagesByMilestone[milestone.id]?.length ? (
+                        <div className="mb-4">
+                          <BeforeAfterSlider images={imagesByMilestone[milestone.id]} />
+                        </div>
+                      ) : imagesByMilestone[milestone.id]?.length ? (
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {imagesByMilestone[milestone.id].map((image) => {
+                            const isImage = (image.mime_type || "").startsWith("image/");
+                            return (
+                              <a
+                                key={image.id}
+                                href={image.blob_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="rounded-lg border border-[var(--border)] overflow-hidden hover:border-[var(--border-strong)] transition-colors group block"
+                              >
+                                {isImage ? (
+                                  <img
+                                    src={image.blob_url}
+                                    alt={image.file_name}
+                                    className="w-full aspect-[4/3] object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <span className="block aspect-[4/3] bg-[var(--surface-subtle)]/50" />
+                                )}
+                                <p className="p-2 text-xs text-[var(--text-muted)] group-hover:text-[var(--foreground)] truncate" title={image.file_name}>
+                                  {image.file_name}
+                                </p>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      ) : !milestone.description && (!imagesByMilestone[milestone.id]?.length) ? (
+                        <p className="text-sm text-[var(--text-muted)] italic">No deliverables recorded yet.</p>
+                      ) : null}
+                    </div>
                     {milestone.status === "SUBMITTED" && (
                       <div className="rounded-xl border-2 border-[var(--brand)]/30 bg-[var(--brand-light)]/20 p-6 mb-4">
                         <p className="text-sm font-semibold text-[var(--foreground)] mb-2">Ready for your approval</p>

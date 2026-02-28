@@ -3,6 +3,11 @@ import { Suspense } from "react";
 import { Shield, User, Palette } from "lucide-react";
 import AuthRegisterForm from "@/components/forms/AuthRegisterForm";
 
+export const metadata = {
+  title: "Create account",
+  description: "Register as a customer or apply as an interior designer on Interior OS.",
+};
+
 export default async function RegisterPage({
   searchParams,
 }: {
@@ -32,7 +37,7 @@ export default async function RegisterPage({
     {
       role: "firm" as const,
       label: "Designer",
-      description: "Apply as a verified firm, get leads & projects",
+      description: "Apply as a designer, get leads & projects",
       icon: Palette,
       href: "/register?role=designer",
     },
@@ -82,7 +87,7 @@ export default async function RegisterPage({
                 Create your account
               </h2>
               <p className="text-[15px] text-[var(--text-muted)] leading-relaxed max-w-[320px]">
-                Choose how you want to use Interior OS. Customers and designers can register here.
+                Create a customer account or apply as an interior designer.
               </p>
             </div>
 

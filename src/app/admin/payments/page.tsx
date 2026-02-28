@@ -4,11 +4,24 @@ import { sql } from "@/lib/db";
 import { paymentTypeLabel } from "@/lib/paymentLabels";
 import FadeIn from "@/components/animations/FadeIn";
 import PageTabs from "@/components/ui/PageTabs";
+import TableFilterBar from "@/components/ui/TableFilterBar";
 import ReleasePaymentButton from "@/components/admin/ReleasePaymentButton";
 
 export const dynamic = "force-dynamic";
 
-type PageProps = { searchParams?: Promise<{ status?: string }> };
+type PageProps = { searchParams?: Promise<{ status?: string; q?: string }> };
+
+function matchSearch(row: PaymentRow, q: string): boolean {
+  const s = q.toLowerCase();
+  return (
+    (row.project_title ?? "").toLowerCase().includes(s) ||
+    (row.milestone_title ?? "").toLowerCase().includes(s) ||
+    (row.customer_name ?? "").toLowerCase().includes(s) ||
+    (row.customer_email ?? "").toLowerCase().includes(s) ||
+    (row.firm_name ?? "").toLowerCase().includes(s) ||
+    (row.firm_email ?? "").toLowerCase().includes(s)
+  );
+}
 
 type PaymentRow = {
   id: string;
@@ -33,6 +46,7 @@ type PaymentRow = {
 export default async function AdminPaymentsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const filterStatus = params?.status ?? "";
+  const q = (params?.q ?? "").trim();
 
   const [subscriptionRow] = await sql<{ total: string }>`
     select coalesce(sum(amount), 0)::text as total from payment_ledger
@@ -70,17 +84,27 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
   const heldPayments = payments.filter((p) => p.status === "HELD");
   const releasedPayments = payments.filter((p) => p.status === "RELEASED");
 
-  const ledgerFiltered =
+  const statusFiltered =
     filterStatus === "HELD"
       ? heldPayments
       : filterStatus === "RELEASED"
         ? releasedPayments
         : payments;
 
+  const ledgerFiltered = q ? statusFiltered.filter((row) => matchSearch(row, q)) : statusFiltered;
+
+  const base = "/admin/payments";
+  const query = (status: string) => {
+    const sp = new URLSearchParams();
+    if (status) sp.set("status", status);
+    if (q) sp.set("q", q);
+    const s = sp.toString();
+    return s ? `?${s}` : "";
+  };
   const ledgerTabs = [
-    { label: "All", href: "/admin/payments", active: !filterStatus, count: payments.length },
-    { label: "Held", href: "/admin/payments?status=HELD", active: filterStatus === "HELD", count: heldPayments.length },
-    { label: "Released", href: "/admin/payments?status=RELEASED", active: filterStatus === "RELEASED", count: releasedPayments.length },
+    { label: "All", href: base + query(""), active: !filterStatus, count: payments.length },
+    { label: "Held", href: base + query("HELD"), active: filterStatus === "HELD", count: heldPayments.length },
+    { label: "Released", href: base + query("RELEASED"), active: filterStatus === "RELEASED", count: releasedPayments.length },
   ];
 
   return (
@@ -160,7 +184,7 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
                       {heldPayments.map((payment) => {
                         const expectedMargin =
                           payment.type === "MILESTONE" && payment.firm_id
-                            ? Math.round((payment.amount * (payment.platform_margin_pct ?? 0)) / 100)
+                            ? Math.round((payment.amount * (payment.platform_margin_pct ?? 5)) / 100)
                             : null;
                         const designerName = payment.firm_name ?? payment.firm_email ?? "—";
                         return (
@@ -203,14 +227,27 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
           )}
 
           <FadeIn delay={0.15} className="mb-8">
-            <h2 className="heading-md mb-2">Payment Ledger</h2>
+            <h2 className="heading-md mb-2">Payment ledger</h2>
             <p className="text-sm text-[var(--text-muted)] mb-4">
-              All payments with date, type, particulars, customer, designer, amount, and margin. Use tabs to filter by status.
+              All payments with date, type, particulars, customer, designer, amount, and margin.
             </p>
-            <PageTabs tabs={ledgerTabs} />
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between mb-4">
+              <PageTabs tabs={ledgerTabs} className="mb-0 sm:flex-1 sm:min-w-0 order-2 sm:order-1" />
+              <div className="w-full sm:w-auto order-1 sm:order-2">
+                <TableFilterBar
+                  value={q}
+                  placeholder="Search by project, customer, designer…"
+                  preserveParams={filterStatus ? { status: filterStatus } : {}}
+                />
+              </div>
+            </div>
             {ledgerFiltered.length === 0 ? (
               <p className="text-sm text-[var(--text-muted)]">
-                {filterStatus ? `No ${filterStatus.toLowerCase()} payments.` : "No payments recorded yet."}
+                {q
+                  ? "No payments match your search. Try a different term or clear the search."
+                  : filterStatus
+                    ? `No ${filterStatus.toLowerCase()} payments.`
+                    : "No payments recorded yet."}
               </p>
             ) : (
               <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
@@ -233,7 +270,7 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
                         const margin =
                           payment.platform_margin_amount ??
                           (payment.type === "MILESTONE" && payment.firm_id
-                            ? Math.round((payment.amount * (payment.platform_margin_pct ?? 0)) / 100)
+                            ? Math.round((payment.amount * (payment.platform_margin_pct ?? 5)) / 100)
                             : null);
                         const designerName = payment.firm_name ?? payment.firm_email ?? "—";
                         return (
@@ -257,7 +294,7 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
                                   designerName={designerName}
                                   expectedMargin={
                                     payment.type === "MILESTONE" && payment.firm_id
-                                      ? Math.round((payment.amount * (payment.platform_margin_pct ?? 0)) / 100)
+                                      ? Math.round((payment.amount * (payment.platform_margin_pct ?? 5)) / 100)
                                       : null
                                   }
                                 />

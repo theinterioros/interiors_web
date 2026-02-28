@@ -2,8 +2,22 @@ import { CreditCard, ShieldCheck, Info } from "lucide-react";
 import { requireCustomerPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { paymentTypeLabel } from "@/lib/paymentLabels";
+import PageTabs from "@/components/ui/PageTabs";
+import TableFilterBar from "@/components/ui/TableFilterBar";
 
 export const dynamic = "force-dynamic";
+
+type PageProps = { searchParams?: Promise<{ status?: string; q?: string }> };
+
+function matchSearch(row: LedgerRow, q: string): boolean {
+  const s = q.toLowerCase();
+  return (
+    (row.project_title ?? "").toLowerCase().includes(s) ||
+    (row.milestone_title ?? "").toLowerCase().includes(s) ||
+    (row.firm_name ?? "").toLowerCase().includes(s) ||
+    (row.firm_email ?? "").toLowerCase().includes(s)
+  );
+}
 
 type LedgerRow = {
   id: string;
@@ -17,8 +31,11 @@ type LedgerRow = {
   created_at: Date;
 };
 
-export default async function CustomerPaymentsPage() {
+export default async function CustomerPaymentsPage({ searchParams }: PageProps) {
   const user = await requireCustomerPaid();
+  const params = await searchParams;
+  const filterStatus = params?.status ?? "";
+  const q = (params?.q ?? "").trim();
 
   const ledger = await sql<LedgerRow>`
     select
@@ -39,6 +56,29 @@ export default async function CustomerPaymentsPage() {
   const releasedRows = ledger.filter((r) => r.status === "RELEASED");
   const releasedTotal = releasedRows.reduce((s, r) => s + r.amount, 0);
 
+  const statusFiltered =
+    filterStatus === "HELD"
+      ? heldRows
+      : filterStatus === "RELEASED"
+        ? releasedRows
+        : ledger;
+
+  const ledgerFiltered = q ? statusFiltered.filter((row) => matchSearch(row, q)) : statusFiltered;
+
+  const base = "/customer/payments";
+  const query = (status: string) => {
+    const sp = new URLSearchParams();
+    if (status) sp.set("status", status);
+    if (q) sp.set("q", q);
+    const s = sp.toString();
+    return s ? `?${s}` : "";
+  };
+  const ledgerTabs = [
+    { label: "All", href: base + query(""), active: !filterStatus, count: ledger.length },
+    { label: "In escrow", href: base + query("HELD"), active: filterStatus === "HELD", count: heldRows.length },
+    { label: "Released", href: base + query("RELEASED"), active: filterStatus === "RELEASED", count: releasedRows.length },
+  ];
+
   return (
     <div className="space-y-8">
       <header>
@@ -46,28 +86,28 @@ export default async function CustomerPaymentsPage() {
           <CreditCard className="h-4 w-4 text-[var(--text-muted)]" />
           <p className="eyebrow">Payments</p>
         </div>
-        <h1 className="heading-lg mb-1">Payment History</h1>
+        <h1 className="heading-lg mb-1">Payment history</h1>
         <p className="text-sm text-[var(--text-muted)] mb-2">
-          View all your payments: registration fee, project fees, and milestone payouts. Each entry shows the date, type, project and milestone details, the designer you paid, amount, and status.
+          All your payments: registration, project fees, and milestones. Funds are held in escrow until released to your designer after you approve each milestone.
         </p>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-subtle)]/50 p-4 flex items-start gap-3">
           <Info className="h-4 w-4 text-[var(--brand)] shrink-0 mt-0.5" />
-          <div className="text-sm text-[var(--text-muted)]">
-            <strong className="text-[var(--foreground)]">Escrow:</strong> When you approve a milestone, the amount is held in escrow until admin releases it to the designer. &quot;In escrow&quot; = awaiting release; &quot;Released&quot; = designer has been paid.
-          </div>
+          <p className="text-sm text-[var(--text-muted)]">
+            <strong className="text-[var(--foreground)]">Escrow:</strong> When you approve a milestone, the amount is held securely and then released to your designer. &quot;In escrow&quot; means awaiting release; &quot;Released&quot; means the designer has been paid.
+          </p>
         </div>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-lg border border-[var(--border)] bg-[var(--accent-amber-light)]/20 p-5">
-          <p className="eyebrow mb-1">In escrow (HELD)</p>
+          <p className="eyebrow mb-1">In escrow</p>
           <p className="text-2xl font-semibold text-[var(--foreground)]">₹{heldTotal.toLocaleString()}</p>
-          <p className="text-xs text-[var(--text-muted)] mt-1">You approved; not yet released to designer (admin will release)</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Approved by you; not yet released to your designer</p>
         </div>
         <div className="rounded-lg border border-[var(--border)] bg-white p-5">
           <p className="eyebrow mb-1">Released</p>
           <p className="text-2xl font-semibold text-[var(--foreground)]">₹{releasedTotal.toLocaleString()}</p>
-          <p className="text-xs text-[var(--text-muted)] mt-1">Already sent to designer (registration + milestones)</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Already released to your designer</p>
         </div>
       </div>
 
@@ -78,12 +118,26 @@ export default async function CustomerPaymentsPage() {
             <h2 className="font-semibold text-[var(--foreground)]">Payment ledger</h2>
           </div>
           <p className="text-sm text-[var(--text-muted)] mt-1">
-            Date, payment type, particulars, designer, amount, and status for each payment.
+            Date, type, project or milestone, designer, amount, and status.
           </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <PageTabs tabs={ledgerTabs} className="mb-0 sm:flex-1 sm:min-w-0 order-2 sm:order-1" />
+            <div className="w-full sm:w-auto order-1 sm:order-2">
+            <TableFilterBar
+              value={q}
+              placeholder="Search by project, milestone, designer…"
+              preserveParams={filterStatus ? { status: filterStatus } : {}}
+            />
+            </div>
+          </div>
         </div>
-        {ledger.length === 0 ? (
+        {ledgerFiltered.length === 0 ? (
           <div className="p-8 text-center text-sm text-[var(--text-muted)]">
-            No payments recorded yet. Registration and project fees appear here when paid. Approved milestones show as &quot;In escrow&quot; until released to the designer.
+            {q
+              ? "No payments match your search. Try a different term or clear the search."
+              : filterStatus
+                ? `No ${filterStatus === "HELD" ? "escrow" : "released"} payments.`
+                : "No payments yet. Registration and project fees appear here once paid; approved milestones show as In escrow until released to your designer."}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -99,7 +153,7 @@ export default async function CustomerPaymentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {ledger.map((row) => (
+                {ledgerFiltered.map((row) => (
                   <tr key={row.id} className="border-b border-[var(--border)] last:border-0">
                     <td className="py-3 px-4 text-[var(--foreground)]">{new Date(row.created_at).toLocaleDateString()}</td>
                     <td className="py-3 px-4">{paymentTypeLabel(row.type)}</td>
@@ -108,7 +162,7 @@ export default async function CustomerPaymentsPage() {
                         ? `${row.project_title} / ${row.milestone_title}`
                         : row.milestone_title ?? row.project_title ?? "—"}
                     </td>
-                    <td className="py-3 px-4">{row.firm_name ?? row.firm_email ?? "—"}</td>
+                    <td className="py-3 px-4">{row.type === "CUSTOMER_REGISTRATION_FEE" ? "—" : (row.firm_name ?? row.firm_email ?? "—")}</td>
                     <td className="py-3 px-4 text-right font-medium">₹{row.amount.toLocaleString()}</td>
                     <td className="py-3 px-4 text-right">
                       <span

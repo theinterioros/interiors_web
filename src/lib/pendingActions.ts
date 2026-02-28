@@ -38,23 +38,9 @@ async function fetchPendingActionsForUser(userId: string, role: Role): Promise<P
   }
 
   if (role === "FIRM") {
-    const [leadsRow, profileRow] = await Promise.all([
-      sql<{ count: string }>`select count(*)::text as count from projects where firm_id = ${userId} and status = 'LEAD'`,
-      sql<{ margin_accepted_at: Date | null; status: string }>`select margin_accepted_at, status from firm_profiles where user_id = ${userId} limit 1`,
-    ]);
-    const leads = parseInt(leadsRow[0]?.count ?? "0", 10);
-    if (leads > 0) items.push({ label: `${leads} lead${leads !== 1 ? "s" : ""} awaiting your action`, href: "/firm/leads", count: leads });
-    const marginAccepted = profileRow[0]?.margin_accepted_at != null;
-    let latestMarginStatus: string | null = null;
-    try {
-      const [profile] = await sql<{ id: string }>`select id from firm_profiles where user_id = ${userId} limit 1`;
-      if (profile?.id) {
-        const rows = await sql<{ status: string }>`select status from margin_requests where profile_id = ${profile.id} order by created_at desc limit 1`;
-        latestMarginStatus = rows[0]?.status ?? null;
-      }
-    } catch {
-      // margin_requests table may not exist
-    }
+    const [leadsRow] = await sql<{ count: string }>`select count(*)::text as count from projects where firm_id = ${userId} and status = 'LEAD'`;
+    const leads = parseInt(leadsRow?.count ?? "0", 10);
+    if (leads > 0) items.push({ label: `${leads} lead${leads !== 1 ? "s" : ""} awaiting your action`, href: "/designer/leads", count: leads });
     const paid = await (async (): Promise<boolean> => {
       try {
         const [r] = await sql<{ subscription_expires_at: Date | null }>`select subscription_expires_at from firm_profiles where user_id = ${userId} limit 1`;
@@ -65,11 +51,7 @@ async function fetchPendingActionsForUser(userId: string, role: Role): Promise<P
       const [pay] = await sql<{ id: string }>`select id from payment_ledger where firm_id = ${userId} and type = 'FIRM_REGISTRATION_FEE' and status = 'RELEASED' limit 1`;
       return !!pay;
     })();
-    if (!marginAccepted && profileRow[0]?.status === "APPROVED") {
-      if (latestMarginStatus === "APPROVED") items.push({ label: "Accept platform margin", href: "/firm/dashboard", count: 1 });
-      else items.push({ label: "Declare or update margin", href: "/firm/dashboard", count: 1 });
-    }
-    if (marginAccepted && !paid) items.push({ label: "Pay registration fee (₹3,000)", href: "/firm/register/pay", count: 1 });
+    if (!paid) items.push({ label: "Pay registration fee (₹3,000)", href: "/designer/register/pay", count: 1 });
   }
 
   return items;

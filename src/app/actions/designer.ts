@@ -1,6 +1,8 @@
 "use server";
 
 import crypto from "crypto";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { RoleValues } from "@/lib/types";
 import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
@@ -73,7 +75,9 @@ export async function updateFirmProfileAction(formData: FormData) {
         pincode,
         about,
         experience_years,
-        google_review_links
+        google_review_links,
+        platform_margin_pct,
+        margin_accepted_at
       )
       values (
         ${crypto.randomUUID()},
@@ -91,7 +95,9 @@ export async function updateFirmProfileAction(formData: FormData) {
         ${pincode},
         ${about},
         ${experienceYears},
-        ${googleReviewLinks}
+        ${googleReviewLinks},
+        5,
+        now()
       )
     `;
   }
@@ -99,46 +105,13 @@ export async function updateFirmProfileAction(formData: FormData) {
   return;
 }
 
-/** Designer submits a margin request (%). Creates a new row in margin_requests for the trail. */
-export async function submitMarginRequestAction(formData: FormData): Promise<{ error?: string }> {
-  const user = await getCurrentUser();
-  if (!user || user.role !== RoleValues.FIRM) {
-    return { error: "Unauthorized." };
-  }
-  const pct = Number(formData.get("marginPct"));
-  if (Number.isNaN(pct) || pct < 0 || pct > 100) {
-    return { error: "Enter a margin between 0 and 100%." };
-  }
-  const [profile] = await sql<{ id: string }>`select id from firm_profiles where user_id = ${user.id} limit 1`;
-  if (!profile) {
-    return { error: "Profile not found." };
-  }
+function isValidImageUrl(s: string): boolean {
   try {
-    await sql`
-      insert into margin_requests (id, profile_id, requested_margin_pct, status)
-      values (${crypto.randomUUID()}, ${profile.id}, ${pct}, 'PENDING')
-    `;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("margin_requests") && msg.includes("does not exist")) {
-      return { error: "Margin requests are not set up yet. Please run the database migration." };
-    }
-    throw e;
+    const u = new URL(s);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
   }
-  return {};
-}
-
-/** Designer accepts the platform margin (allowed before profile approval). Next step is pay subscription; then admin can approve profile. */
-export async function acceptMarginAction(): Promise<void> {
-  const user = await getCurrentUser();
-  if (!user || user.role !== RoleValues.FIRM) {
-    throw new Error("Unauthorized.");
-  }
-  await sql`
-    update firm_profiles
-    set margin_accepted_at = now(), updated_at = now()
-    where user_id = ${user.id} and margin_accepted_at is null
-  `;
 }
 
 export async function uploadFirmPortfolioAction(formData: FormData) {
@@ -147,9 +120,16 @@ export async function uploadFirmPortfolioAction(formData: FormData) {
     throw new Error("Unauthorized.");
   }
 
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    throw new Error("File is required.");
+  const file = formData.get("file") instanceof File ? (formData.get("file") as File) : null;
+  const imageUrlRaw = formData.get("imageUrl");
+  const imageUrl = typeof imageUrlRaw === "string" && imageUrlRaw.trim() ? imageUrlRaw.trim() : null;
+
+  const useUrl = imageUrl && isValidImageUrl(imageUrl) && (!file || file.size === 0);
+  const useFile = file && file.size > 0;
+
+  if (!useFile && !useUrl) {
+    revalidatePath("/designer/profile");
+    redirect("/designer/profile?tab=portfolio&portfolioError=" + encodeURIComponent("Please upload an image file or paste an image URL."));
   }
 
   const [profile] = await sql<{ id: string }>`
@@ -161,18 +141,61 @@ export async function uploadFirmPortfolioAction(formData: FormData) {
   }
 
   const workIdRaw = formData.get("workId");
-  const workId = typeof workIdRaw === "string" && workIdRaw.trim() ? workIdRaw.trim() : null;
+  let workId: string | null = typeof workIdRaw === "string" && workIdRaw.trim() ? workIdRaw.trim() : null;
+  const workOrderRaw = formData.get("workOrder");
+  const workOrder = typeof workOrderRaw === "string" && workOrderRaw !== "" ? parseInt(workOrderRaw, 10) : null;
+
+  if (!workId && (workOrder === null || workOrder === undefined || Number.isNaN(workOrder) || workOrder < 0 || workOrder > 4)) {
+    throw new Error("Save the project first, or use a valid project slot.");
+  }
+
+  if (!workId && workOrder !== null && !Number.isNaN(workOrder) && workOrder >= 0 && workOrder <= 4) {
+    const [existing] = await sql<{ id: string }>`
+      select id from firm_portfolio_works where profile_id = ${profile.id} and display_order = ${workOrder} limit 1
+    `;
+    if (existing) {
+      workId = existing.id;
+    } else {
+      const newWorkId = crypto.randomUUID();
+      await sql`
+        insert into firm_portfolio_works (id, profile_id, title, description, display_order)
+        values (${newWorkId}, ${profile.id}, ${`Project ${workOrder + 1}`}, '', ${workOrder})
+      `;
+      workId = newWorkId;
+    }
+  }
 
   if (workId) {
     const [count] = await sql<{ n: number }>`
       select count(*)::int as n from firm_portfolio_files where work_id = ${workId}
     `;
-    if (count && count.n >= 3) {
-      throw new Error("Maximum 3 images per work.");
+    if (count && count.n >= 5) {
+      throw new Error("Maximum 5 images per project.");
     }
   }
 
-  const blobUrl = await uploadBlob(file, `firm-portfolio/${profile.id}`);
+  const imageTitleRaw = formData.get("imageTitle");
+  const fileDisplayName =
+    typeof imageTitleRaw === "string" && imageTitleRaw.trim()
+      ? String(imageTitleRaw).trim().slice(0, 50)
+      : useFile
+        ? (file!.name.slice(0, 50))
+        : "Image";
+
+  let blobUrl: string;
+  let mimeType: string;
+  let sizeBytes: number;
+
+  if (useFile) {
+    blobUrl = await uploadBlob(file!, `firm-portfolio/${profile.id}`);
+    mimeType = file!.type || "image/jpeg";
+    sizeBytes = file!.size;
+  } else {
+    blobUrl = imageUrl!;
+    mimeType = "image/jpeg";
+    sizeBytes = 0;
+  }
+
   try {
     await sql`
       insert into firm_portfolio_files (
@@ -183,9 +206,9 @@ export async function uploadFirmPortfolioAction(formData: FormData) {
         ${profile.id},
         ${workId},
         ${blobUrl},
-        ${file.name},
-        ${file.type},
-        ${file.size}
+        ${fileDisplayName},
+        ${mimeType},
+        ${sizeBytes}
       )
     `;
   } catch (e) {
@@ -199,9 +222,9 @@ export async function uploadFirmPortfolioAction(formData: FormData) {
           ${crypto.randomUUID()},
           ${profile.id},
           ${blobUrl},
-          ${file.name},
-          ${file.type},
-          ${file.size}
+          ${fileDisplayName},
+          ${mimeType},
+          ${sizeBytes}
         )
       `;
     } else {
@@ -209,7 +232,55 @@ export async function uploadFirmPortfolioAction(formData: FormData) {
     }
   }
 
-  return;
+  revalidatePath("/designer/profile");
+  redirect("/designer/profile?tab=portfolio&portfolioSuccess=1");
+}
+
+export async function deleteFirmPortfolioFileAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    throw new Error("Unauthorized.");
+  }
+  const fileId = String(formData.get("fileId") ?? "").trim();
+  if (!fileId) throw new Error("Missing file.");
+  const [profile] = await sql<{ id: string }>`
+    select id from firm_profiles where user_id = ${user.id} limit 1
+  `;
+  if (!profile) throw new Error("Profile not found.");
+  const [file] = await sql<{ id: string }>`
+    select id from firm_portfolio_files
+    where id = ${fileId} and profile_id = ${profile.id}
+    limit 1
+  `;
+  if (!file) throw new Error("Image not found or you cannot delete it.");
+  await sql`delete from firm_portfolio_files where id = ${fileId}`;
+  revalidatePath("/designer/profile");
+  redirect("/designer/profile?tab=portfolio&portfolioSuccess=deleted");
+}
+
+export async function updateFirmPortfolioFileAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    throw new Error("Unauthorized.");
+  }
+  const fileId = String(formData.get("fileId") ?? "").trim();
+  const file_name = String(formData.get("file_name") ?? "").trim().slice(0, 50);
+  if (!fileId) throw new Error("Missing file.");
+  const [profile] = await sql<{ id: string }>`
+    select id from firm_profiles where user_id = ${user.id} limit 1
+  `;
+  if (!profile) throw new Error("Profile not found.");
+  const [file] = await sql<{ id: string }>`
+    select id from firm_portfolio_files
+    where id = ${fileId} and profile_id = ${profile.id}
+    limit 1
+  `;
+  if (!file) throw new Error("Image not found or you cannot edit it.");
+  await sql`
+    update firm_portfolio_files set file_name = ${file_name || "Image"} where id = ${fileId}
+  `;
+  revalidatePath("/designer/profile");
+  redirect("/designer/profile?tab=portfolio&portfolioSuccess=updated");
 }
 
 export async function savePortfolioWorkAction(formData: FormData) {
@@ -219,7 +290,7 @@ export async function savePortfolioWorkAction(formData: FormData) {
   }
 
   const workOrder = Number(formData.get("workOrder"));
-  if (Number.isNaN(workOrder) || workOrder < 0 || workOrder > 2) {
+  if (Number.isNaN(workOrder) || workOrder < 0 || workOrder > 4) {
     throw new Error("Invalid work slot.");
   }
 
@@ -249,6 +320,12 @@ export async function savePortfolioWorkAction(formData: FormData) {
         where id = ${existing.id}
       `;
     } else {
+      const [workCount] = await sql<{ n: number }>`
+        select count(*)::int as n from firm_portfolio_works where profile_id = ${profile.id}
+      `;
+      if (workCount && workCount.n >= 5) {
+        throw new Error("Maximum 5 projects in portfolio. Remove one to add another.");
+      }
       await sql`
         insert into firm_portfolio_works (id, profile_id, title, description, display_order)
         values (${crypto.randomUUID()}, ${profile.id}, ${title}, ${description}, ${workOrder})
@@ -261,4 +338,100 @@ export async function savePortfolioWorkAction(formData: FormData) {
     }
     throw e;
   }
+  revalidatePath("/designer/profile");
+}
+
+/** Create a new portfolio project with optional images in one submit. */
+export async function createPortfolioProjectWithImagesAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    throw new Error("Unauthorized.");
+  }
+
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  if (!title) {
+    revalidatePath("/designer/profile");
+    redirect("/designer/profile?tab=portfolio&portfolioError=" + encodeURIComponent("Project title is required."));
+  }
+
+  const [profile] = await sql<{ id: string }>`
+    select id from firm_profiles where user_id = ${user.id} limit 1
+  `;
+  if (!profile) {
+    throw new Error("Create your profile first.");
+  }
+
+  const [countRow] = await sql<{ n: number }>`
+    select count(*)::int as n from firm_portfolio_works where profile_id = ${profile.id}
+  `;
+  const nextOrder = countRow?.n ?? 0;
+  if (nextOrder >= 5) {
+    revalidatePath("/designer/profile");
+    redirect("/designer/profile?tab=portfolio&portfolioError=" + encodeURIComponent("Maximum 5 projects. Remove one to add another."));
+  }
+
+  const workId = crypto.randomUUID();
+  await sql`
+    insert into firm_portfolio_works (id, profile_id, title, description, display_order)
+    values (${workId}, ${profile.id}, ${title}, ${description || ""}, ${nextOrder})
+  `;
+
+  for (let i = 1; i <= 5; i++) {
+    const file = formData.get(`image_${i}_file`) instanceof File ? (formData.get(`image_${i}_file`) as File) : null;
+    const urlRaw = formData.get(`image_${i}_url`);
+    const imageUrl = typeof urlRaw === "string" && urlRaw.trim() ? urlRaw.trim() : null;
+    const nameRaw = formData.get(`image_${i}_name`);
+    const imageName = typeof nameRaw === "string" && nameRaw.trim() ? nameRaw.trim().slice(0, 50) : null;
+
+    const useUrl = imageUrl && isValidImageUrl(imageUrl) && (!file || file.size === 0);
+    const useFile = file && file.size > 0;
+    if (!useFile && !useUrl) continue;
+
+    const fileDisplayName = imageName || (useFile ? file!.name.slice(0, 50) : "Image");
+    let blobUrl: string;
+    let mimeType: string;
+    let sizeBytes: number;
+
+    if (useFile) {
+      blobUrl = await uploadBlob(file!, `firm-portfolio/${profile.id}`);
+      mimeType = file!.type || "image/jpeg";
+      sizeBytes = file!.size;
+    } else {
+      blobUrl = imageUrl!;
+      mimeType = "image/jpeg";
+      sizeBytes = 0;
+    }
+
+    await sql`
+      insert into firm_portfolio_files (id, profile_id, work_id, blob_url, file_name, mime_type, size_bytes)
+      values (${crypto.randomUUID()}, ${profile.id}, ${workId}, ${blobUrl}, ${fileDisplayName}, ${mimeType}, ${sizeBytes})
+    `;
+  }
+
+  revalidatePath("/designer/profile");
+  redirect("/designer/profile?tab=portfolio&portfolioSuccess=1");
+}
+
+export async function deletePortfolioWorkAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    throw new Error("Unauthorized.");
+  }
+  const workId = String(formData.get("workId") ?? "").trim();
+  if (!workId) throw new Error("Missing project.");
+  const [profile] = await sql<{ id: string }>`
+    select id from firm_profiles where user_id = ${user.id} limit 1
+  `;
+  if (!profile) throw new Error("Profile not found.");
+  const [work] = await sql<{ id: string }>`
+    select id from firm_portfolio_works
+    where id = ${workId} and profile_id = ${profile.id}
+    limit 1
+  `;
+  if (!work) throw new Error("Project not found or you cannot delete it.");
+  await sql`delete from firm_portfolio_files where work_id = ${workId}`;
+  await sql`delete from firm_portfolio_works where id = ${workId}`;
+  revalidatePath("/designer/profile");
+  redirect("/designer/profile?tab=portfolio&portfolioSuccess=projectDeleted");
 }

@@ -3,10 +3,11 @@ import { FolderKanban } from "lucide-react";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import PageTabs from "@/components/ui/PageTabs";
+import TableFilterBar from "@/components/ui/TableFilterBar";
 
 export const dynamic = "force-dynamic";
 
-type PageProps = { searchParams?: Promise<{ status?: string }> };
+type PageProps = { searchParams?: Promise<{ status?: string; q?: string }> };
 
 const STATUS_TABS = [
   { value: "", label: "All" },
@@ -14,10 +15,20 @@ const STATUS_TABS = [
   { value: "ACTIVE", label: "Active" },
 ];
 
+function matchSearch(row: { title: string; customer_name: string | null; customer_email: string }, q: string) {
+  const s = q.toLowerCase();
+  return (
+    row.title.toLowerCase().includes(s) ||
+    (row.customer_name ?? "").toLowerCase().includes(s) ||
+    (row.customer_email ?? "").toLowerCase().includes(s)
+  );
+}
+
 export default async function FirmProjectsPage({ searchParams }: PageProps) {
   const user = await requireFirmPaid();
   const params = await searchParams;
   const filterStatus = params?.status ?? "";
+  const q = (params?.q ?? "").trim();
 
   const projects = await sql<{
     id: string;
@@ -44,14 +55,23 @@ export default async function FirmProjectsPage({ searchParams }: PageProps) {
     ACTIVE: projects.filter((p) => p.status === "ACTIVE").length,
   };
 
-  const filtered =
+  const statusFiltered =
     filterStatus
       ? projects.filter((p) => p.status === filterStatus)
       : projects;
+  const filtered = q ? statusFiltered.filter((p) => matchSearch(p, q)) : statusFiltered;
 
+  const base = "/designer/projects";
+  const query = (status: string) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (q) params.set("q", q);
+    const s = params.toString();
+    return s ? `?${s}` : "";
+  };
   const tabs = STATUS_TABS.map((s) => ({
     label: s.label,
-    href: s.value ? `/firm/projects?status=${s.value}` : "/firm/projects",
+    href: base + query(s.value),
     active: (filterStatus || "") === s.value,
     count: s.value === "" ? counts.all : counts[s.value as keyof typeof counts],
   }));
@@ -69,15 +89,26 @@ export default async function FirmProjectsPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      <PageTabs tabs={tabs} />
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between mb-4">
+        <PageTabs tabs={tabs} className="mb-0 sm:flex-1 sm:min-w-0 order-2 sm:order-1" />
+        <div className="w-full sm:w-auto order-1 sm:order-2">
+          <TableFilterBar
+            value={q}
+            placeholder="Search by title or customer…"
+            preserveParams={filterStatus ? { status: filterStatus } : {}}
+          />
+        </div>
+      </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-lg border border-[var(--border)] bg-white p-8 text-center text-[var(--text-muted)]">
-          {filterStatus === "LEAD"
-            ? "No leads yet."
-            : filterStatus === "ACTIVE"
-              ? "No active projects yet."
-              : "No projects yet."}
+          {q
+            ? "No projects match your search."
+            : filterStatus === "LEAD"
+              ? "No leads yet."
+              : filterStatus === "ACTIVE"
+                ? "No active projects yet."
+                : "No projects yet."}
         </div>
       ) : (
         <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
@@ -128,7 +159,7 @@ export default async function FirmProjectsPage({ searchParams }: PageProps) {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <Link
-                        href={p.status === "LEAD" ? "/firm/leads" : `/firm/projects/${p.id}`}
+                        href={p.status === "LEAD" ? "/designer/leads" : `/designer/projects/${p.id}`}
                         className="text-[var(--brand)] hover:underline font-medium"
                       >
                         {p.status === "LEAD" ? "View lead" : "View"}

@@ -33,7 +33,7 @@ export default function AddMilestoneModal({ projectId, action }: Props) {
     try {
       await action(formData);
       setOpen(false);
-      router.push(`/firm/projects/${projectId}?tab=in-progress`);
+      router.push(`/designer/projects/${projectId}?tab=in-progress`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {

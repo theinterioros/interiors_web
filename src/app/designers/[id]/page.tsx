@@ -6,15 +6,39 @@ import { RoleValues } from "@/lib/types";
 import FadeIn from "@/components/animations/FadeIn";
 import StaggerChildren from "@/components/animations/StaggerChildren";
 import FadeInItem from "@/components/animations/FadeInItem";
+
 export const dynamic = "force-dynamic";
 
-export default async function FirmProfilePage({
+function DesignerProfileError({ message }: { message: string }) {
+  return (
+    <div className="page bg-white">
+      <div className="page-inner">
+        <p className="text-sm text-[var(--text-muted)] mb-4">{message}</p>
+        <Link href="/designers" className="btn btn-secondary">
+          ← Back to designers
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default async function DesignerProfilePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const [firm] = await sql<{
+  let id: string;
+  try {
+    const resolved = await params;
+    id = resolved?.id?.trim() ?? "";
+  } catch {
+    return <DesignerProfileError message="Invalid page." />;
+  }
+  if (!id) {
+    return <DesignerProfileError message="Designer not specified." />;
+  }
+
+  let firm: {
     id: string;
     user_id: string;
     name: string;
@@ -29,21 +53,45 @@ export default async function FirmProfilePage({
     margin_accepted_at: Date | null;
     rating: number | null;
     google_review_links: string | null;
-  }>`
-    select id, user_id, name, firm_name, owner_name, experience_years, city, pincode, about, status, verified_at, margin_accepted_at, rating, google_review_links
-    from firm_profiles
-    where id = ${id}
-    limit 1
-  `;
+  } | null = null;
+  try {
+    const rows = await sql<{
+      id: string;
+      user_id: string;
+      name: string;
+      firm_name: string | null;
+      owner_name: string | null;
+      experience_years: number;
+      city: string;
+      pincode: string;
+      about: string;
+      status: string;
+      verified_at: Date | null;
+      margin_accepted_at: Date | null;
+      rating: number | null;
+      google_review_links: string | null;
+    }>`
+      select id, user_id, name, firm_name, owner_name, experience_years, city, pincode, about, status, verified_at, margin_accepted_at, rating, google_review_links
+      from firm_profiles
+      where id = ${id}
+      limit 1
+    `;
+    firm = rows[0] ?? null;
+  } catch (err) {
+    console.error("Designer profile load error:", err);
+    return <DesignerProfileError message="Could not load this designer. Please try again." />;
+  }
 
-  const isVerifiedAndAccepted =
-    firm && firm.status === "APPROVED" && firm.margin_accepted_at != null;
+  const isVerifiedAndAccepted = firm && firm.status === "APPROVED";
 
   if (!firm) {
     return (
       <div className="page bg-white">
         <div className="page-inner">
-          <div className="text-sm text-[var(--text-muted)]">Firm not found.</div>
+          <p className="text-sm text-[var(--text-muted)] mb-4">Designer not found.</p>
+          <Link href="/designers" className="btn btn-secondary">
+            ← Back to designers
+          </Link>
         </div>
       </div>
     );
@@ -92,16 +140,21 @@ export default async function FirmProfilePage({
     filesByWork.get(key)!.push(file);
   }
 
-  const portfolioDocs = await sql<{
-    id: string;
-    blob_url: string;
-    file_name: string;
-  }>`
-    select id, blob_url, file_name
-    from firm_documents
-    where profile_id = ${firm.id} and doc_type = 'portfolio'
-    order by created_at desc
-  `;
+  let portfolioDocs: { id: string; blob_url: string; file_name: string }[] = [];
+  try {
+    portfolioDocs = await sql<{
+      id: string;
+      blob_url: string;
+      file_name: string;
+    }>`
+      select id, blob_url, file_name
+      from firm_documents
+      where profile_id = ${firm.id} and doc_type = 'portfolio'
+      order by created_at desc
+    `;
+  } catch {
+    // firm_documents or doc_type may not exist
+  }
 
   const user = await getCurrentUser();
   const canRequest = user?.role === RoleValues.CUSTOMER;
@@ -167,7 +220,12 @@ export default async function FirmProfilePage({
             </p>
           ) : null}
 
-          <p className="text-[var(--text-muted)]">{firm.about}</p>
+          {firm.about && (
+            <>
+              <h2 className="heading-sm text-[var(--foreground)] mb-2 mt-6">About</h2>
+              <p className="text-[var(--text-muted)]">{firm.about}</p>
+            </>
+          )}
         </FadeIn>
 
         <FadeIn delay={0.2} className="mb-8">
@@ -209,16 +267,23 @@ export default async function FirmProfilePage({
                                 href={file.blob_url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="block overflow-hidden rounded-lg border border-[var(--border)] hover:border-[var(--border-strong)]"
+                                className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]/30 hover:border-[var(--brand)]/50 hover:shadow-md transition-all"
                               >
-                                {isImage ? (
-                                  <img
-                                    src={file.blob_url}
-                                    alt={file.file_name}
-                                    className="w-full aspect-[4/3] object-cover"
-                                  />
-                                ) : null}
-                                <p className="text-xs text-[var(--text-muted)] p-2">{file.file_name}</p>
+                                <div className="aspect-[4/3] overflow-hidden bg-[var(--surface-subtle)]/50">
+                                  {isImage ? (
+                                    <img
+                                      src={file.blob_url}
+                                      alt={file.file_name}
+                                      className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)] text-sm">
+                                      Document
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs text-[var(--text-muted)] p-3 truncate" title={file.file_name}>{file.file_name}</p>
                               </a>
                             );
                           })}
@@ -230,71 +295,45 @@ export default async function FirmProfilePage({
                   </FadeInItem>
                 );
               })}
-              {(filesByWork.get(null)?.length ?? 0) > 0 && (
-                <FadeInItem>
-                  <section className="card" aria-labelledby="portfolio-other">
-                    <h3 id="portfolio-other" className="heading-sm mb-4">Other Portfolio Images</h3>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {filesByWork.get(null)!.map((file) => {
-                        const isImage = (file.mime_type || "").startsWith("image/");
-                        return (
-                          <a
-                            key={file.id}
-                            href={file.blob_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="block overflow-hidden rounded-lg border border-[var(--border)] hover:border-[var(--border-strong)]"
-                          >
-                            {isImage ? (
-                              <img
-                                src={file.blob_url}
-                                alt={file.file_name}
-                                className="w-full aspect-[4/3] object-cover"
-                              />
-                            ) : null}
-                            <p className="text-xs text-[var(--text-muted)] p-2">{file.file_name}</p>
-                          </a>
-                        );
-                      })}
-                    </div>
-                  </section>
-                </FadeInItem>
-              )}
             </StaggerChildren>
           ) : portfolio.length === 0 && portfolioDocs.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)]">No portfolio items yet.</p>
           ) : portfolio.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)]">No additional portfolio items.</p>
           ) : (
-            <StaggerChildren className="space-y-8">
+            <FadeIn delay={0.1}>
               <section className="card">
                 <h3 className="heading-sm mb-4">Portfolio Images</h3>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {portfolio.map((file) => {
                     const isImage = (file.mime_type || "").startsWith("image/");
                     return (
-                      <FadeInItem key={file.id}>
-                        <a
-                          href={file.blob_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block overflow-hidden rounded-lg border border-[var(--border)] hover:border-[var(--border-strong)]"
-                        >
+                      <a
+                        key={file.id}
+                        href={file.blob_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]/30 hover:border-[var(--brand)]/50 hover:shadow-md transition-all"
+                      >
+                        <div className="aspect-[4/3] overflow-hidden bg-[var(--surface-subtle)]/50">
                           {isImage ? (
                             <img
                               src={file.blob_url}
                               alt={file.file_name}
-                              className="w-full aspect-[4/3] object-cover"
+                              className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
+                              loading="lazy"
                             />
-                          ) : null}
-                          <p className="text-xs text-[var(--text-muted)] p-2">{file.file_name}</p>
-                        </a>
-                      </FadeInItem>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)] text-sm">Document</div>
+                          )}
+                        </div>
+                        <p className="text-xs text-[var(--text-muted)] p-3 truncate" title={file.file_name}>{file.file_name}</p>
+                      </a>
                     );
                   })}
                 </div>
               </section>
-            </StaggerChildren>
+            </FadeIn>
           )}
         </FadeIn>
 
