@@ -140,7 +140,7 @@ export default async function LoginPage({
         </aside>
 
         {/* Right: Sign-in form */}
-        <div className="flex-1 flex flex-col justify-center min-w-0 lg:ml-[420px] px-4 py-8 sm:px-6 lg:px-14 xl:px-20 bg-white lg:bg-transparent">
+        <div className="flex-1 flex flex-col justify-center min-w-0 max-w-full overflow-hidden lg:ml-[420px] px-4 py-8 sm:px-6 lg:px-14 xl:px-20 bg-white lg:bg-transparent">
           <div className="mx-auto w-full max-w-[400px]">
             {/* Mobile role switcher */}
             <div className="lg:hidden mb-6">

@@ -166,8 +166,8 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
                 <p className="px-4 py-2 text-sm text-[var(--text-muted)] border-b border-[var(--border)]">
                   Customer has approved these milestone payments. Click &quot;Release to designer&quot; to confirm and send the amount (platform margin is deducted). Designer and customer are notified.
                 </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="table-wrap overflow-x-auto">
+                  <table className="w-full text-sm min-w-[640px]">
                     <thead>
                       <tr className="border-b border-[var(--border)] bg-[var(--surface-subtle)]/50">
                         <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">Date</th>
@@ -251,8 +251,8 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps) {
               </p>
             ) : (
               <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="table-wrap overflow-x-auto">
+                  <table className="w-full text-sm min-w-[640px]">
                     <thead>
                       <tr className="border-b border-[var(--border)] bg-[var(--surface-subtle)]/50">
                         <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">Date</th>

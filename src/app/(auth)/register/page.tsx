@@ -139,8 +139,8 @@ export default async function RegisterPage({
           </div>
         </aside>
 
-        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto min-w-0 lg:ml-[420px]">
-          <div className="flex flex-col justify-center flex-1 px-4 py-8 sm:px-6 lg:px-12 xl:px-20 bg-white lg:bg-transparent">
+        <div className="flex-1 flex flex-col min-h-0 overflow-x-hidden overflow-y-auto min-w-0 max-w-full lg:ml-[420px]">
+          <div className="flex flex-col justify-center flex-1 px-4 py-8 sm:px-6 lg:px-12 xl:px-20 bg-white lg:bg-transparent max-w-full">
             <div
               className={`mx-auto w-full ${roleParam === "FIRM" ? "max-w-[440px] sm:max-w-[640px] lg:max-w-[900px] xl:max-w-[960px]" : "max-w-[440px] sm:max-w-[520px]"}`}
             >

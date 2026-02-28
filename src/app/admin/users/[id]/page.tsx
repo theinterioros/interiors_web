@@ -178,8 +178,8 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
               {payments.length === 0 ? (
                 <div className="p-6 text-center text-sm text-[var(--text-muted)]">No payments yet.</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="table-wrap overflow-x-auto">
+                  <table className="w-full text-sm min-w-[520px]">
                     <thead>
                       <tr className="border-b border-[var(--border)] bg-[var(--surface-subtle)]/50">
                         <th className="text-left py-2 px-4 font-medium text-[var(--text-muted)]">Type</th>
@@ -224,8 +224,8 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
               {projects.length === 0 ? (
                 <div className="p-6 text-center text-sm text-[var(--text-muted)]">No projects yet.</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="table-wrap overflow-x-auto">
+                  <table className="w-full text-sm min-w-[520px]">
                     <thead>
                       <tr className="border-b border-[var(--border)] bg-[var(--surface-subtle)]/50">
                         <th className="text-left py-2 px-4 font-medium text-[var(--text-muted)]">Title</th>

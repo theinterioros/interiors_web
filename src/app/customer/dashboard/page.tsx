@@ -143,8 +143,8 @@ export default async function CustomerDashboardPage({ searchParams }: PageProps)
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="table-wrap overflow-x-auto">
+            <table className="w-full text-sm min-w-[520px]">
               <thead>
                 <tr className="border-b border-[var(--border)] bg-[var(--surface-subtle)]/50">
                   <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">Created</th>

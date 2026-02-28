@@ -153,8 +153,8 @@ export default async function AdminProjectDetailPage({
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="table-wrap overflow-x-auto">
+                <table className="w-full text-sm min-w-[400px]">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--surface-subtle)]/50">
                       <th className="text-left py-3 px-4 font-medium text-[var(--text-muted)]">Title</th>

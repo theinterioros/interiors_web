@@ -70,7 +70,14 @@ a {
 /* Layout: no extra top padding — header is in flow; avoid white bar under nav */
 .page {
   min-height: 100vh;
-  padding: 1.5rem 1.5rem 4rem;
+  padding: 1rem 1rem 4rem;
+  min-width: 0;
+}
+
+@media (min-width: 480px) {
+  .page {
+    padding: 1.25rem 1.25rem 4rem;
+  }
 }
 
 @media (min-width: 768px) {
@@ -122,6 +129,32 @@ a {
 .page-inner.section-tight,
 .section-tight .page-inner {
   max-width: 960px;
+}
+
+/* Mobile: tables scroll horizontally without breaking layout */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-wrap table {
+  min-width: 640px;
+}
+
+/* Touch targets: minimum 44px for tap areas on mobile */
+@media (max-width: 767px) {
+  .btn,
+  .input,
+  button[type="submit"],
+  button[type="button"]:not(.icon-only) {
+    min-height: 44px;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+  a.btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
 /* Typography — Atlassian-inspired scale (14px base, clear hierarchy) */
