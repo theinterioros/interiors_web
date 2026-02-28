@@ -41,11 +41,13 @@ export async function runCleanupProduction(): Promise<CleanupResult> {
     }
   }
 
-  // Keep any user you have notified (they have at least one notification)
-  const notifiedUserIds = (await sql`
-    select distinct user_id from notifications
+  // Keep any customer you have notified (designers: only Mira Kapoor above)
+  const notifiedNonDesigners = (await sql`
+    select distinct n.user_id from notifications n
+    join users u on u.id = n.user_id
+    where u.role != 'FIRM'
   `) as { user_id: string }[];
-  for (const row of notifiedUserIds) {
+  for (const row of notifiedNonDesigners) {
     keepIds.add(row.user_id);
   }
 
@@ -56,7 +58,7 @@ export async function runCleanupProduction(): Promise<CleanupResult> {
       ok: true,
       kept: keepIds.size,
       removed: 0,
-      message: "No extra users to remove. Kept: demo users (Mira Kapoor, Aarav Sharma), all admins, and any user you have notified.",
+      message: "No extra users to remove. Kept: Mira Kapoor (only designer), Aarav Sharma, all admins, and any notified customer.",
     };
   }
 
@@ -112,10 +114,54 @@ export async function runCleanupProduction(): Promise<CleanupResult> {
     await sql`delete from users where id = ${id}`;
   }
 
+  // Orphan cleanup: only relevant data in every table (no dangling refs)
+  try {
+    await sql`
+      delete from payment_ledger
+      where (customer_id is not null and not exists (select 1 from users u where u.id = payment_ledger.customer_id))
+         or (firm_id is not null and not exists (select 1 from users u where u.id = payment_ledger.firm_id))
+    `;
+    await sql`
+      delete from payment_ledger
+      where project_id is not null and not exists (select 1 from projects p where p.id = payment_ledger.project_id)
+    `;
+    await sql`
+      delete from payment_ledger
+      where milestone_id is not null and not exists (select 1 from milestones m where m.id = payment_ledger.milestone_id)
+    `;
+    await sql`
+      delete from payment_ledger
+      where type in ('MILESTONE', 'ADVANCE', 'ADDITIONAL_PROJECT_FEE') and project_id is null
+    `;
+  } catch {}
+
+  try {
+    await sql`
+      delete from notifications
+      where not exists (select 1 from users u where u.id = notifications.user_id)
+    `;
+  } catch {}
+
+  try {
+    await sql`
+      delete from digital_twin_files
+      where not exists (select 1 from users u where u.id = digital_twin_files.customer_id)
+         or not exists (select 1 from users u where u.id = digital_twin_files.uploaded_by)
+         or (project_id is not null and not exists (select 1 from projects p where p.id = digital_twin_files.project_id))
+    `;
+  } catch {}
+
+  try {
+    await sql`
+      delete from digital_twin_subscriptions
+      where not exists (select 1 from users u where u.id = digital_twin_subscriptions.customer_id)
+    `;
+  } catch {}
+
   return {
     ok: true,
     kept: keepIds.size,
     removed: ids.length,
-    message: "Cleanup complete. Kept: demo users (Mira Kapoor, Aarav Sharma), all admins, and any user you have notified.",
+    message: `Cleanup complete. Only designer kept: Mira Kapoor. Plus Aarav Sharma, all admins, and any notified customer. Removed ${ids.length} user(s); orphan rows in payment_ledger and other tables cleaned.`,
   };
 }

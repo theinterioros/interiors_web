@@ -30,7 +30,7 @@ export default function AdminCleanupProduction() {
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]/50 p-4">
       <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">Production cleanup</h3>
       <p className="text-xs text-[var(--text-muted)] mb-3">
-        Keep demo users (Mira Kapoor, Aarav Sharma), all admins, and anyone you have notified. Remove everyone else and their data.
+        Keep only Mira Kapoor (designer), Aarav Sharma, all admins, and any customer you notified. Remove all other designers and their data.
       </p>
       <button
         type="button"

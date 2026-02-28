@@ -64,8 +64,12 @@ async function main() {
     }
   }
 
-  // Keep any user you have notified (they have at least one notification)
-  const notifiedRows = await sql`select distinct user_id from notifications`;
+  // Keep any customer you have notified (designers: only Mira Kapoor above)
+  const notifiedRows = await sql`
+    select distinct n.user_id from notifications n
+    join users u on u.id = n.user_id
+    where u.role != 'FIRM'
+  `;
   for (const row of notifiedRows) {
     keepIds.add(row.user_id);
   }
@@ -73,7 +77,7 @@ async function main() {
   const toRemove = allUsers.filter((u) => !keepIds.has(u.id)).map((u) => u.id);
 
   if (toRemove.length === 0) {
-    console.log("No extra users to remove. Kept: demo users (Mira Kapoor, Aarav Sharma), all admins, and any user you have notified.");
+    console.log("No extra users to remove. Kept: Mira Kapoor (only designer), Aarav Sharma, all admins, and any notified customer.");
     return;
   }
 
@@ -179,7 +183,49 @@ async function main() {
   }
   console.log("Deleted users.");
 
-  console.log("Cleanup complete. Kept: demo users (Mira Kapoor, Aarav Sharma), all admins, and any user you have notified.");
+  // Orphan cleanup: only relevant data in every table
+  try {
+    await sql`
+      delete from payment_ledger
+      where (customer_id is not null and not exists (select 1 from users u where u.id = payment_ledger.customer_id))
+         or (firm_id is not null and not exists (select 1 from users u where u.id = payment_ledger.firm_id))
+    `;
+    await sql`
+      delete from payment_ledger
+      where project_id is not null and not exists (select 1 from projects p where p.id = payment_ledger.project_id)
+    `;
+    await sql`
+      delete from payment_ledger
+      where milestone_id is not null and not exists (select 1 from milestones m where m.id = payment_ledger.milestone_id)
+    `;
+    await sql`
+      delete from payment_ledger
+      where type in ('MILESTONE', 'ADVANCE', 'ADDITIONAL_PROJECT_FEE') and project_id is null
+    `;
+    console.log("Orphan payment_ledger cleaned.");
+  } catch (e) {
+    console.warn("Orphan payment_ledger:", e.message);
+  }
+  try {
+    await sql`delete from notifications where not exists (select 1 from users u where u.id = notifications.user_id)`;
+    console.log("Orphan notifications cleaned.");
+  } catch (e) {
+    console.warn("Orphan notifications:", e.message);
+  }
+  try {
+    await sql`
+      delete from digital_twin_files
+      where not exists (select 1 from users u where u.id = digital_twin_files.customer_id)
+         or not exists (select 1 from users u where u.id = digital_twin_files.uploaded_by)
+         or (project_id is not null and not exists (select 1 from projects p where p.id = digital_twin_files.project_id))
+    `;
+    await sql`delete from digital_twin_subscriptions where not exists (select 1 from users u where u.id = digital_twin_subscriptions.customer_id)`;
+    console.log("Orphan digital_twin tables cleaned.");
+  } catch (e) {
+    console.warn("Orphan digital_twin:", e.message);
+  }
+
+  console.log("Cleanup complete. Only designer kept: Mira Kapoor. Plus Aarav Sharma, all admins, and any notified customer. Orphan rows removed.");
 }
 
 main().catch((err) => {
