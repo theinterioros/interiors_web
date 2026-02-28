@@ -146,7 +146,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                   {filtered.map((user) => (
                     <tr key={user.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--surface-subtle)]/30">
                         <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
+                          <Link href={`/admin/users/${user.id}`} className="flex items-center gap-2 hover:opacity-90">
                             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--surface-subtle)] text-[var(--text-muted)]">
                               {user.role === "CUSTOMER" ? (
                                 <User className="h-4 w-4" />
@@ -156,8 +156,8 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                                 <Shield className="h-4 w-4" />
                               )}
                             </span>
-                            <span className="font-medium text-[var(--foreground)]">{user.name ?? "—"}</span>
-                          </div>
+                            <span className="font-medium text-[var(--foreground)]">{user.name ?? user.email}</span>
+                          </Link>
                         </td>
                         <td className="py-3 px-4">
                           <span className="block text-[var(--foreground)]">{user.email}</span>
@@ -224,15 +224,13 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                           {new Date(user.created_at).toLocaleDateString()}
                         </td>
                         <td className="py-3 px-4">
-                          {user.role === "FIRM" && (
-                            <Link
-                              href={`/admin/users/${user.id}`}
-                              className="inline-flex items-center gap-1 text-sm text-[var(--brand)] hover:underline"
-                            >
-                              View history
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </Link>
-                          )}
+                          <Link
+                            href={`/admin/users/${user.id}`}
+                            className="inline-flex items-center gap-1 text-sm text-[var(--brand)] hover:underline"
+                          >
+                            {user.role === "FIRM" ? "View history" : "View"}
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Link>
                         </td>
                       </tr>
                   ))}
