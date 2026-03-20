@@ -5,6 +5,7 @@ import { hasFirmPaidRegistration } from "@/lib/registrationPayments";
 import { redirect } from "next/navigation";
 import FirmRegisterPayForm from "./FirmRegisterPayForm";
 import { FIRM_REGISTRATION_AMOUNT } from "@/lib/registrationPayments";
+import { getAdminSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,9 @@ export default async function DesignerRegisterPayPage() {
   if (paid) {
     redirect("/designer/dashboard");
   }
+
+  const settings = await getAdminSettings();
+  const yearlyAmount = settings.designerYearlyFee ?? FIRM_REGISTRATION_AMOUNT;
 
   return (
     <div className="page">
@@ -33,14 +37,14 @@ export default async function DesignerRegisterPayPage() {
                 </div>
               </div>
               <p className="text-sm text-[var(--text-muted)] mb-6">
-                Pay the yearly subscription (₹3,000/year) to access your designer dashboard, accept leads, and manage projects. Renew each year to stay active.
+                Pay the yearly subscription to access your designer dashboard, accept leads, and manage projects. Renew each year to stay active.
               </p>
               <div className="flex items-baseline gap-2 mb-6">
                 <IndianRupee className="h-6 w-6 text-[var(--foreground)]" />
-                <span className="text-3xl font-bold text-[var(--foreground)]">{FIRM_REGISTRATION_AMOUNT.toLocaleString()}</span>
+                <span className="text-3xl font-bold text-[var(--foreground)]">{yearlyAmount.toLocaleString()}</span>
                 <span className="text-[var(--text-muted)]">/ year</span>
               </div>
-              <FirmRegisterPayForm />
+              <FirmRegisterPayForm amount={yearlyAmount} />
               <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
                 <Link href="/login?role=designer" className="font-medium text-[var(--brand)] hover:underline">
                   Back to sign in

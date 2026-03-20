@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { approveMilestoneAction } from "@/app/actions/project";
-import MockPaymentModal from "@/components/ui/MockPaymentModal";
+import PaymentCheckoutModal from "@/components/ui/PaymentCheckoutModal";
 
 type Props = {
   milestoneId: string;
@@ -15,11 +15,10 @@ export default function ApproveMilestonePay({ milestoneId, amount, title }: Prop
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
 
-  async function handleConfirm() {
+  async function mockPay() {
     const formData = new FormData();
     formData.set("milestoneId", milestoneId);
     await approveMilestoneAction(formData);
-    router.refresh();
   }
 
   return (
@@ -31,13 +30,18 @@ export default function ApproveMilestonePay({ milestoneId, amount, title }: Prop
       >
         Approve & Pay
       </button>
-      <MockPaymentModal
+      <PaymentCheckoutModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        amount={amount}
+        amountRupees={amount}
         title={`Milestone: ${title}`}
-        subtitle="Funds will be held in escrow until admin releases to the designer."
-        onConfirm={handleConfirm}
+        subtitle="Funds are held in escrow until admin releases to the designer."
+        kind="MILESTONE"
+        milestoneId={milestoneId}
+        mockPay={mockPay}
+        onPaid={async () => {
+          router.refresh();
+        }}
       />
     </>
   );

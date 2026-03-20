@@ -104,6 +104,7 @@ export default async function RegisterPage({
                   <Link
                     key={p.role}
                     href={p.href}
+                    scroll={false}
                     className={`group flex items-start gap-4 rounded-2xl p-4 transition-all duration-200 ${
                       isActive
                         ? "bg-white shadow-sm ring-1 ring-[var(--brand)]/20 ring-inset border border-[var(--brand)]/30"

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { requestProjectAction, checkProjectLimitAction } from "@/app/actions/project";
 import { payAdditionalProjectFeeAction } from "@/app/actions/auth";
 import { Loader2 } from "lucide-react";
-import MockPaymentModal from "@/components/ui/MockPaymentModal";
+import PaymentCheckoutModal from "@/components/ui/PaymentCheckoutModal";
 import PageBackLink from "@/components/ui/PageBackLink";
 
 type Props = {
@@ -119,9 +119,8 @@ export default function RequestProjectForm({
     setSubmitting(false);
   }
 
-  async function handlePayThenRequest() {
+  async function afterAdditionalFeePaid() {
     if (!pendingData) return;
-    await payAdditionalProjectFeeAction();
     await submitRequest(pendingData);
     setModalOpen(false);
     setPendingData(null);
@@ -222,13 +221,18 @@ export default function RequestProjectForm({
         </div>
       </form>
 
-      <MockPaymentModal
+      <PaymentCheckoutModal
         open={modalOpen}
-        onClose={() => { setModalOpen(false); setPendingData(null); }}
-        amount={additionalProjectFeeAmount}
+        onClose={() => {
+          setModalOpen(false);
+          setPendingData(null);
+        }}
+        amountRupees={additionalProjectFeeAmount}
         title="Additional project fee"
-        subtitle="Your subscription includes one project. Pay ₹1,000 to start another project with this designer."
-        onConfirm={handlePayThenRequest}
+        subtitle="Your subscription includes one project. Pay to start another project with this designer."
+        kind="ADDITIONAL_PROJECT"
+        mockPay={payAdditionalProjectFeeAction}
+        onPaid={afterAdditionalFeePaid}
       />
     </>
   );

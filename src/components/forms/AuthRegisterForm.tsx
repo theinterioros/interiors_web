@@ -7,6 +7,7 @@ import { registerAction } from "@/app/actions/auth";
 import { useState, useRef } from "react";
 import ValidatedEmailInput from "@/components/ui/ValidatedEmailInput";
 import ValidatedPhoneInput from "@/components/ui/ValidatedPhoneInput";
+import { validateEmail, validatePhoneIndia, EMAIL_ERROR, PHONE_ERROR } from "@/lib/validation";
 
 const DESIGNER_STEPS = [
   { step: 1, label: "Account" },
@@ -86,6 +87,32 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
         el.focus();
         setServerError(`Please enter at least ${minLen} characters.`);
         return false;
+      }
+
+      const fieldName = el.getAttribute("name") ?? "";
+      if (fieldName === "email") {
+        const r = validateEmail(v);
+        if (!r.valid) {
+          el.focus();
+          setServerError(EMAIL_ERROR);
+          return false;
+        }
+      }
+      if (fieldName === "phone") {
+        const r = validatePhoneIndia(v);
+        if (!r.valid) {
+          el.focus();
+          setServerError(PHONE_ERROR);
+          return false;
+        }
+      }
+      if (fieldName === "pincode") {
+        const digits = v.replace(/\D/g, "");
+        if (digits.length !== 6) {
+          el.focus();
+          setServerError("Pincode must be exactly 6 digits.");
+          return false;
+        }
       }
     }
     setServerError("");
@@ -178,7 +205,12 @@ export default function AuthRegisterForm({ fixedRole }: { fixedRole?: "CUSTOMER"
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
-              <ValidatedEmailInput name="email" placeholder="you@example.com" className="input w-full" />
+              <ValidatedEmailInput
+                name="email"
+                placeholder="you@example.com"
+                className="input w-full"
+                required
+              />
             </div>
           </div>
           <div className="space-y-4">

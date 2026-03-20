@@ -1,55 +1,34 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useFormStatus } from "react-dom";
-import { Loader2 } from "lucide-react";
-import { renewFirmSubscriptionAction } from "@/app/actions/auth";
 import { useState } from "react";
+import { renewFirmSubscriptionAction } from "@/app/actions/auth";
+import PaymentCheckoutModal from "@/components/ui/PaymentCheckoutModal";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="btn btn-primary w-full disabled:opacity-50 inline-flex items-center justify-center gap-2"
-    >
-      {pending ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          Processing…
-        </>
-      ) : (
-        "Pay ₹3,000 (mock) — extend by 1 year"
-      )}
-    </button>
-  );
-}
-
-export default function FirmRenewForm() {
+export default function FirmRenewForm({ amount }: { amount: number }) {
   const router = useRouter();
-  const [error, setError] = useState("");
-
-  const handleAction = async (_formData: FormData): Promise<void> => {
-    setError("");
-    const result = await renewFirmSubscriptionAction();
-    if (result?.redirect) {
-      router.push(result.redirect);
-      return;
-    }
-    if (result?.error) {
-      setError(result.error);
-    }
-  };
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <form action={handleAction}>
-      {error && (
-        <p className="text-sm text-red-600 mb-4" role="alert">
-          {error}
-        </p>
-      )}
-      <SubmitButton />
-    </form>
+    <>
+      <button type="button" className="btn btn-primary w-full" onClick={() => setModalOpen(true)}>
+        Pay ₹{amount.toLocaleString()} — extend by 1 year
+      </button>
+      <PaymentCheckoutModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        amountRupees={amount}
+        title="Designer subscription renewal"
+        subtitle="Adds one year to your subscription."
+        kind="FIRM_RENEW"
+        mockPay={async () => {
+          const r = await renewFirmSubscriptionAction();
+          if (r?.error) throw new Error(r.error);
+        }}
+        onPaid={async () => {
+          router.push("/designer/profile");
+        }}
+      />
+    </>
   );
 }

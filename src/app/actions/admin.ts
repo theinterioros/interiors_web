@@ -3,11 +3,13 @@
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { RoleValues, DesignerStatusValues, PaymentStatusValues } from "@/lib/types";
+import { RoleValues, DesignerStatusValues, PaymentStatusValues, PaymentTypeValues } from "@/lib/types";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications";
 import { runCleanupProduction, deleteUserAndRelatedData, type CleanupResult } from "@/lib/cleanupProduction";
+import { createPayout, isRazorpayConfigured } from "@/lib/razorpay";
+import { env } from "@/lib/env";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -166,20 +168,63 @@ export async function addRateAction(formData: FormData) {
     throw new Error("Use the default rate section for the default rate.");
   }
 
-  try {
-    await sql`
-      insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft, rate_per_sq_yd, rate_per_sq_m)
-      values (${crypto.randomUUID()}, ${settings.id}, ${city}, ${pincode}, ${ratePerSqFt}, ${ratePerSqYd}, ${ratePerSqM})
-    `;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes("rate_per_sq_yd") || message.includes("rate_per_sq_m")) {
+  const digits = pincode.trim();
+  if (!/^\d{6}$/.test(digits)) {
+    throw new Error("Pincode must be exactly 6 digits.");
+  }
+
+  const [existing] = await sql<{ id: string }>`
+    select id from city_pincode_rates
+    where settings_id = ${settings.id}
+      and lower(trim(city)) = lower(${city})
+      and pincode = ${digits}
+      and not (city = 'DEFAULT' and pincode = '*')
+    limit 1
+  `;
+
+  if (existing) {
+    try {
       await sql`
-        insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft)
-        values (${crypto.randomUUID()}, ${settings.id}, ${city}, ${pincode}, ${ratePerSqFt})
+        update city_pincode_rates
+        set city = ${city},
+            pincode = ${digits},
+            rate_per_sq_ft = ${ratePerSqFt},
+            rate_per_sq_yd = ${ratePerSqYd},
+            rate_per_sq_m = ${ratePerSqM},
+            is_active = true
+        where id = ${existing.id}
       `;
-    } else {
-      throw err;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("rate_per_sq_yd") || message.includes("rate_per_sq_m")) {
+        await sql`
+          update city_pincode_rates
+          set city = ${city},
+              pincode = ${digits},
+              rate_per_sq_ft = ${ratePerSqFt},
+              is_active = true
+          where id = ${existing.id}
+        `;
+      } else {
+        throw err;
+      }
+    }
+  } else {
+    try {
+      await sql`
+        insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft, rate_per_sq_yd, rate_per_sq_m)
+        values (${crypto.randomUUID()}, ${settings.id}, ${city}, ${digits}, ${ratePerSqFt}, ${ratePerSqYd}, ${ratePerSqM})
+      `;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("rate_per_sq_yd") || message.includes("rate_per_sq_m")) {
+        await sql`
+          insert into city_pincode_rates (id, settings_id, city, pincode, rate_per_sq_ft)
+          values (${crypto.randomUUID()}, ${settings.id}, ${city}, ${digits}, ${ratePerSqFt})
+        `;
+      } else {
+        throw err;
+      }
     }
   }
 
@@ -462,15 +507,42 @@ export async function releasePaymentAction(formData: FormData) {
     platformMarginAmount = Math.round((payment.amount * Number(pct)) / 100);
   }
 
+  const designerAmount = payment.amount - (platformMarginAmount ?? 0);
+
+  let payoutId: string | null = null;
+  if (
+    payment.type === PaymentTypeValues.MILESTONE &&
+    payment.firm_id &&
+    designerAmount > 0 &&
+    isRazorpayConfigured() &&
+    Boolean(env.razorpayXAccountNumber)
+  ) {
+    const [bank] = await sql<{ razorpay_fund_account_id: string }>`
+      select razorpay_fund_account_id from designer_bank_accounts where user_id = ${payment.firm_id} limit 1
+    `;
+    if (!bank?.razorpay_fund_account_id) {
+      throw new Error(
+        "Designer has no bank account on file. They must add payout details in Profile before you can release."
+      );
+    }
+    const payout = await createPayout({
+      fundAccountId: bank.razorpay_fund_account_id,
+      amountRupees: designerAmount,
+      referenceId: paymentId.replace(/-/g, "").slice(0, 36),
+      narration: `Milestone ${paymentId.slice(0, 8)}`,
+      idempotencyKey: paymentId,
+    });
+    payoutId = payout.id;
+  }
+
   await sql`
     update payment_ledger
     set status = ${PaymentStatusValues.RELEASED},
         platform_margin_amount = ${platformMarginAmount},
+        razorpay_payout_id = ${payoutId},
         updated_at = now()
     where id = ${paymentId}
   `;
-
-  const designerAmount = payment.amount - (platformMarginAmount ?? 0);
 
   if (payment.customer_id && payment.customer_email) {
     await notifyUser({

@@ -2,26 +2,14 @@
 
 import { useState } from "react";
 import CitySelect from "@/components/ui/CitySelect";
+import EstimatorResultSummary from "@/components/estimator/EstimatorResultSummary";
 import Link from "next/link";
-
-type Breakdown = {
-  ratePerSqFt: number;
-  squareFeet: number;
-  propertyMultiplier?: number;
-  roomModifier?: number;
-  adjusted?: number;
-};
-
-type Result = {
-  min: number;
-  max: number;
-  currency: string;
-  breakdown: Breakdown;
-  disclaimer: string;
-};
+import { ESTIMATOR_AREA_OPTIONS } from "@/lib/estimator-types";
+import type { EstimatorApiData } from "@/lib/estimator-types";
+import ValidatedPincodeInput from "@/components/ui/ValidatedPincodeInput";
 
 export default function CustomerEstimatorClient() {
-  const [result, setResult] = useState<Result | null>(null);
+  const [result, setResult] = useState<EstimatorApiData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -36,17 +24,23 @@ export default function CustomerEstimatorClient() {
     const areaUnit = String(formData.get("areaUnit") ?? "sqft").toLowerCase();
     const normalizedUnit = areaUnit === "sqyd" ? "sqyd" : areaUnit === "sqm" ? "sqm" : "sqft";
     const configuration = String(formData.get("configuration") ?? "2BHK");
-    const rooms =
-      configuration === "1BHK" ? 1 : configuration === "2BHK" ? 2 : configuration === "3BHK" ? 3 : configuration === "4BHK" ? 4 : 5;
+    const areas = formData.getAll("areas").map((v) => String(v));
 
     const payload = {
       city: formData.get("city"),
-      pincode: formData.get("pincode"),
+      pincode: formData.get("pincode") ?? "",
       area: Math.max(0, area),
       areaUnit: normalizedUnit,
       propertyType: formData.get("propertyType") === "villa" ? "villa" : "apartment",
-      rooms,
+      bhk: configuration,
+      interiorTier: String(formData.get("interiorTier") ?? "standard"),
+      material: String(formData.get("material") ?? "laminate"),
+      possession: String(formData.get("possession") ?? "ready"),
+      areas,
       requireContact: false,
+      ...(String(formData.get("budgetNote") ?? "").trim()
+        ? { budgetNote: String(formData.get("budgetNote")).trim() }
+        : {}),
     };
 
     try {
@@ -55,9 +49,9 @@ export default function CustomerEstimatorClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = (await res.json()) as EstimatorApiData & { error?: string };
       if (!res.ok) throw new Error(data.error || "Unable to estimate.");
-      setResult(data);
+      setResult(data as EstimatorApiData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to estimate.");
     } finally {
@@ -76,8 +70,15 @@ export default function CustomerEstimatorClient() {
               <CitySelect name="city" required placeholder="Select city" className="input w-full" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Pincode</label>
-              <input name="pincode" required placeholder="e.g. 560001" className="input w-full" />
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+                Pincode
+              </label>
+              <ValidatedPincodeInput
+                name="pincode"
+                placeholder="e.g. 560001"
+                className="input w-full"
+                required
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Property Type</label>
@@ -94,6 +95,31 @@ export default function CustomerEstimatorClient() {
                 <option value="3BHK">3 BHK</option>
                 <option value="4BHK">4 BHK</option>
                 <option value="5BHK">5+ BHK</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Interior type</label>
+              <select name="interiorTier" className="input w-full" defaultValue="standard">
+                <option value="basic">Basic</option>
+                <option value="standard">Standard</option>
+                <option value="premium">Premium</option>
+                <option value="luxury">Luxury</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Material</label>
+              <select name="material" className="input w-full" defaultValue="laminate">
+                <option value="laminate">Laminate</option>
+                <option value="acrylic">Acrylic</option>
+                <option value="pu_finish">PU finish</option>
+                <option value="veneer">Veneer</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Possession</label>
+              <select name="possession" className="input w-full" defaultValue="ready">
+                <option value="ready">Ready</option>
+                <option value="under_construction">Under construction</option>
               </select>
             </div>
             <div>
@@ -115,6 +141,23 @@ export default function CustomerEstimatorClient() {
                 <option value="sqm">Sq.m</option>
               </select>
             </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">Areas</label>
+              <div className="grid grid-cols-2 gap-2 rounded-lg border border-[var(--border)] p-3">
+                {ESTIMATOR_AREA_OPTIONS.map((opt) => (
+                  <label key={opt.key} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="areas" value={opt.key} defaultChecked className="rounded" />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
+                Budget (optional)
+              </label>
+              <input name="budgetNote" className="input w-full" placeholder="e.g. ~15 lakhs" maxLength={500} />
+            </div>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button type="submit" disabled={loading} className="btn btn-primary w-full disabled:opacity-50">
@@ -127,55 +170,15 @@ export default function CustomerEstimatorClient() {
         <h2 className="heading-md mb-4">Output</h2>
         {result ? (
           <div className="space-y-6">
-            <div>
-              <p className="text-sm text-[var(--text-muted)] mb-1">Estimated range</p>
-              <p className="text-2xl font-bold text-[var(--brand)]">
-                ₹{result.min.toLocaleString()} – ₹{result.max.toLocaleString()}
-              </p>
-              <p className="text-xs text-[var(--text-muted)] mt-1">{result.currency}</p>
-            </div>
-            <div className="rounded-lg border border-[var(--border)] bg-white divide-y divide-[var(--border)]">
-              <div className="flex justify-between items-center py-3 px-4">
-                <span className="text-sm text-[var(--text-muted)]">Carpet Area</span>
-                <span className="text-sm font-medium text-[var(--foreground)]">{result.breakdown.squareFeet} sq.ft</span>
-              </div>
-              <div className="flex justify-between items-center py-3 px-4">
-                <span className="text-sm text-[var(--text-muted)]">Rate (₹/sq.ft)</span>
-                <span className="text-sm font-medium text-[var(--foreground)]">₹{result.breakdown.ratePerSqFt.toLocaleString()}</span>
-              </div>
-              {result.breakdown.propertyMultiplier != null && result.breakdown.propertyMultiplier !== 1 && (
-                <div className="flex justify-between items-center py-3 px-4">
-                  <span className="text-sm text-[var(--text-muted)]">Property multiplier</span>
-                  <span className="text-sm font-medium text-[var(--foreground)]">×{result.breakdown.propertyMultiplier}</span>
-                </div>
-              )}
-              {result.breakdown.roomModifier != null && result.breakdown.roomModifier !== 1 && (
-                <div className="flex justify-between items-center py-3 px-4">
-                  <span className="text-sm text-[var(--text-muted)]">Room modifier</span>
-                  <span className="text-sm font-medium text-[var(--foreground)]">×{result.breakdown.roomModifier}</span>
-                </div>
-              )}
-              {result.breakdown.adjusted != null && (
-                <div className="flex justify-between items-center py-3 px-4">
-                  <span className="text-sm text-[var(--text-muted)]">Adjusted base</span>
-                  <span className="text-sm font-medium text-[var(--foreground)]">₹{result.breakdown.adjusted.toLocaleString()}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center py-3 px-4">
-                <span className="text-sm text-[var(--text-muted)]">Range (90% – 110%)</span>
-                <span className="text-sm font-semibold text-[var(--brand)]">
-                  ₹{result.min.toLocaleString()} – ₹{result.max.toLocaleString()}
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-[var(--text-subtle)]">{result.disclaimer}</p>
+            <EstimatorResultSummary result={result} showSource />
             <Link href="/designers" className="btn btn-primary inline-flex">
               Browse designers
             </Link>
           </div>
         ) : (
           <p className="text-sm text-[var(--text-muted)]">
-            Enter your property details in the input panel and click <strong>Get detailed estimate</strong> to see the breakdown here.
+            Enter your property details in the input panel and click <strong>Get detailed estimate</strong> to see the
+            breakdown here.
           </p>
         )}
       </div>

@@ -205,6 +205,9 @@ create table payment_ledger (
   project_id uuid references projects(id) on delete set null,
   milestone_id uuid references milestones(id) on delete set null,
   platform_margin_amount int,
+  razorpay_order_id text,
+  razorpay_payment_id text,
+  razorpay_payout_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -323,4 +326,6 @@ create index twin_subscription_expires_idx on digital_twin_subscriptions(expires
 create index notification_user_idx on notifications(user_id);
 create index notification_type_idx on notifications(type);
 create index rates_city_idx on city_pincode_rates(city, pincode);
+create unique index city_pincode_rates_unique_override on city_pincode_rates (settings_id, (lower(trim(city))), pincode)
+  where not (city = 'DEFAULT' and pincode = '*');
 create index trusted_studios_sort_idx on trusted_studios(sort_order);

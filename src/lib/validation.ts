@@ -43,6 +43,18 @@ export function validatePhoneIndia(
   return { valid: true, sanitized: ten };
 }
 
+/**
+ * Indian pincode: exactly 6 digits (numeric only).
+ * Returns { valid: true, sanitized } or { valid: false }.
+ */
+export function validatePincodeIndia(
+  value: string
+): { valid: true; sanitized: string } | { valid: false } {
+  const trimmed = String(value ?? "").trim();
+  if (!/^\d{6}$/.test(trimmed)) return { valid: false };
+  return { valid: true, sanitized: trimmed };
+}
+
 /** @deprecated Use validateEmail for new code. */
 export function isValidEmail(value: string): boolean {
   return validateEmail(value).valid;

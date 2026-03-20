@@ -188,6 +188,59 @@ async function main() {
   await sql`CREATE INDEX IF NOT EXISTS milestone_trail_created_idx ON milestone_trail(created_at)`;
   console.log("Migration applied: milestone_trail table");
 
+  // Razorpay: payment_ledger columns for order/payment/payout ids
+  await sql`ALTER TABLE payment_ledger ADD COLUMN IF NOT EXISTS razorpay_order_id text`;
+  await sql`ALTER TABLE payment_ledger ADD COLUMN IF NOT EXISTS razorpay_payment_id text`;
+  await sql`ALTER TABLE payment_ledger ADD COLUMN IF NOT EXISTS razorpay_payout_id text`;
+  console.log("Migration applied: payment_ledger razorpay_order_id, razorpay_payment_id, razorpay_payout_id");
+
+  // Estimator leads: store full AI JSON payload
+  await sql`ALTER TABLE estimator_leads ADD COLUMN IF NOT EXISTS estimate_payload jsonb`;
+  console.log("Migration applied: estimator_leads.estimate_payload");
+
+  // Deduplicate city_pincode_rates (keep newest row per settings + normalized city + pincode; exclude DEFAULT/*)
+  await sql`
+    delete from city_pincode_rates
+    where id in (
+      select id from (
+        select id,
+          row_number() over (
+            partition by settings_id, lower(trim(city)), pincode
+            order by created_at desc, id desc
+          ) as rn
+        from city_pincode_rates
+        where not (city = 'DEFAULT' and pincode = '*')
+      ) t
+      where rn > 1
+    )
+  `;
+  console.log("Migration applied: city_pincode_rates dedupe");
+
+  await sql`
+    create unique index if not exists city_pincode_rates_unique_override
+    on city_pincode_rates (settings_id, (lower(trim(city))), pincode)
+    where not (city = 'DEFAULT' and pincode = '*')
+  `;
+  console.log("Migration applied: city_pincode_rates_unique_override partial unique index");
+
+  // Designer bank account for Razorpay payouts (one per designer)
+  await sql`
+    CREATE TABLE IF NOT EXISTS designer_bank_accounts (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      razorpay_contact_id text not null,
+      razorpay_fund_account_id text not null,
+      account_holder_name text not null,
+      ifsc text not null,
+      account_last4 text not null,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now(),
+      unique(user_id)
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS designer_bank_accounts_user_idx ON designer_bank_accounts(user_id)`;
+  console.log("Migration applied: designer_bank_accounts table");
+
   // Seed trusted_studios if empty
   const count = await sql`SELECT 1 FROM trusted_studios LIMIT 1`;
   if (count.length === 0) {

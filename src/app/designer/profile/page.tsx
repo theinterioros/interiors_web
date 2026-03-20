@@ -1,23 +1,27 @@
 import Link from "next/link";
-import { updateFirmProfileAction, createPortfolioProjectWithImagesAction } from "@/app/actions/designer";
+import { updateFirmProfileAction, createPortfolioProjectWithImagesAction, saveDesignerBankAccountAction } from "@/app/actions/designer";
 import PortfolioProjectCard from "@/components/designer/PortfolioProjectCard";
 import AddProjectModal from "@/components/designer/AddProjectModal";
+import BankAccountForm from "@/components/designer/BankAccountForm";
 import PageTabs from "@/components/ui/PageTabs";
-import { Building2, Calendar, IndianRupee } from "lucide-react";
+import { Building2, Calendar, IndianRupee, Landmark } from "lucide-react";
 import { requireFirmPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { FIRM_REGISTRATION_AMOUNT } from "@/lib/registrationPayments";
 
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams?: Promise<{ tab?: string; portfolioError?: string; portfolioSuccess?: string }> };
+type Props = { searchParams?: Promise<{ tab?: string; portfolioError?: string; portfolioSuccess?: string; bankError?: string; bankSuccess?: string }> };
 
 export default async function DesignerProfilePage({ searchParams }: Props) {
   const user = await requireFirmPaid();
   const params = await searchParams;
-  const tab = params?.tab === "portfolio" ? "portfolio" : "details";
+  const tabParam = params?.tab;
+  const tab = tabParam === "portfolio" ? "portfolio" : tabParam === "bank" ? "bank" : "details";
   const portfolioError = params?.portfolioError ? decodeURIComponent(params.portfolioError) : null;
   const portfolioSuccess = params?.portfolioSuccess ?? null;
+  const bankError = params?.bankError ? decodeURIComponent(params.bankError) : null;
+  const bankSuccess = params?.bankSuccess ?? null;
 
   const [profile] = await sql<{
     id: string;
@@ -51,6 +55,10 @@ export default async function DesignerProfilePage({ searchParams }: Props) {
   const subscriptionExpiresAt = profile?.subscription_expires_at ? new Date(profile.subscription_expires_at) : null;
   const isSubscriptionActive = subscriptionExpiresAt ? subscriptionExpiresAt > new Date() : true;
   const isExpiringSoon = subscriptionExpiresAt && subscriptionExpiresAt > new Date() && subscriptionExpiresAt.getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
+
+  const [bankAccount] = await sql<{ account_holder_name: string; ifsc: string; account_last4: string }>`
+    select account_holder_name, ifsc, account_last4 from designer_bank_accounts where user_id = ${user.id} limit 1
+  `;
 
   type PortfolioRow = { id: string; work_id: string | null; blob_url: string; file_name: string };
   let portfolio: PortfolioRow[] = [];
@@ -98,6 +106,7 @@ export default async function DesignerProfilePage({ searchParams }: Props) {
   const profileTabs = [
     { label: "Details", href: "/designer/profile", active: tab === "details" },
     { label: "Portfolio", href: "/designer/profile?tab=portfolio", active: tab === "portfolio", count: works.length },
+    { label: "Bank account", href: "/designer/profile?tab=bank", active: tab === "bank" },
   ];
 
   return (
@@ -183,7 +192,15 @@ export default async function DesignerProfilePage({ searchParams }: Props) {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-[var(--foreground)]">Pincode</label>
-              <input name="pincode" defaultValue={profile?.pincode ?? ""} required className="input" />
+              <input
+                name="pincode"
+                defaultValue={profile?.pincode ?? ""}
+                required
+                className="input"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                maxLength={6}
+              />
             </div>
           </div>
           <div className="space-y-2">
@@ -240,6 +257,38 @@ export default async function DesignerProfilePage({ searchParams }: Props) {
         </form>
       </div>
         </>
+      )}
+
+      {tab === "bank" && (
+      <div className="rounded-lg border border-[var(--border)] bg-white overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--border)]">
+          <h2 className="font-semibold text-[var(--foreground)] flex items-center gap-2">
+            <Landmark className="h-4 w-4 text-[var(--text-muted)]" />
+            Bank account (payout details)
+          </h2>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">
+            Add your bank account to receive milestone payments. Required before you can submit milestones for customer approval. Enter your account number twice to confirm.
+          </p>
+        </div>
+        <div className="p-5">
+          {bankError && (
+            <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-3 py-2 text-sm text-red-700 dark:text-red-300" role="alert">
+              {bankError}
+            </div>
+          )}
+          {bankSuccess === "1" && (
+            <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-3 py-2 text-sm text-green-700 dark:text-green-300" role="status">
+              Bank account saved. You can update it anytime below.
+            </div>
+          )}
+          {bankAccount ? (
+            <p className="text-sm text-[var(--text-muted)] mb-4">
+              Current account: <span className="font-medium text-[var(--foreground)]">{bankAccount.account_holder_name}</span>, ••••{bankAccount.account_last4}, IFSC {bankAccount.ifsc}. Update below if needed.
+            </p>
+          ) : null}
+          <BankAccountForm action={saveDesignerBankAccountAction} existingBank={bankAccount ?? null} />
+        </div>
+      </div>
       )}
 
       {tab === "portfolio" && (

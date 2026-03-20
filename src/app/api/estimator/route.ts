@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { estimateCost } from "@/lib/estimator";
 import { sql } from "@/lib/db";
 import { validateEmail, validatePhoneIndia, PHONE_ERROR, EMAIL_ERROR } from "@/lib/validation";
+import { parseEstimatorRequestBody, roomsFromBhk } from "@/lib/estimator-api-validate";
+import { estimateInteriorFormula, estimateInteriorWithOpenAI } from "@/lib/estimator-openai";
+import type { EstimatorApiData } from "@/lib/estimator-types";
+import { env } from "@/lib/env";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   let body: Record<string, unknown>;
@@ -10,17 +15,17 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
+
+  const parsed = parseEstimatorRequestBody(body);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+  const input = parsed.data;
+
   const name = String(body.name ?? "").trim();
   const emailRaw = String(body.email ?? "").trim();
   const phoneRaw = String(body.phone ?? "").trim();
   const requireContact = Boolean(body.requireContact !== false && (name || emailRaw || phoneRaw));
-  const city = String(body.city ?? "");
-  const pincode = String(body.pincode ?? "");
-  const area = Number(body.area ?? body.squareFeet ?? 0);
-  const areaUnit = String(body.areaUnit ?? "sqft").toLowerCase();
-  const normalizedUnit = areaUnit === "sqyd" ? "sqyd" : areaUnit === "sqm" ? "sqm" : "sqft";
-  const propertyType = body.propertyType === "villa" ? "villa" : "apartment";
-  const rooms = Number(body.rooms ?? 0);
 
   let email = "";
   let phone = "";
@@ -37,38 +42,98 @@ export async function POST(request: Request) {
     phone = phoneResult.sanitized;
   }
 
-  if (!city || !pincode) {
-    return NextResponse.json({ error: "Missing required fields (city, pincode)." }, { status: 400 });
-  }
-  if (typeof area !== "number" || Number.isNaN(area) || area <= 0) {
-    return NextResponse.json({ error: "Carpet area must be a positive number." }, { status: 400 });
-  }
+  let data: EstimatorApiData | null = null;
 
-  const result = await estimateCost({
-    city,
-    pincode,
-    area,
-    areaUnit: normalizedUnit,
-    propertyType,
-    rooms,
-  });
-
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 404 });
-  }
-
-  const squareFeetForLead = result.data.breakdown.squareFeet;
-
-  if (name && email && phone) {
+  if (env.openaiApiKey) {
     try {
-      await sql`
-        insert into estimator_leads (name, email, phone, city, pincode, square_feet, property_type, rooms, min_amount, max_amount)
-        values (${name}, ${email}, ${phone}, ${city}, ${pincode}, ${squareFeetForLead}, ${propertyType}, ${rooms}, ${result.data.min}, ${result.data.max})
-      `;
-    } catch {
-      // Don't fail the request if lead save fails
+      data = await estimateInteriorWithOpenAI(input);
+    } catch (e) {
+      console.error("OpenAI estimator error:", e);
     }
   }
 
-  return NextResponse.json(result.data);
+  if (!data) {
+    data = await estimateInteriorFormula(input);
+  }
+
+  if (!data) {
+    return NextResponse.json(
+      {
+        error:
+          "Unable to produce an estimate. Set a default rate in Admin → AI Estimator pricing, or configure OPENAI_API_KEY.",
+      },
+      { status: 503 }
+    );
+  }
+
+  const pincodeForDb = input.pincode.trim();
+  const rooms = roomsFromBhk(input.bhk);
+  const propertyLabel = `${input.bhk} · ${input.interiorTier} · ${input.material}`;
+
+  if (name && email && phone) {
+    const estimatePayloadJson = JSON.stringify({ input, result: data });
+    try {
+      await sql`
+        insert into estimator_leads (
+          name,
+          email,
+          phone,
+          city,
+          pincode,
+          square_feet,
+          property_type,
+          rooms,
+          min_amount,
+          max_amount,
+          estimate_payload
+        )
+        values (
+          ${name},
+          ${email},
+          ${phone},
+          ${input.city},
+          ${pincodeForDb},
+          ${data.flatSizeSqFt},
+          ${propertyLabel},
+          ${rooms},
+          ${data.min},
+          ${data.max},
+          ${estimatePayloadJson}::jsonb
+        )
+      `;
+    } catch (err) {
+      try {
+        await sql`
+          insert into estimator_leads (
+            name,
+            email,
+            phone,
+            city,
+            pincode,
+            square_feet,
+            property_type,
+            rooms,
+            min_amount,
+            max_amount
+          )
+          values (
+            ${name},
+            ${email},
+            ${phone},
+            ${input.city},
+            ${pincodeForDb},
+            ${data.flatSizeSqFt},
+            ${propertyLabel},
+            ${rooms},
+            ${data.min},
+            ${data.max}
+          )
+        `;
+      } catch {
+        // ignore lead save failure
+      }
+    }
+  }
+
+  return NextResponse.json(data);
 }

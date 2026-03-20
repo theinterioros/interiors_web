@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { createPortal } from "react-dom";
-import { Menu, X, LogIn, LogOut, Loader2, HelpCircle } from "lucide-react";
+import { Menu, X, LogOut, Loader2, HelpCircle } from "lucide-react";
 import { APP_NAV, type AppRole } from "@/lib/appNav";
 
 type SessionUser = {
@@ -137,14 +137,14 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
             </form>
           </>
         ) : (
-          <>
-            <Link href="/login?role=customer" className="btn btn-secondary text-sm font-medium px-4 py-2 rounded-lg border border-[var(--border-strong)] text-[var(--foreground)] hover:bg-[var(--surface-subtle)] transition-colors">
-              Customer Sign In
+          <div className="flex items-center gap-2">
+            <Link href="/login?role=customer" className="btn btn-secondary text-sm px-4 py-2">
+              Customer
             </Link>
-            <Link href="/login?role=designer" className="btn btn-primary text-sm font-medium px-4 py-2 rounded-lg">
-              Designer Sign In
+            <Link href="/login?role=designer" className="btn btn-primary text-sm px-4 py-2">
+              Designer
             </Link>
-          </>
+          </div>
         )}
       </div>
 
@@ -236,18 +236,16 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
                     <Link
                       href="/login?role=customer"
                       onClick={close}
-                      className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 border border-[var(--border-strong)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-subtle)] transition-colors"
+                      className="btn btn-secondary w-full justify-center rounded-xl py-3"
                     >
-                      <LogIn className="h-4 w-4 shrink-0" />
-                      Customer Sign In
+                      Customer
                     </Link>
                     <Link
                       href="/login?role=designer"
                       onClick={close}
-                      className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-[var(--brand)] text-white font-semibold hover:opacity-95 transition-opacity"
+                      className="btn btn-primary w-full justify-center rounded-xl py-3"
                     >
-                      <LogIn className="h-4 w-4 shrink-0" />
-                      Designer Sign In
+                      Designer
                     </Link>
                   </div>
                 )}

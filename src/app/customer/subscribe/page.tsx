@@ -5,6 +5,7 @@ import { hasCustomerPaidSubscription } from "@/lib/registrationPayments";
 import { redirect } from "next/navigation";
 import CustomerSubscribeForm from "./CustomerSubscribeForm";
 import { CUSTOMER_SUBSCRIPTION_AMOUNT } from "@/lib/registrationPayments";
+import { getAdminSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,9 @@ export default async function CustomerSubscribePage() {
   if (paid) {
     redirect("/customer/dashboard");
   }
+
+  const settings = await getAdminSettings();
+  const subAmount = settings.customerRegistrationFee ?? CUSTOMER_SUBSCRIPTION_AMOUNT;
 
   return (
     <div className="page">
@@ -37,10 +41,10 @@ export default async function CustomerSubscribePage() {
             </p>
             <div className="flex items-baseline gap-2 mb-6">
               <IndianRupee className="h-6 w-6 text-[var(--foreground)]" />
-              <span className="text-3xl font-bold text-[var(--foreground)]">{CUSTOMER_SUBSCRIPTION_AMOUNT.toLocaleString()}</span>
+              <span className="text-3xl font-bold text-[var(--foreground)]">{subAmount.toLocaleString()}</span>
               <span className="text-[var(--text-muted)]">one-time</span>
             </div>
-            <CustomerSubscribeForm amount={CUSTOMER_SUBSCRIPTION_AMOUNT} />
+            <CustomerSubscribeForm amount={subAmount} />
             <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
               <Link href="/login?role=customer" className="font-medium text-[var(--brand)] hover:underline">
                 Back to sign in

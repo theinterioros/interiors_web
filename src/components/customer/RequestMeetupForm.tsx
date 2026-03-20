@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { requestProjectAction, checkProjectLimitAction } from "@/app/actions/project";
 import { payAdditionalProjectFeeAction } from "@/app/actions/auth";
-import MockPaymentModal from "@/components/ui/MockPaymentModal";
+import PaymentCheckoutModal from "@/components/ui/PaymentCheckoutModal";
 type Props = {
   firmId: string;
   additionalProjectFeeAmount: number;
@@ -62,8 +62,7 @@ export default function RequestMeetupForm({ firmId, additionalProjectFeeAmount }
     setSubmitting(false);
   }
 
-  async function handlePayThenRequest() {
-    await payAdditionalProjectFeeAction();
+  async function afterAdditionalFeePaid() {
     await submitRequest(pendingTitle, pendingDescription);
     setModalOpen(false);
   }
@@ -91,13 +90,15 @@ export default function RequestMeetupForm({ firmId, additionalProjectFeeAmount }
           </button>
         </div>
       </form>
-      <MockPaymentModal
+      <PaymentCheckoutModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        amount={additionalProjectFeeAmount}
+        amountRupees={additionalProjectFeeAmount}
         title="New project fee"
         subtitle="Your subscription includes one project. Pay to start another."
-        onConfirm={handlePayThenRequest}
+        kind="ADDITIONAL_PROJECT"
+        mockPay={payAdditionalProjectFeeAction}
+        onPaid={afterAdditionalFeePaid}
       />
     </>
   );

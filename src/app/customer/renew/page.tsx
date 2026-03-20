@@ -58,7 +58,7 @@ export default async function CustomerRenewPage() {
               <span className="text-3xl font-bold text-[var(--foreground)]">₹{amount.toLocaleString()}</span>
               <span className="text-[var(--text-muted)]">/ year</span>
             </div>
-            <CustomerRenewForm />
+            <CustomerRenewForm amount={amount} />
             <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
               <Link href="/customer/digital-twin" className="font-medium text-[var(--brand)] hover:underline">
                 Back to Digital Twin

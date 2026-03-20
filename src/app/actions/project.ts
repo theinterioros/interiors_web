@@ -260,6 +260,11 @@ export async function submitMilestoneAction(formData: FormData) {
     throw new Error(`Maximum ${MILESTONE_MAX_IMAGES} images allowed. Remove extras before submitting.`);
   }
 
+  const [bankRow] = await sql<{ id: string }>`select id from designer_bank_accounts where user_id = ${user.id} limit 1`;
+  if (!bankRow?.id) {
+    throw new Error("Add your bank account in Profile → Bank account tab before submitting milestones for payment.");
+  }
+
   await sql`
     update milestones
     set status = ${MilestoneStatusValues.SUBMITTED},

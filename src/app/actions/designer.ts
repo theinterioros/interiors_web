@@ -7,6 +7,7 @@ import { RoleValues } from "@/lib/types";
 import { sql } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { uploadBlob } from "@/lib/blob";
+import { createContact, createFundAccount, isRazorpayConfigured } from "@/lib/razorpay";
 
 export async function updateFirmProfileAction(formData: FormData) {
   const user = await getCurrentUser();
@@ -33,6 +34,11 @@ export async function updateFirmProfileAction(formData: FormData) {
     throw new Error("All fields are required.");
   }
 
+  const pincodeDigits = pincode.trim();
+  if (!/^\d{6}$/.test(pincodeDigits)) {
+    throw new Error("Pincode must be exactly 6 digits.");
+  }
+
   const [existing] = await sql<{ id: string }>`
     select id from firm_profiles where user_id = ${user.id} limit 1
   `;
@@ -50,7 +56,7 @@ export async function updateFirmProfileAction(formData: FormData) {
           designers_count = ${designersCount},
           comments = ${comments || null},
           city = ${city},
-          pincode = ${pincode},
+          pincode = ${pincodeDigits},
           about = ${about},
           experience_years = ${experienceYears},
           google_review_links = ${googleReviewLinks},
@@ -92,7 +98,7 @@ export async function updateFirmProfileAction(formData: FormData) {
         ${comments || null},
         ${name},
         ${city},
-        ${pincode},
+        ${pincodeDigits},
         ${about},
         ${experienceYears},
         ${googleReviewLinks},
@@ -103,6 +109,82 @@ export async function updateFirmProfileAction(formData: FormData) {
   }
 
   return;
+}
+
+/** Check if designer has bank account (for milestone payouts). */
+export async function designerHasBankAccount(userId: string): Promise<boolean> {
+  const [row] = await sql<{ id: string }>`
+    select id from designer_bank_accounts where user_id = ${userId} limit 1
+  `;
+  return Boolean(row?.id);
+}
+
+function profileBankTab(params: string): string {
+  return `/designer/profile?tab=bank${params ? `&${params}` : ""}`;
+}
+
+/** Save or update designer bank account (RazorpayX contact + fund account). Required for receiving milestone payouts. */
+export async function saveDesignerBankAccountAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== RoleValues.FIRM) {
+    redirect(profileBankTab("bankError=" + encodeURIComponent("Unauthorized.")));
+  }
+  if (!isRazorpayConfigured()) {
+    redirect(profileBankTab("bankError=" + encodeURIComponent("Payments are not configured. Please try again later.")));
+  }
+
+  const accountHolderName = String(formData.get("accountHolderName") ?? "").trim();
+  const accountNumber = String(formData.get("accountNumber") ?? "").replace(/\s/g, "");
+  const confirmAccountNumber = String(formData.get("confirmAccountNumber") ?? "").replace(/\s/g, "");
+  const ifsc = String(formData.get("ifsc") ?? "").trim().toUpperCase();
+
+  if (!accountHolderName || accountHolderName.length < 3) {
+    redirect(profileBankTab("bankError=" + encodeURIComponent("Account holder name is required (min 3 characters).")));
+  }
+  if (!accountNumber || accountNumber.length < 9) {
+    redirect(profileBankTab("bankError=" + encodeURIComponent("Valid account number is required.")));
+  }
+  if (accountNumber !== confirmAccountNumber) {
+    redirect(profileBankTab("bankError=" + encodeURIComponent("Account number and confirm account number do not match. Please re-enter.")));
+  }
+  if (!ifsc || ifsc.length !== 11) {
+    redirect(profileBankTab("bankError=" + encodeURIComponent("IFSC code must be 11 characters.")));
+  }
+
+  const [userRow] = await sql<{ email: string; phone: string | null }>`
+    select email, phone from users where id = ${user.id} limit 1
+  `;
+  const email = userRow?.email ?? "";
+  const phone = (userRow?.phone ?? "").replace(/\D/g, "").slice(0, 10) || "0000000000";
+
+  try {
+    const contact = await createContact({
+      name: accountHolderName,
+      email: email || `designer-${user.id}@placeholder.in`,
+      contact: phone,
+      type: "vendor",
+      referenceId: user.id.slice(0, 40),
+    });
+    const fundAccount = await createFundAccount({
+      contactId: contact.id,
+      accountHolderName,
+      ifsc,
+      accountNumber,
+    });
+    const accountLast4 = accountNumber.slice(-4);
+
+    await sql`delete from designer_bank_accounts where user_id = ${user.id}`;
+    await sql`
+      insert into designer_bank_accounts (id, user_id, razorpay_contact_id, razorpay_fund_account_id, account_holder_name, ifsc, account_last4, updated_at)
+      values (${crypto.randomUUID()}, ${user.id}, ${contact.id}, ${fundAccount.id}, ${accountHolderName}, ${ifsc}, ${accountLast4}, now())
+    `;
+    revalidatePath("/designer/profile");
+    revalidatePath("/designer/projects");
+    redirect(profileBankTab("bankSuccess=1"));
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to save bank account.";
+    redirect(profileBankTab("bankError=" + encodeURIComponent(message)));
+  }
 }
 
 function isValidImageUrl(s: string): boolean {

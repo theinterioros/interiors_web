@@ -3,22 +3,12 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import CitySelect from "@/components/ui/CitySelect";
+import EstimatorResultSummary from "@/components/estimator/EstimatorResultSummary";
+import ValidatedPincodeInput from "@/components/ui/ValidatedPincodeInput";
 import { validateEmail, validatePhoneIndia, sanitizePhoneInputLive, PHONE_ERROR, EMAIL_ERROR } from "@/lib/validation";
-import { Zap, X, Upload, ChevronRight, ChevronLeft, MapPin, Home, User } from "lucide-react";
-
-type EstimateResult = {
-  min: number;
-  max: number;
-  currency: string;
-  breakdown: {
-    ratePerSqFt: number;
-    squareFeet: number;
-    propertyMultiplier?: number;
-    roomModifier?: number;
-    adjusted?: number;
-  };
-  disclaimer: string;
-};
+import { ESTIMATOR_AREA_OPTIONS } from "@/lib/estimator-types";
+import type { EstimatorApiData } from "@/lib/estimator-types";
+import { Zap, X, Upload, ChevronRight, ChevronLeft, MapPin, Home, User, Palette } from "lucide-react";
 
 type EstimatorFormProps = {
   variant?: "default" | "inline";
@@ -29,12 +19,13 @@ type EstimatorFormProps = {
 const STEPS = [
   { id: 1, title: "Property location", short: "Location", icon: MapPin },
   { id: 2, title: "Property details", short: "Property", icon: Home },
-  { id: 3, title: "Your contact", short: "Contact", icon: User },
+  { id: 3, title: "Scope & finishes", short: "Scope", icon: Palette },
+  { id: 4, title: "Your contact", short: "Contact", icon: User },
 ] as const;
 
 export default function EstimatorForm({ variant = "default", isLoggedInCustomer = false }: EstimatorFormProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [result, setResult] = useState<EstimateResult | null>(null);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [result, setResult] = useState<EstimatorApiData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -74,8 +65,8 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
     const form = formRef.current;
     if (step === 1) {
       const city = (form.querySelector('[name="city"]') as HTMLInputElement)?.value?.trim();
-      const pincode = (form.querySelector('[name="pincode"]') as HTMLInputElement)?.value?.trim();
-      return !!city && !!pincode;
+      const pincodeRaw = (form.querySelector('[name="pincode"]') as HTMLInputElement)?.value?.trim() ?? "";
+      return Boolean(city) && /^\d{6}$/.test(pincodeRaw);
     }
     if (step === 2) {
       const configuration = (form.querySelector('[name="configuration"]') as HTMLSelectElement)?.value;
@@ -85,20 +76,28 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
       const minArea = areaUnit === "sqyd" ? 12 : areaUnit === "sqm" ? 10 : 100;
       return !!configuration && !!carpetArea && !Number.isNaN(area) && area >= minArea;
     }
+    if (step === 3) {
+      const checked = form.querySelectorAll('input[name="areas"]:checked').length;
+      return checked > 0;
+    }
     return true;
   }
 
   function handleNext() {
     setError("");
     if (step === 1 && !canGoNext()) {
-      setError("Please select city and enter pincode.");
+      setError("Please select your city and enter a valid 6-digit pincode.");
       return;
     }
     if (step === 2 && !canGoNext()) {
       setError("Please select configuration and enter carpet area (min 100 sq.ft or equivalent).");
       return;
     }
-    setStep((s) => Math.min(3, s + 1) as 1 | 2 | 3);
+    if (step === 3 && !canGoNext()) {
+      setError("Select at least one area for interiors (e.g. kitchen, wardrobes).");
+      return;
+    }
+    setStep((s) => Math.min(4, s + 1) as 1 | 2 | 3 | 4);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -130,28 +129,28 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
     const areaUnit = String(formData.get("areaUnit") ?? "sqft");
     const configuration = String(formData.get("configuration") || "2BHK");
     const propertyTypeRaw = String(formData.get("propertyType") || "flat");
-    const propertyType = propertyTypeRaw === "villa" ? "villa" : "apartment"; // flat, independent → apartment
-    const rooms =
-      configuration === "1BHK"
-        ? 1
-        : configuration === "2BHK"
-          ? 2
-          : configuration === "3BHK"
-            ? 3
-            : configuration === "4BHK"
-              ? 4
-              : 5;
+    const propertyType = propertyTypeRaw === "villa" ? "villa" : "apartment";
+    const areas = formData.getAll("areas").map((v) => String(v));
+    const interiorTier = String(formData.get("interiorTier") ?? "standard");
+    const material = String(formData.get("material") ?? "laminate");
+    const possession = String(formData.get("possession") ?? "ready");
+    const budgetNoteRaw = String(formData.get("budgetNote") ?? "").trim();
 
     const payload = {
       name,
       email: emailResult.sanitized,
       phone: phoneResult.sanitized,
       city: formData.get("city"),
-      pincode: formData.get("pincode"),
+      pincode: formData.get("pincode") ?? "",
       area: Math.max(0, area),
       areaUnit: areaUnit === "sqyd" ? "sqyd" : areaUnit === "sqm" ? "sqm" : "sqft",
       propertyType,
-      rooms,
+      bhk: configuration,
+      interiorTier,
+      material,
+      possession,
+      areas,
+      ...(budgetNoteRaw ? { budgetNote: budgetNoteRaw } : {}),
     };
 
     try {
@@ -186,7 +185,9 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-semibold text-[var(--foreground)]">Get Cost Estimate</h2>
-                <p className="text-sm text-[var(--text-muted)] mt-0.5">Share your property details and contact to receive your estimate</p>
+                  <p className="text-sm text-[var(--text-muted)] mt-0.5">
+                    Tell us about your home — we use AI and local benchmarks for a clear estimate.
+                  </p>
               </div>
             </div>
 
@@ -195,7 +196,7 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
               <div className="relative h-2 w-full rounded-full bg-[var(--border)] overflow-hidden mb-3">
                 <div
                   className="absolute inset-y-0 left-0 rounded-full bg-[var(--brand)] transition-all duration-300 ease-out"
-                  style={{ width: `${(step / 3) * 100}%` }}
+                  style={{ width: `${(step / 4) * 100}%` }}
                 />
               </div>
               <div className="flex justify-between gap-2">
@@ -244,16 +245,24 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
               >
                 <div className="mb-4">
                   <h3 id="step-1-heading" className="text-base font-semibold text-[var(--foreground)] mb-0.5">Property location</h3>
-                  <p className="text-sm text-[var(--text-muted)]">Where is your property? We use this for location-based rates.</p>
+                  <p className="text-sm text-[var(--text-muted)]">City and pincode help tailor pricing.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2 space-y-1.5">
                     <label htmlFor="estimator-city" className="block text-sm font-medium text-[var(--foreground)]">City</label>
                     <CitySelect id="estimator-city" name="city" required placeholder="Select city" className="input w-full" />
                   </div>
-                  <div className="space-y-1.5">
-                    <label htmlFor="estimator-pincode" className="block text-sm font-medium text-[var(--foreground)]">Pincode</label>
-                    <input id="estimator-pincode" name="pincode" required placeholder="e.g. 500001" className="input w-full" />
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label htmlFor="estimator-pincode" className="block text-sm font-medium text-[var(--foreground)]">
+                      Pincode
+                    </label>
+                    <ValidatedPincodeInput
+                      id="estimator-pincode"
+                      name="pincode"
+                      placeholder="e.g. 500001"
+                      className="input w-full max-w-xs"
+                      required
+                    />
                   </div>
                 </div>
               </div>
@@ -267,7 +276,7 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
               >
                 <div className="mb-4">
                   <h3 id="step-2-heading" className="text-base font-semibold text-[var(--foreground)] mb-0.5">Property details</h3>
-                  <p className="text-sm text-[var(--text-muted)]">Type, size and optional floor plan help us refine your estimate.</p>
+                  <p className="text-sm text-[var(--text-muted)]">Size and layout help calibrate scope and cost.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5 min-w-0">
@@ -326,7 +335,7 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
                 </div>
               </div>
 
-              {/* Step 3: Contact (last) */}
+              {/* Step 3: Scope & finishes */}
               <div
                 className={step === 3 ? "block" : "hidden"}
                 role="tabpanel"
@@ -334,7 +343,83 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
                 aria-hidden={step !== 3}
               >
                 <div className="mb-4">
-                  <h3 id="step-3-heading" className="text-base font-semibold text-[var(--foreground)] mb-0.5">Your contact</h3>
+                  <h3 id="step-3-heading" className="text-base font-semibold text-[var(--foreground)] mb-0.5">
+                    Scope & finishes
+                  </h3>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    What you want done, material quality, and timeline drivers. Estimates use AI; data is processed securely.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label htmlFor="estimator-interiorTier" className="block text-sm font-medium text-[var(--foreground)]">
+                      Interior type
+                    </label>
+                    <select id="estimator-interiorTier" name="interiorTier" className="input w-full" required defaultValue="standard">
+                      <option value="basic">Basic</option>
+                      <option value="standard">Standard</option>
+                      <option value="premium">Premium</option>
+                      <option value="luxury">Luxury</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <span className="block text-sm font-medium text-[var(--foreground)]">Areas required</span>
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-subtle)]/40 p-3">
+                      {ESTIMATOR_AREA_OPTIONS.map((opt) => (
+                        <label
+                          key={opt.key}
+                          className="flex items-center gap-2 text-sm text-[var(--foreground)] cursor-pointer"
+                        >
+                          <input type="checkbox" name="areas" value={opt.key} defaultChecked className="rounded border-[var(--border)]" />
+                          {opt.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="estimator-material" className="block text-sm font-medium text-[var(--foreground)]">
+                      Material preference
+                    </label>
+                    <select id="estimator-material" name="material" className="input w-full" required defaultValue="laminate">
+                      <option value="laminate">Laminate</option>
+                      <option value="acrylic">Acrylic</option>
+                      <option value="pu_finish">PU finish</option>
+                      <option value="veneer">Veneer</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="estimator-possession" className="block text-sm font-medium text-[var(--foreground)]">
+                      Possession status
+                    </label>
+                    <select id="estimator-possession" name="possession" className="input w-full" required defaultValue="ready">
+                      <option value="ready">Ready</option>
+                      <option value="under_construction">Under construction</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label htmlFor="estimator-budgetNote" className="block text-sm font-medium text-[var(--foreground)]">
+                      Budget expectation <span className="text-[var(--text-muted)] font-normal">(optional)</span>
+                    </label>
+                    <input
+                      id="estimator-budgetNote"
+                      name="budgetNote"
+                      placeholder="e.g. around 15 lakhs"
+                      className="input w-full"
+                      maxLength={500}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 4: Contact */}
+              <div
+                className={step === 4 ? "block" : "hidden"}
+                role="tabpanel"
+                aria-labelledby="step-4-heading"
+                aria-hidden={step !== 4}
+              >
+                <div className="mb-4">
+                  <h3 id="step-4-heading" className="text-base font-semibold text-[var(--foreground)] mb-0.5">Your contact</h3>
                   <p className="text-sm text-[var(--text-muted)]">Share your contact to receive your estimate. Create a free account later for a detailed breakdown and to connect with verified designers.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -411,7 +496,7 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
                 {step > 1 ? (
                   <button
                     type="button"
-                    onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
+                    onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3 | 4)}
                     className="btn btn-ghost inline-flex items-center gap-2 text-sm font-medium py-2.5"
                   >
                     <ChevronLeft className="h-4 w-4 shrink-0" />
@@ -422,7 +507,7 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
                 )}
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                {step < 3 ? (
+                {step < 4 ? (
                   <button
                     type="button"
                     onClick={handleNext}
@@ -472,32 +557,8 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
             <h3 id="estimate-result-title" className="text-xl font-semibold text-[var(--foreground)] mb-2 pr-10">
               Your estimate
             </h3>
-            <p className="text-3xl font-bold text-[var(--brand)] mb-5">
-              ₹{result.min.toLocaleString()} – ₹{result.max.toLocaleString()}
-            </p>
-            <div className="bg-[var(--surface-subtle)] rounded-xl p-4 mb-5 text-sm">
-              <div className="flex justify-between mb-2">
-                <span className="text-[var(--text-muted)]">Square feet</span>
-                <span className="font-semibold text-[var(--foreground)]">{result.breakdown.squareFeet}</span>
-              </div>
-              {isLoggedInCustomer && result.breakdown.ratePerSqFt != null && (
-                <>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-[var(--text-muted)]">Rate (₹/sq ft)</span>
-                    <span className="font-semibold text-[var(--foreground)]">{result.breakdown.ratePerSqFt.toLocaleString()}</span>
-                  </div>
-                  {result.breakdown.adjusted != null && (
-                    <div className="flex justify-between mb-2">
-                      <span className="text-[var(--text-muted)]">Adjusted base</span>
-                      <span className="font-semibold text-[var(--foreground)]">₹{result.breakdown.adjusted.toLocaleString()}</span>
-                    </div>
-                  )}
-                </>
-              )}
-              <div className="flex justify-between pt-2 border-t border-[var(--border)]">
-                <span className="text-[var(--text-muted)]">Range</span>
-                <span className="font-semibold text-[var(--brand)]">₹{result.min.toLocaleString()} – ₹{result.max.toLocaleString()}</span>
-              </div>
+            <div className="mb-5">
+              <EstimatorResultSummary result={result} showSource={isLoggedInCustomer} />
             </div>
             {isLoggedInCustomer ? (
               <div className="flex flex-col gap-2">

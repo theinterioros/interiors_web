@@ -96,10 +96,10 @@ export default async function LoginPage({
               </p>
             </div>
 
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-subtle)] mb-4">
+            <p className="hidden lg:block text-[11px] font-semibold uppercase tracking-widest text-[var(--text-subtle)] mb-4">
               Account type
             </p>
-            <nav className="space-y-3">
+            <nav className="hidden lg:block space-y-3">
               {PERSONAS.map((p) => {
                 const isActive = p.role === role;
                 const PIcon = p.icon;
@@ -107,6 +107,7 @@ export default async function LoginPage({
                   <Link
                     key={p.role}
                     href={p.href}
+                    scroll={false}
                     className={`group flex items-start gap-4 rounded-2xl p-4 transition-all duration-200 ${
                       isActive
                         ? "bg-white shadow-sm ring-1 ring-[var(--brand)]/20 ring-inset border border-[var(--brand)]/30"

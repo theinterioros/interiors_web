@@ -2,21 +2,13 @@
 
 import { useState } from "react";
 import CitySelect from "@/components/ui/CitySelect";
-
-type EstimateResult = {
-  min: number;
-  max: number;
-  currency: string;
-  breakdown: {
-    ratePerSqFt: number;
-    squareFeet: number;
-    adjusted: number;
-  };
-  disclaimer: string;
-};
+import EstimatorResultSummary from "@/components/estimator/EstimatorResultSummary";
+import { ESTIMATOR_AREA_OPTIONS } from "@/lib/estimator-types";
+import type { EstimatorApiData } from "@/lib/estimator-types";
+import ValidatedPincodeInput from "@/components/ui/ValidatedPincodeInput";
 
 export default function DashboardEstimatePanel() {
-  const [result, setResult] = useState<EstimateResult | null>(null);
+  const [result, setResult] = useState<EstimatorApiData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,26 +21,24 @@ export default function DashboardEstimatePanel() {
     const formData = new FormData(event.currentTarget);
     const area = Number(formData.get("carpetArea"));
     const unit = String(formData.get("areaUnit") ?? "SFT");
-    const toSqft =
-      unit === "SQM" ? area * 10.7639 : unit === "SQYD" ? area * 9 : area;
+    const toSqft = unit === "SQM" ? area * 10.7639 : unit === "SQYD" ? area * 9 : area;
     const configuration = String(formData.get("configuration") ?? "2BHK");
-    const rooms =
-      configuration === "1BHK"
-        ? 1
-        : configuration === "2BHK"
-          ? 2
-          : configuration === "3BHK"
-            ? 3
-            : configuration === "4BHK"
-              ? 4
-              : 5;
+    const areas = formData.getAll("areas").map((v) => String(v));
 
     const payload = {
       city: formData.get("city"),
-      pincode: formData.get("pincode"),
+      pincode: formData.get("pincode") ?? "",
       squareFeet: Math.max(0, Math.round(toSqft)),
-      propertyType: formData.get("propertyType"),
-      rooms,
+      propertyType: formData.get("propertyType") === "villa" ? "villa" : "apartment",
+      bhk: configuration,
+      interiorTier: String(formData.get("interiorTier") ?? "standard"),
+      material: String(formData.get("material") ?? "laminate"),
+      possession: String(formData.get("possession") ?? "ready"),
+      areas,
+      requireContact: false,
+      ...(String(formData.get("budgetNote") ?? "").trim()
+        ? { budgetNote: String(formData.get("budgetNote")).trim() }
+        : {}),
     };
 
     try {
@@ -58,11 +48,11 @@ export default function DashboardEstimatePanel() {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as EstimatorApiData & { error?: string };
       if (!response.ok) {
         throw new Error(data.error || "Unable to estimate.");
       }
-      setResult(data);
+      setResult(data as EstimatorApiData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to estimate.");
     } finally {
@@ -72,7 +62,6 @@ export default function DashboardEstimatePanel() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-2 mb-12">
-      {/* Input Panel */}
       <div className="card">
         <p className="eyebrow mb-3">Input panel</p>
         <h2 className="heading-md mb-6">Property details</h2>
@@ -83,8 +72,15 @@ export default function DashboardEstimatePanel() {
               <CitySelect name="city" required placeholder="Search and select city" className="input" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">Pincode</label>
-              <input name="pincode" required placeholder="e.g. 560001" className="input" />
+              <label className="text-sm font-medium text-[var(--foreground)]">
+                Pincode
+              </label>
+              <ValidatedPincodeInput
+                name="pincode"
+                placeholder="e.g. 560001"
+                className="input"
+                required
+              />
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -104,6 +100,42 @@ export default function DashboardEstimatePanel() {
                 <option value="4BHK">4 BHK</option>
                 <option value="5BHK">5+ BHK</option>
               </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">Interior type</label>
+              <select name="interiorTier" className="input" defaultValue="standard">
+                <option value="basic">Basic</option>
+                <option value="standard">Standard</option>
+                <option value="premium">Premium</option>
+                <option value="luxury">Luxury</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">Material</label>
+              <select name="material" className="input" defaultValue="laminate">
+                <option value="laminate">Laminate</option>
+                <option value="acrylic">Acrylic</option>
+                <option value="pu_finish">PU finish</option>
+                <option value="veneer">Veneer</option>
+              </select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">Possession</label>
+              <select name="possession" className="input max-w-xs" defaultValue="ready">
+                <option value="ready">Ready</option>
+                <option value="under_construction">Under construction</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-medium text-[var(--foreground)]">Areas</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-lg border border-[var(--border)] p-3">
+              {ESTIMATOR_AREA_OPTIONS.map((opt) => (
+                <label key={opt.key} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="areas" value={opt.key} defaultChecked className="rounded" />
+                  {opt.label}
+                </label>
+              ))}
             </div>
           </div>
           <div className="space-y-2">
@@ -132,6 +164,10 @@ export default function DashboardEstimatePanel() {
               </div>
             </div>
           </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[var(--foreground)]">Budget (optional)</label>
+            <input name="budgetNote" className="input w-full" placeholder="e.g. ~15 lakhs" maxLength={500} />
+          </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button type="submit" disabled={loading} className="btn btn-primary w-full disabled:opacity-50">
             {loading ? "Estimating…" : "Get estimate"}
@@ -139,31 +175,21 @@ export default function DashboardEstimatePanel() {
         </form>
       </div>
 
-      {/* Output Panel — only show breakup after estimate */}
       <div className="card-subtle">
         <p className="eyebrow mb-3">Output panel</p>
         <h2 className="heading-md mb-6">Estimated cost breakup</h2>
         {result ? (
           <>
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center justify-between py-2 border-b border-[var(--border)]">
-                <span className="text-sm text-[var(--text-muted)]">Square feet</span>
-                <span className="text-sm font-semibold text-[var(--foreground)]">{result.breakdown.squareFeet}</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-[var(--text-muted)]">Estimated range</span>
-                <span className="text-sm font-semibold text-[var(--brand)]">
-                  ₹{result.min.toLocaleString()} – ₹{result.max.toLocaleString()}
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-[var(--text-subtle)]">
-              Our AI analyses your property details and location to provide this estimated range. Final costs depend on scope and materials.
+            <EstimatorResultSummary result={result} showSource />
+            <p className="text-xs text-[var(--text-subtle)] mt-4">
+              Our AI analyses your property details and scope to provide this estimate. Final costs depend on site
+              conditions and materials.
             </p>
           </>
         ) : (
           <p className="text-sm text-[var(--text-muted)]">
-            Enter your property details in the input panel and click <strong>Get estimate</strong> to see your cost breakup.
+            Enter your property details in the input panel and click <strong>Get estimate</strong> to see your cost
+            breakup.
           </p>
         )}
       </div>

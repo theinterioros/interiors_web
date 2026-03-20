@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { sql } from "@/lib/db";
 import { FIRM_REGISTRATION_AMOUNT } from "@/lib/registrationPayments";
+import { getAdminSettings } from "@/lib/settings";
 import FirmRenewForm from "./FirmRenewForm";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,9 @@ export default async function DesignerRenewPage() {
   const expiresAt = profile?.subscription_expires_at ? new Date(profile.subscription_expires_at) : null;
   const isActive = expiresAt ? expiresAt > new Date() : false;
   const neverPaid = !expiresAt;
+
+  const settings = await getAdminSettings();
+  const yearlyAmount = settings.designerYearlyFee ?? FIRM_REGISTRATION_AMOUNT;
 
   return (
     <div className="page">
@@ -52,10 +56,10 @@ export default async function DesignerRenewPage() {
             )}
             <div className="flex items-baseline gap-2 mb-6">
               <IndianRupee className="h-6 w-6 text-[var(--foreground)]" />
-              <span className="text-3xl font-bold text-[var(--foreground)]">{FIRM_REGISTRATION_AMOUNT.toLocaleString()}</span>
+              <span className="text-3xl font-bold text-[var(--foreground)]">{yearlyAmount.toLocaleString()}</span>
               <span className="text-[var(--text-muted)]">/ year</span>
             </div>
-            <FirmRenewForm />
+            <FirmRenewForm amount={yearlyAmount} />
             <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
               <Link href="/designer/profile" className="font-medium text-[var(--brand)] hover:underline">
                 Back to profile

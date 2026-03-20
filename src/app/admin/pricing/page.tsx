@@ -74,7 +74,8 @@ export default async function AdminPricingPage() {
         <div className="card p-6">
           <h2 className="heading-md mb-4">Pincode-specific rates</h2>
           <p className="text-sm text-[var(--text-muted)] mb-4">
-            Override the default for specific city + pincode. ₹/sq ft required; sq yd and sq m optional.
+            Override the default for specific city + pincode. ₹/sq ft required; sq yd and sq m optional. Adding the same
+            city + pincode again updates the existing row (no duplicates).
           </p>
           <form action={addRateAction} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] sm:items-end">
             <div className="space-y-2">
@@ -83,7 +84,15 @@ export default async function AdminPricingPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-[var(--foreground)]">Pincode</label>
-              <input name="pincode" required className="input" placeholder="e.g. 560001" />
+              <input
+                name="pincode"
+                required
+                className="input"
+                placeholder="e.g. 560001"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                maxLength={6}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-[var(--foreground)]">₹/sq ft</label>

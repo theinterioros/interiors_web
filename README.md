@@ -23,6 +23,8 @@ Open `http://localhost:3000`.
 
 Create `.env`:
 
+See [`.env.example`](./.env.example) for all optional keys. Minimum:
+
 ```
 DATABASE_URL="postgresql://..."
 ADMIN_SEED_EMAIL="admin@interioros.com"
@@ -31,6 +33,10 @@ ADMIN_SEED_NAME="Interior OS Admin"
 APP_URL="http://localhost:3000"
 BLOB_READ_WRITE_TOKEN="vercel_blob_token"
 ```
+
+**OpenAI (AI cost estimator):** set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`). If unset, estimates use the formula + admin pincode rates.
+
+**Razorpay:** set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` for real Checkout. If unset, pay flows use a short **mock** confirmation. For **webhooks**, add `RAZORPAY_WEBHOOK_SECRET` and point Razorpay to `https://<your-domain>/api/webhooks/razorpay` (events: `payment.captured`). For **designer payouts** when an admin releases escrow, enable RazorpayX and set `RAZORPAY_X_ACCOUNT_NUMBER` (from RazorpayX → Banking).
 
 ## Database
 
@@ -84,5 +90,6 @@ Configure the following in the admin dashboard:
 
 ## Notes
 
-- Payments are mocked using an internal ledger. No payment providers are integrated.
-- AI/AR functionality is represented as "Coming Soon" placeholders with TODO hooks.
+- **Payments:** `payment_ledger` tracks all charges. With Razorpay keys, Checkout creates orders and verifies signatures; without keys, the UI uses a mock pay step that still writes to the ledger (dev-friendly).
+- **AI estimator:** Uses OpenAI when `OPENAI_API_KEY` is set; otherwise falls back to deterministic pricing from Admin → AI Estimator pricing.
+- AI/AR room visualisation remains “Coming Soon” where marked in the product.
