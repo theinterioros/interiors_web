@@ -56,7 +56,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       ) as project_count,
       (
         case when u.role = 'CUSTOMER' then
-          exists (select 1 from payment_ledger pl where pl.customer_id = u.id and pl.type = 'CUSTOMER_REGISTRATION_FEE' and pl.status = 'RELEASED')
+          true
         when u.role = 'FIRM' then
           exists (select 1 from payment_ledger pl where pl.firm_id = u.id and pl.type = 'FIRM_REGISTRATION_FEE' and pl.status = 'RELEASED')
         else null end

@@ -1,8 +1,17 @@
 /**
  * System prompt for OpenAI interior cost estimator (InteriorOS).
- * Includes product rules + strict JSON output for parsing.
+ *
+ * This module keeps a safe fallback prompt string (to prevent breaking changes),
+ * but will prefer the editable prompt at `docs/AI_COST_ESTIMATOR_PROMPT.md` when present.
+ *
+ * IMPORTANT: The OpenAI output JSON contract (keys + types) MUST remain identical
+ * to what `parseOpenAiEstimateJson()` expects.
  */
-export const ESTIMATOR_AI_SYSTEM_PROMPT = `You are an AI Interior Cost Estimator for InteriorOS, a platform that helps homeowners estimate the cost of interior design for their flats.
+
+import fs from "node:fs";
+import path from "node:path";
+
+const FALLBACK_PROMPT = `You are an AI Interior Cost Estimator for InteriorOS, a platform that helps homeowners estimate the cost of interior design for their flats.
 
 Your job is to estimate the approximate cost of interior work based on the user's inputs (provided as JSON in the user message).
 
@@ -48,3 +57,16 @@ Rules for breakdown:
 - All amounts are INR whole rupees (no paise).
 
 Tone for disclaimer: similar to "This is an approximate estimate based on average market pricing. Final cost may vary depending on site conditions, design complexity, materials, and labor."`;
+
+function loadPromptFromDocs(): string | null {
+  const promptPath = path.join(process.cwd(), "docs", "AI_COST_ESTIMATOR_PROMPT.md");
+  try {
+    const txt = fs.readFileSync(promptPath, "utf8");
+    const trimmed = String(txt ?? "").trim();
+    return trimmed.length ? trimmed : null;
+  } catch {
+    return null;
+  }
+}
+
+export const ESTIMATOR_AI_SYSTEM_PROMPT = loadPromptFromDocs() ?? FALLBACK_PROMPT;

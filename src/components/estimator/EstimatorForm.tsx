@@ -166,6 +166,33 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
       }
       setResult(data);
       setShowModal(true);
+
+      // Used to prefill the detailed estimator after sign-in.
+      // Only stores the input fields needed by /api/estimator (no contact details).
+      if (typeof window !== "undefined") {
+        try {
+          const prefill = {
+            payload: {
+              city: String(payload.city ?? "").trim(),
+              pincode: String(payload.pincode ?? "").trim(),
+              area: payload.area,
+              areaUnit: payload.areaUnit,
+              propertyType: payload.propertyType,
+              bhk: payload.bhk,
+              interiorTier: payload.interiorTier,
+              material: payload.material,
+              possession: payload.possession,
+              areas: payload.areas,
+              ...(payload.budgetNote ? { budgetNote: payload.budgetNote } : {}),
+            },
+            result: data as EstimatorApiData,
+            version: 1,
+          };
+          localStorage.setItem("io_estimator_landing_prefill_v1", JSON.stringify(prefill));
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to estimate.");
     } finally {
@@ -558,7 +585,11 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
               Your estimate
             </h3>
             <div className="mb-5">
-              <EstimatorResultSummary result={result} showSource={isLoggedInCustomer} />
+              <EstimatorResultSummary
+                result={result}
+                showSource={isLoggedInCustomer}
+                variant={isLoggedInCustomer ? "breakdownOnly" : "rangeOnly"}
+              />
             </div>
             {isLoggedInCustomer ? (
               <div className="flex flex-col gap-2">
@@ -577,10 +608,10 @@ export default function EstimatorForm({ variant = "default", isLoggedInCustomer 
               </div>
             ) : (
               <a
-                href="/login?role=customer"
+                href="/login?role=customer&redirect=/customer/estimator"
                 className="block w-full py-3 rounded-xl border-2 border-[var(--brand)] text-[var(--brand)] font-semibold text-center hover:bg-[var(--brand-light)] transition-colors"
               >
-                Sign up for more details
+                Sign in to view detailed cost breakdown
               </a>
             )}
           </div>

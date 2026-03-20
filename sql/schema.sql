@@ -105,6 +105,18 @@ create table firm_profiles (
   updated_at timestamptz not null default now()
 );
 
+create table designer_bank_accounts (
+  id uuid primary key,
+  user_id uuid unique not null references users(id) on delete cascade,
+  razorpay_contact_id text not null,
+  razorpay_fund_account_id text not null,
+  account_holder_name text not null,
+  ifsc text not null,
+  account_last4 text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table firm_documents (
   id uuid primary key,
   profile_id uuid not null references firm_profiles(id) on delete cascade,

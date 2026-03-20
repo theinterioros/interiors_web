@@ -18,6 +18,12 @@ type LedgerRow = {
   razorpay_payment_id: string | null;
 };
 
+// Razorpay's webhook URL verification sometimes performs a reachability check that may not be a POST.
+// We keep GET lightweight and return 200 so crawlers/verifiers can access the endpoint.
+export async function GET() {
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(request: Request) {
   const raw = await request.text();
   const signature = request.headers.get("x-razorpay-signature") ?? "";

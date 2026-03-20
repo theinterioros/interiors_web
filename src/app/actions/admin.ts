@@ -510,13 +510,17 @@ export async function releasePaymentAction(formData: FormData) {
   const designerAmount = payment.amount - (platformMarginAmount ?? 0);
 
   let payoutId: string | null = null;
-  if (
-    payment.type === PaymentTypeValues.MILESTONE &&
-    payment.firm_id &&
-    designerAmount > 0 &&
-    isRazorpayConfigured() &&
-    Boolean(env.razorpayXAccountNumber)
-  ) {
+  const shouldPayout =
+    payment.type === PaymentTypeValues.MILESTONE && payment.firm_id && designerAmount > 0;
+
+  if (shouldPayout) {
+    if (!isRazorpayConfigured()) {
+      throw new Error("Razorpay is not configured. Cannot release milestone payout.");
+    }
+    if (!env.razorpayXAccountNumber) {
+      throw new Error("RAZORPAY_X_ACCOUNT_NUMBER is required for payouts (RazorpayX).");
+    }
+
     const [bank] = await sql<{ razorpay_fund_account_id: string }>`
       select razorpay_fund_account_id from designer_bank_accounts where user_id = ${payment.firm_id} limit 1
     `;
@@ -525,6 +529,7 @@ export async function releasePaymentAction(formData: FormData) {
         "Designer has no bank account on file. They must add payout details in Profile before you can release."
       );
     }
+
     const payout = await createPayout({
       fundAccountId: bank.razorpay_fund_account_id,
       amountRupees: designerAmount,

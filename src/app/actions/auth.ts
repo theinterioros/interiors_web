@@ -260,13 +260,6 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
       redirect("/designer/register/pay");
     }
   }
-  if (user.role === RoleValues.CUSTOMER) {
-    const { hasCustomerPaidSubscription } = await import("@/lib/registrationPayments");
-    const paid = await hasCustomerPaidSubscription(user.id);
-    if (!paid) {
-      redirect("/customer/subscribe");
-    }
-  }
   const redirectUrlRaw = String(formData.get("redirect") ?? "").trim();
   const safeRedirect =
     redirectUrlRaw.startsWith("/") && !redirectUrlRaw.startsWith("//") ? redirectUrlRaw : null;
@@ -348,20 +341,8 @@ export async function payCustomerSubscriptionAction(): Promise<PayCustomerSubscr
   if (!user || user.role !== RoleValues.CUSTOMER) {
     return { error: "Unauthorized." };
   }
-  const { hasCustomerPaidSubscription, CUSTOMER_SUBSCRIPTION_AMOUNT } = await import("@/lib/registrationPayments");
-  const paid = await hasCustomerPaidSubscription(user.id);
-  if (paid) {
-    return { redirect: "/customer/dashboard" };
-  }
-  const id = crypto.randomUUID();
-  await sql`
-    insert into payment_ledger (id, type, status, amount, currency, customer_id)
-    values (${id}, 'CUSTOMER_REGISTRATION_FEE', 'RELEASED', ${CUSTOMER_SUBSCRIPTION_AMOUNT}, 'INR', ${user.id})
-  `;
-  revalidatePath("/admin");
-  revalidatePath("/admin/payments");
-  revalidatePath("/customer/dashboard");
-  revalidatePath("/customer/payments");
+  // Customer registration/subscription is now free.
+  // Keep this action to avoid breaking old UI flows; just redirect.
   return { redirect: "/customer/dashboard" };
 }
 
@@ -410,6 +391,9 @@ export async function verifyOtpAction(_prevState: unknown, formData: FormData) {
   const code = String(formData.get("code") ?? "").trim();
   const intendedRoleRaw = String(formData.get("intendedRole") ?? "").trim().toLowerCase();
   const intendedRole = INTENDED_ROLE_TO_DB[intendedRoleRaw] ?? null;
+  const redirectUrlRaw = String(formData.get("redirect") ?? "").trim();
+  const safeRedirect =
+    redirectUrlRaw.startsWith("/") && !redirectUrlRaw.startsWith("//") ? redirectUrlRaw : null;
 
   if (!email || !code) {
     return { ok: false, error: "Email and code are required." };
@@ -454,13 +438,7 @@ export async function verifyOtpAction(_prevState: unknown, formData: FormData) {
       redirect("/designer/register/pay");
     }
   }
-  if (user.role === RoleValues.CUSTOMER) {
-    const { hasCustomerPaidSubscription } = await import("@/lib/registrationPayments");
-    const paid = await hasCustomerPaidSubscription(user.id);
-    if (!paid) {
-      redirect("/customer/subscribe");
-    }
-  }
+  if (safeRedirect) redirect(safeRedirect);
   return redirectByRole(user.role);
 }
 

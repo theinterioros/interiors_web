@@ -6,7 +6,14 @@ import { estimateCost } from "@/lib/estimator";
 import { roomsFromBhk } from "@/lib/estimator-api-validate";
 
 function num(v: unknown, fallback = 0): number {
-  const n = typeof v === "number" ? v : Number(v);
+  if (typeof v === "number") return Number.isFinite(v) ? Math.round(v) : fallback;
+  if (typeof v === "string") {
+    // Accept values like "1,23,456", "₹123456", "123456.00" etc.
+    const cleaned = v.replace(/,/g, "").replace(/[^\d.-]/g, "");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? Math.round(n) : fallback;
+  }
+  const n = Number(v);
   return Number.isFinite(n) ? Math.round(n) : fallback;
 }
 
@@ -30,17 +37,17 @@ export function parseOpenAiEstimateJson(
   const o = parsed as Record<string, unknown>;
   const b = o.breakdown && typeof o.breakdown === "object" ? (o.breakdown as Record<string, unknown>) : {};
 
-  const minTotal = num(o.minTotal);
-  const maxTotal = num(o.maxTotal);
+  const minTotal = num(o.minTotal ?? o.min_total ?? o.minCost ?? o.min_cost);
+  const maxTotal = num(o.maxTotal ?? o.max_total ?? o.maxCost ?? o.max_cost);
   if (minTotal <= 0 || maxTotal <= 0 || minTotal > maxTotal) return null;
 
   const breakdown = {
     kitchen: num(b.kitchen),
     wardrobes: num(b.wardrobes),
-    tvUnit: num(b.tvUnit ?? b.tv_unit),
-    falseCeiling: num(b.falseCeiling ?? b.false_ceiling),
-    lighting: num(b.lighting),
-    others: num(b.others),
+    tvUnit: num(b.tvUnit ?? b.tv_unit ?? b.tvunit ?? b.tv_unit_price),
+    falseCeiling: num(b.falseCeiling ?? b.false_ceiling ?? b.falseceiling ?? b.false_ceiling_cost),
+    lighting: num(b.lighting ?? b.lights),
+    others: num(b.others ?? b.other ?? b.misc),
   };
 
   const disclaimer =
@@ -92,8 +99,24 @@ export async function estimateInteriorWithOpenAI(
   });
 
   const raw = completion.choices[0]?.message?.content;
-  if (!raw) return null;
-  return parseOpenAiEstimateJson(raw, input);
+  if (!raw) {
+    console.error("OpenAI estimator returned empty content.");
+    return null;
+  }
+  const parsed = parseOpenAiEstimateJson(raw, input);
+  if (!parsed) {
+    // Helpful diagnostics: OpenAI might return valid JSON but not in the exact schema we expect.
+    // This is logged only on parse failure; it does not change the API response shape.
+    try {
+      const o = JSON.parse(raw) as Record<string, unknown>;
+      const topKeys = Object.keys(o ?? {});
+      console.error("OpenAI estimator parse failure. Top keys:", topKeys);
+    } catch {
+      // ignore
+    }
+    console.error("OpenAI estimator parse failure. Raw (truncated):", raw.slice(0, 500));
+  }
+  return parsed;
 }
 
 /** Deterministic fallback using DB rates + formula from estimator.ts */

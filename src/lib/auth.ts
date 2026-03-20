@@ -41,14 +41,9 @@ export async function requireFirmPaid() {
   redirect("/designer/renew");
 }
 
-/** Use in customer portal pages that require subscription. Redirects to subscribe page if not paid. */
+/** Use in customer portal pages that require login. Registration is free now. */
 export async function requireCustomerPaid() {
   const user = await requireRole(["CUSTOMER"]);
-  const { hasCustomerPaidSubscription } = await import("@/lib/registrationPayments");
-  const paid = await hasCustomerPaidSubscription(user.id);
-  if (!paid) {
-    redirect("/customer/subscribe");
-  }
   return user;
 }
 

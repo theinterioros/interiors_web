@@ -29,27 +29,15 @@ export async function hasFirmPaidRegistration(firmUserId: string): Promise<boole
   return !!row;
 }
 
-/** True if this customer user has a RELEASED payment of type CUSTOMER_REGISTRATION_FEE */
-export async function hasCustomerPaidSubscription(customerUserId: string): Promise<boolean> {
-  const [row] = await sql<{ id: string }>`
-    select id from payment_ledger
-    where customer_id = ${customerUserId}
-      and type = 'CUSTOMER_REGISTRATION_FEE'
-      and status = 'RELEASED'
-    limit 1
-  `;
-  return !!row;
+/** Customers have full platform access now (no registration fee required). */
+export async function hasCustomerPaidSubscription(_customerUserId: string): Promise<boolean> {
+  return true;
 }
 
-/** Number of project slots paid for: 1 per CUSTOMER_REGISTRATION_FEE + 1 per ADDITIONAL_PROJECT_FEE (RELEASED). */
-export async function getCustomerProjectSlotsPaid(customerUserId: string): Promise<number> {
-  const rows = await sql<{ count: string }>`
-    select count(*)::text as count from payment_ledger
-    where customer_id = ${customerUserId}
-      and type in ('CUSTOMER_REGISTRATION_FEE', 'ADDITIONAL_PROJECT_FEE')
-      and status = 'RELEASED'
-  `;
-  return parseInt(rows[0]?.count ?? "0", 10);
+/** Project slot gating is removed; return a large number so customers can create projects freely. */
+export async function getCustomerProjectSlotsPaid(_customerUserId: string): Promise<number> {
+  // Keep the parameter so call sites don't change.
+  return 999999;
 }
 
 export const ADDITIONAL_PROJECT_FEE_AMOUNT = 1000;

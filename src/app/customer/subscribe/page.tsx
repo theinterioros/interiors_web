@@ -1,11 +1,8 @@
 import Link from "next/link";
-import { User, IndianRupee } from "lucide-react";
+import { User } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
-import { hasCustomerPaidSubscription } from "@/lib/registrationPayments";
 import { redirect } from "next/navigation";
 import CustomerSubscribeForm from "./CustomerSubscribeForm";
-import { CUSTOMER_SUBSCRIPTION_AMOUNT } from "@/lib/registrationPayments";
-import { getAdminSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -14,14 +11,8 @@ export default async function CustomerSubscribePage() {
   if (!user || user.role !== "CUSTOMER") {
     redirect("/login?role=customer");
   }
-  const paid = await hasCustomerPaidSubscription(user.id);
-  if (paid) {
-    redirect("/customer/dashboard");
-  }
-
-  const settings = await getAdminSettings();
-  const subAmount = settings.customerRegistrationFee ?? CUSTOMER_SUBSCRIPTION_AMOUNT;
-
+  // Customer registration/subscription is free now.
+  // Keep this page as a safe redirect target for any legacy links.
   return (
     <div className="page">
       <div className="page-inner">
@@ -32,22 +23,17 @@ export default async function CustomerSubscribePage() {
                 <User className="h-6 w-6" />
               </div>
               <div>
-                <p className="eyebrow">Customer subscription</p>
-                <h1 className="heading-md">Unlock your dashboard</h1>
+                <p className="eyebrow">Customer registration</p>
+                <h1 className="heading-md">Unlocked</h1>
               </div>
             </div>
             <p className="text-sm text-[var(--text-muted)] mb-6">
-              Pay the one-time subscription fee to access the AI estimator, browse verified firms, start projects, and manage your digital twin.
+              Registration is free. You already have full access to the platform.
             </p>
-            <div className="flex items-baseline gap-2 mb-6">
-              <IndianRupee className="h-6 w-6 text-[var(--foreground)]" />
-              <span className="text-3xl font-bold text-[var(--foreground)]">{subAmount.toLocaleString()}</span>
-              <span className="text-[var(--text-muted)]">one-time</span>
-            </div>
-            <CustomerSubscribeForm amount={subAmount} />
+            <CustomerSubscribeForm amount={0} />
             <p className="mt-6 text-center text-sm text-[var(--text-muted)]">
-              <Link href="/login?role=customer" className="font-medium text-[var(--brand)] hover:underline">
-                Back to sign in
+              <Link href="/customer/dashboard" className="font-medium text-[var(--brand)] hover:underline">
+                Go to dashboard
               </Link>
             </p>
           </div>

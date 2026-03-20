@@ -7,7 +7,6 @@ import { env } from "@/lib/env";
 import { getAdminSettings } from "@/lib/settings";
 import {
   ADDITIONAL_PROJECT_FEE_AMOUNT,
-  CUSTOMER_SUBSCRIPTION_AMOUNT,
   FIRM_REGISTRATION_AMOUNT,
 } from "@/lib/registrationPayments";
 import {
@@ -28,10 +27,6 @@ type Kind =
   | "MILESTONE";
 
 export async function POST(request: Request) {
-  if (!isRazorpayConfigured()) {
-    return NextResponse.json({ error: "Razorpay is not configured." }, { status: 503 });
-  }
-
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -49,9 +44,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "kind is required." }, { status: 400 });
   }
 
+  // Customer registration is free now; do not create a Razorpay order/ledger entry.
+  if (kind === "CUSTOMER_REGISTRATION") {
+    return NextResponse.json(
+      { error: "Customer registration is free now. No payment required." },
+      { status: 400 }
+    );
+  }
+
+  if (!isRazorpayConfigured()) {
+    return NextResponse.json({ error: "Razorpay is not configured." }, { status: 503 });
+  }
+
   const ledgerId = crypto.randomUUID();
   let amountRupees = 0;
-  let type: string = PaymentTypeValues.CUSTOMER_REGISTRATION_FEE;
+  let type: string = "";
   let customerId: string | null = null;
   let firmId: string | null = null;
   let projectId: string | null = null;
@@ -60,14 +67,7 @@ export async function POST(request: Request) {
   const settings = await getAdminSettings();
 
   try {
-    if (kind === "CUSTOMER_REGISTRATION") {
-      if (user.role !== RoleValues.CUSTOMER) {
-        return NextResponse.json({ error: "Invalid role." }, { status: 403 });
-      }
-      amountRupees = settings.customerRegistrationFee ?? CUSTOMER_SUBSCRIPTION_AMOUNT;
-      type = PaymentTypeValues.CUSTOMER_REGISTRATION_FEE;
-      customerId = user.id;
-    } else if (kind === "FIRM_REGISTRATION" || kind === "FIRM_RENEW") {
+    if (kind === "FIRM_REGISTRATION" || kind === "FIRM_RENEW") {
       if (user.role !== RoleValues.FIRM) {
         return NextResponse.json({ error: "Invalid role." }, { status: 403 });
       }

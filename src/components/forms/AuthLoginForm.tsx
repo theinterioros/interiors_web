@@ -95,6 +95,7 @@ export default function AuthLoginForm({
           {!otpRequested ? (
             <form action={otpAction} className="space-y-3">
               <input type="hidden" name="intendedRole" value={role} />
+              {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
                 <ValidatedEmailInput name="email" placeholder="Email" className="input w-full" />
@@ -105,6 +106,7 @@ export default function AuthLoginForm({
           ) : (
             <form action={verifyAction} className="space-y-3">
               <input type="hidden" name="intendedRole" value={role} />
+              {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
                 <ValidatedEmailInput name="email" placeholder="Email" className="input w-full" />
