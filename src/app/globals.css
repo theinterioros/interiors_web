@@ -408,6 +408,136 @@ a {
     linear-gradient(180deg, var(--g-1) 0%, var(--g-2) 20%, var(--g-0) 55%, var(--g-0) 100%);
 }
 
+.landing-page::before {
+  content: "";
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  z-index: 45;
+  height: 3px;
+  width: calc(var(--landing-scroll-progress, 0) * 1%);
+  background: linear-gradient(90deg, var(--brand), var(--navy-light));
+  box-shadow: 0 0 12px rgba(0, 82, 204, 0.42);
+  pointer-events: none;
+}
+
+.landing-hero-title {
+  position: relative;
+}
+
+.landing-hero-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.75rem;
+  width: min(280px, 62%);
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(0, 82, 204, 0.9), rgba(0, 101, 255, 0.35));
+}
+
+.landing-chip {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.landing-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 22px rgba(9, 30, 66, 0.14);
+  border-color: var(--border-strong);
+}
+
+.landing-primary-cta {
+  transition: box-shadow 0.3s ease, transform 0.2s ease, filter 0.2s ease;
+}
+
+.landing-primary-cta:hover {
+  filter: saturate(1.08);
+}
+
+.landing-estimator-shell {
+  border-radius: 18px;
+  border: 1px solid rgba(0, 82, 204, 0.16);
+  box-shadow: 0 22px 48px rgba(9, 30, 66, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.75) inset;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.98));
+  padding: 6px;
+}
+
+.landing-page .card,
+.landing-page .card-subtle,
+.landing-page .trust-item {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.landing-page main > section {
+  position: relative;
+}
+
+.landing-page main > section + section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: min(980px, calc(100% - 2rem));
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(107, 119, 140, 0.32), transparent);
+}
+
+.landing-page .card:hover,
+.landing-page .card-subtle:hover,
+.landing-page .trust-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(9, 30, 66, 0.12);
+}
+
+.landing-logoMarquee {
+  overflow: hidden;
+  width: 100%;
+  border-radius: 16px;
+}
+
+.landing-logoMarqueeTrack {
+  display: flex;
+  gap: 18px;
+  width: max-content;
+  animation: landingLogoMarquee 24s linear infinite;
+}
+
+.landing-logoMarqueeItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(223, 225, 230, 0.9);
+  background: rgba(255, 255, 255, 0.86);
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  flex: 0 0 auto;
+}
+
+@keyframes landingLogoMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-logoMarqueeTrack {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .landing-hero-title::after {
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(240px, 70%);
+  }
+}
+
 /* App/customer area: solid N100 */
 .page-gradient-app {
   background: var(--g-2);

@@ -8,8 +8,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function LandingScrollAnimations({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    const prefersReducedMotion =
+      typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) return;
+
     const sections = document.querySelectorAll("main section");
     const blobs = document.querySelectorAll("[data-parallax-blob]");
+    const heroChips = document.querySelectorAll(".landing-chip");
+    const primaryCtas = document.querySelectorAll(".landing-primary-cta");
 
     // Section entrance: fade up with stagger for inner content
     sections.forEach((section) => {
@@ -108,8 +115,55 @@ export default function LandingScrollAnimations({ children }: { children: React.
       });
     });
 
+    // Hero chips: quick stagger to make first fold feel alive
+    if (heroChips.length > 0) {
+      gsap.fromTo(
+        heroChips,
+        { opacity: 0, y: 12, scale: 0.96 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.42,
+          ease: "power2.out",
+          stagger: 0.05,
+          scrollTrigger: {
+            trigger: sections[0] ?? "main",
+            start: "top 90%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
+    }
+
+    // Top progress indicator for long-page orientation
+    ScrollTrigger.create({
+      trigger: "main",
+      start: "top top",
+      end: "bottom bottom",
+      onUpdate: (self) => {
+        document.documentElement.style.setProperty("--landing-scroll-progress", `${Math.round(self.progress * 100)}`);
+      },
+      onLeaveBack: () => {
+        document.documentElement.style.setProperty("--landing-scroll-progress", "0");
+      },
+    });
+
+    // Subtle CTA pulse loop (non-transforming for readability)
+    primaryCtas.forEach((cta) => {
+      gsap.to(cta, {
+        boxShadow: "0 10px 24px rgba(0, 82, 204, 0.28)",
+        duration: 1.2,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+    });
+
     return () => {
       ScrollTrigger.getAll().forEach((t) => t.kill());
+      document.documentElement.style.setProperty("--landing-scroll-progress", "0");
+      gsap.killTweensOf(primaryCtas);
     };
   }, []);
 

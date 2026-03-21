@@ -42,6 +42,7 @@ import StaggerChildren from "@/components/animations/StaggerChildren";
 import FadeInItem from "@/components/animations/FadeInItem";
 import LandingScrollAnimations from "@/components/animations/LandingScrollAnimations";
 import VisualizeIllustration from "@/components/landing/VisualizeIllustration";
+import LogoMarquee from "@/components/landing/LogoMarquee";
 import {
   HowItWorksIllo,
   VerifiedFirmsIllo,
@@ -103,7 +104,7 @@ export default async function Home() {
   const firms = await getTrustedStudios();
 
   return (
-    <div className="page-gradient relative overflow-x-hidden min-w-0 w-full">
+    <div className="landing-page page-gradient relative overflow-x-hidden min-w-0 w-full">
       {/* Flowing abstract background — parallax blobs (navy + amber tint) */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
         <div data-parallax-blob className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-[var(--navy-light)]/10 blur-3xl transition-transform" />
@@ -126,7 +127,7 @@ export default async function Home() {
                     <Zap className="h-4 w-4 shrink-0" />
                     AI-powered interior design platform
                   </span>
-                  <h1 className="heading-hero text-[var(--foreground)] mb-4 tracking-tight">
+                  <h1 className="landing-hero-title heading-hero text-[var(--foreground)] mb-4 tracking-tight">
                     Transparency in every step of your{" "}
                     <span className="text-[var(--brand)]">interior</span> journey
                   </h1>
@@ -144,7 +145,7 @@ export default async function Home() {
                     ].map(({ icon: Icon, label, soon }) => (
                       <span
                         key={label}
-                        className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium ${soon ? "border border-dashed border-[var(--brand)]/50 bg-[var(--brand-light)]/60 text-[var(--text-muted)]" : "bg-white border border-[var(--border)] text-[var(--foreground)] shadow-sm"}`}
+                        className={`landing-chip inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium ${soon ? "border border-dashed border-[var(--brand)]/50 bg-[var(--brand-light)]/60 text-[var(--text-muted)]" : "bg-white border border-[var(--border)] text-[var(--foreground)] shadow-sm"}`}
                       >
                         <Icon className="h-4 w-4 shrink-0 text-[var(--brand)]" />
                         {label}
@@ -154,12 +155,12 @@ export default async function Home() {
                   </div>
                   <div className="flex justify-center lg:justify-start">
                     {isCustomer ? (
-                      <Link href="/designers" className="btn btn-primary inline-flex items-center gap-2">
+                      <Link href="/designers" className="landing-primary-cta btn btn-primary inline-flex items-center gap-2">
                         Sign in to View Designers
                         <ArrowRight className="h-4 w-4 shrink-0" />
                       </Link>
                     ) : (
-                      <Link href="/login?redirect=/designers" className="btn btn-primary inline-flex items-center gap-2">
+                      <Link href="/login?redirect=/designers" className="landing-primary-cta btn btn-primary inline-flex items-center gap-2">
                         Sign in to View Designers
                         <ArrowRight className="h-4 w-4 shrink-0" />
                       </Link>
@@ -168,7 +169,7 @@ export default async function Home() {
                 </div>
                 {/* Right: estimator form (multi-step, full width so complete form is visible) */}
                 <div className="w-full min-w-0 flex justify-center lg:justify-end">
-                  <FadeIn delay={0.08} className="w-full max-w-xl">
+                  <FadeIn delay={0.08} className="landing-estimator-shell w-full max-w-xl">
                     <EstimatorForm variant="inline" isLoggedInCustomer={isCustomer} />
                   </FadeIn>
                 </div>
@@ -598,23 +599,8 @@ export default async function Home() {
               <h2 className="heading-lg mb-10">
                 <span className="text-[var(--brand)]">Growing</span> studios
               </h2>
-              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 sm:gap-x-12">
-                {firms.map((firm) => (
-                  <div
-                    key={firm.id}
-                    className="flex items-center gap-3 shrink-0 rounded-xl px-4 py-2.5 border border-[var(--border)] bg-white/80 shadow-sm hover:shadow-md hover:border-[var(--border-strong)] transition-all"
-                  >
-                    <div
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${firm.logoBg} text-white text-xs font-semibold tracking-tight`}
-                      aria-hidden
-                    >
-                      {firm.mark}
-                    </div>
-                    <span className="text-sm text-[var(--foreground)] font-medium whitespace-nowrap">
-                      {firm.name}
-                    </span>
-                  </div>
-                ))}
+              <div className="mx-auto max-w-5xl px-2">
+                <LogoMarquee firms={firms} />
               </div>
             </FadeIn>
           </div>
