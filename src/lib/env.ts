@@ -37,6 +37,7 @@ export const env = {
   appUrl: envValue("APP_URL") || "http://localhost:3000",
   openaiApiKey: envValue("OPENAI_API_KEY"),
   openaiModel: envValue("OPENAI_MODEL") || "gpt-4o-mini",
+  openaiImageModel: envValue("OPENAI_IMAGE_MODEL") || "gpt-image-1",
   razorpayKeyId: envValue("RAZORPAY_KEY_ID"),
   razorpayKeySecret: envValue("RAZORPAY_KEY_SECRET"),
   razorpayWebhookSecret: envValue("RAZORPAY_WEBHOOK_SECRET"),

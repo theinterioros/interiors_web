@@ -261,6 +261,8 @@ create table admin_settings (
   customer_registration_fee int not null default 0,
   firm_yearly_fee int not null default 0,
   digital_twin_yearly_fee int not null default 1000,
+  estimator_prompt_custom text,
+  visualization_prompt_custom text,
   smtp_host text,
   smtp_port int,
   smtp_user text,
@@ -268,6 +270,17 @@ create table admin_settings (
   smtp_secure boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table ai_prompt_audit_logs (
+  id uuid primary key,
+  settings_id uuid not null references admin_settings(id) on delete cascade,
+  admin_user_id uuid references users(id) on delete set null,
+  prompt_key text not null,
+  action text not null,
+  previous_value text,
+  new_value text,
+  created_at timestamptz not null default now()
 );
 
 create table social_links (

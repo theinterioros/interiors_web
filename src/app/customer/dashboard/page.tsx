@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, PlusCircle, Users } from "lucide-react";
+import { BarChart3, PlusCircle, Sparkles, Users } from "lucide-react";
 import { requireCustomerPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import PageTabs from "@/components/ui/PageTabs";
@@ -91,6 +91,24 @@ export default async function CustomerDashboardPage({ searchParams }: PageProps)
         <p className="text-sm text-[var(--text-muted)]">
           Your projects and design leads in one place. Start a project from Browse designers; then track milestones and payments. Use the tabs to filter by status.
         </p>
+      </div>
+
+      <div className="rounded-lg border border-[var(--brand)]/30 bg-[var(--brand-light)]/55 p-4 sm:p-5">
+        <Link
+          href="/customer/visualization"
+          className="flex items-center gap-4 rounded-xl p-4 border border-[var(--brand)]/30 bg-white/70 hover:bg-white transition-colors"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand)] text-white">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-[var(--foreground)]">AI visualization is live</p>
+            <p className="text-sm text-[var(--text-muted)]">
+              Upload your floorplan or room photo, select style, and generate room-wise design concepts.
+            </p>
+          </div>
+          <span className="text-sm font-medium text-[var(--brand)] shrink-0">Open</span>
+        </Link>
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-white p-4 sm:p-5">

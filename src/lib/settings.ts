@@ -15,8 +15,21 @@ type AdminSettingsRow = {
   contact_email?: string | null;
   contact_phone?: string | null;
   contact_address?: string | null;
+  estimator_prompt_custom?: string | null;
+  visualization_prompt_custom?: string | null;
   created_at: Date;
   updated_at: Date;
+};
+
+type AiPromptAuditLogRow = {
+  id: string;
+  prompt_key: string;
+  action: string;
+  previous_value: string | null;
+  new_value: string | null;
+  created_at: Date;
+  admin_name: string | null;
+  admin_email: string | null;
 };
 
 export async function getAdminSettings() {
@@ -41,6 +54,8 @@ export async function getAdminSettings() {
         contactEmail: null,
         contactPhone: null,
         contactAddress: null,
+        estimatorPromptCustom: null,
+        visualizationPromptCustom: null,
         createdAt: new Date(0),
         updatedAt: new Date(0),
         socialLinks: [],
@@ -49,6 +64,7 @@ export async function getAdminSettings() {
         defaultRatePerSqYd: null,
         defaultRatePerSqM: null,
         rates: [],
+        aiPromptAuditLogs: [],
       };
     }
     throw error;
@@ -112,6 +128,24 @@ export async function getAdminSettings() {
   const defaultRatePerSqM = defaultRateRow?.rate_per_sq_m ?? null;
   const overrideRates = rates.filter((r) => !(r.city === "DEFAULT" && r.pincode === "*"));
 
+  let aiPromptAuditLogs: AiPromptAuditLogRow[] = [];
+  try {
+    aiPromptAuditLogs = await sql<AiPromptAuditLogRow>`
+      select l.id, l.prompt_key, l.action, l.previous_value, l.new_value, l.created_at,
+             u.name as admin_name, u.email as admin_email
+      from ai_prompt_audit_logs l
+      left join users u on u.id = l.admin_user_id
+      where l.settings_id = ${settings.id}
+      order by l.created_at desc
+      limit 25
+    `;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.includes('relation "ai_prompt_audit_logs" does not exist')) {
+      throw err;
+    }
+  }
+
   return {
     id: settings.id,
     otpEnabled: settings.otp_enabled,
@@ -126,6 +160,8 @@ export async function getAdminSettings() {
     contactEmail: settings.contact_email ?? null,
     contactPhone: settings.contact_phone ?? null,
     contactAddress: settings.contact_address ?? null,
+    estimatorPromptCustom: settings.estimator_prompt_custom ?? null,
+    visualizationPromptCustom: settings.visualization_prompt_custom ?? null,
     createdAt: settings.created_at,
     updatedAt: settings.updated_at,
     socialLinks: socialLinks.map((link) => ({
@@ -158,6 +194,16 @@ export async function getAdminSettings() {
       ratePerSqYd: rate.rate_per_sq_yd ?? null,
       ratePerSqM: rate.rate_per_sq_m ?? null,
       isActive: rate.is_active,
+    })),
+    aiPromptAuditLogs: aiPromptAuditLogs.map((log) => ({
+      id: log.id,
+      promptKey: log.prompt_key,
+      action: log.action,
+      previousValue: log.previous_value,
+      newValue: log.new_value,
+      createdAt: log.created_at,
+      adminName: log.admin_name,
+      adminEmail: log.admin_email,
     })),
   };
 }

@@ -6,11 +6,13 @@ interface FadeInProps {
   children: React.ReactNode;
   delay?: number;
   className?: string;
+  id?: string;
 }
 
-export default function FadeIn({ children, delay = 0, className }: FadeInProps) {
+export default function FadeIn({ children, delay = 0, className, id }: FadeInProps) {
   return (
     <motion.div
+      id={id}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}

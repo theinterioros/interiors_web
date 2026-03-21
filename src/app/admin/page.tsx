@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Activity } from "lucide-react";
+import { LayoutDashboard, Activity, Sparkles } from "lucide-react";
 import { sql } from "@/lib/db";
 import FadeIn from "@/components/animations/FadeIn";
 
@@ -64,6 +64,26 @@ export default async function AdminPage() {
       </header>
 
       <FadeIn delay={0.05}>
+        <div className="rounded-lg border border-[var(--brand)]/30 bg-[var(--brand-light)]/45 p-4 sm:p-5">
+          <Link
+            href="/admin/settings#ai-prompts"
+            className="flex items-center gap-4 rounded-xl border border-[var(--brand)]/25 bg-white/80 p-4 transition-colors hover:bg-white"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--brand)] text-white">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-[var(--foreground)]">AI Prompt Controls</p>
+              <p className="text-sm text-[var(--text-muted)]">
+                Update Estimator and Visualization prompts safely with fixed I/O contracts.
+              </p>
+            </div>
+            <span className="text-sm font-medium text-[var(--brand)] shrink-0">Open</span>
+          </Link>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={0.06}>
         <div className="rounded-lg border border-[var(--brand)]/20 bg-[var(--surface-subtle)]/50 p-4 sm:p-5">
           <h2 className="heading-md mb-4 flex items-center gap-2">
             <Activity className="h-5 w-5 text-[var(--brand)]" />

@@ -37,7 +37,7 @@ export type EstimatorBodyParse =
 /** Validate POST /api/estimator JSON into EstimatorClientPayload */
 export function parseEstimatorRequestBody(body: Record<string, unknown>): EstimatorBodyParse {
   const city = String(body.city ?? "").trim();
-  let pincode = String(body.pincode ?? "").trim();
+  const pincode = String(body.pincode ?? "").trim();
   const directSqft = Number(body.squareFeet ?? NaN);
   const areaRaw = body.area;
   const area = typeof areaRaw === "number" ? areaRaw : Number(areaRaw ?? NaN);

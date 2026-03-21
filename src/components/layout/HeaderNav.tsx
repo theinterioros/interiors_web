@@ -69,7 +69,7 @@ function SignOutButtonMobile() {
   );
 }
 
-export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderNavProps) {
+export default function HeaderNav({ user, logoutAction }: HeaderNavProps) {
   const pathname = usePathname();
   const isAppRoute = pathname
     ? ["/admin", "/customer", "/designer", "/designers"].some(
@@ -77,8 +77,7 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
       )
     : false;
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const canPortal = typeof window !== "undefined";
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -159,7 +158,7 @@ export default function HeaderNav({ user, dashboardHref, logoutAction }: HeaderN
       </button>
 
       {/* Mobile drawer — portaled to body so it's not clipped by header overflow */}
-      {mounted &&
+      {canPortal &&
         createPortal(
           <div
             className="md:hidden fixed inset-0 z-[9999]"

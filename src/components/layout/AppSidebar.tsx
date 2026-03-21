@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import MobileBottomNav from "./MobileBottomNav";
@@ -47,8 +47,7 @@ export default function AppSidebar({ role }: { role: AppRole }) {
   const pathname = usePathname();
   const items = APP_NAV[role];
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const canPortal = typeof window !== "undefined";
   useEffect(() => {
     if (!mobileOpen) return;
     document.body.style.overflow = "hidden";
@@ -74,7 +73,7 @@ export default function AppSidebar({ role }: { role: AppRole }) {
       </aside>
 
       {/* Mobile drawer */}
-      {mounted &&
+      {canPortal &&
         createPortal(
           <div
             className="md:hidden fixed inset-0 z-[100]"

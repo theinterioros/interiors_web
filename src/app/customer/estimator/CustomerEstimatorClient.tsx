@@ -8,6 +8,28 @@ import { ESTIMATOR_AREA_OPTIONS } from "@/lib/estimator-types";
 import type { EstimatorApiData } from "@/lib/estimator-types";
 import ValidatedPincodeInput from "@/components/ui/ValidatedPincodeInput";
 
+type LandingPrefillPayload = {
+  city?: unknown;
+  pincode?: unknown;
+  area?: unknown;
+  areaUnit?: unknown;
+  propertyType?: unknown;
+  bhk?: unknown;
+  interiorTier?: unknown;
+  material?: unknown;
+  possession?: unknown;
+  areas?: unknown;
+  budgetNote?: unknown;
+};
+
+function normalizeAreaUnit(value: unknown): "sqft" | "sqyd" | "sqm" {
+  return value === "sqyd" || value === "sqm" || value === "sqft" ? value : "sqft";
+}
+
+function normalizePropertyType(value: unknown): "apartment" | "villa" {
+  return value === "villa" ? "villa" : "apartment";
+}
+
 export default function CustomerEstimatorClient() {
   const [result, setResult] = useState<EstimatorApiData | null>(null);
   const [error, setError] = useState("");
@@ -44,7 +66,7 @@ export default function CustomerEstimatorClient() {
         result?: EstimatorApiData;
         version?: number;
       };
-      const payload = parsed.payload as any;
+      const payload = parsed.payload as LandingPrefillPayload;
       if (!payload || typeof payload !== "object") return;
 
       setPrefill({
@@ -52,8 +74,8 @@ export default function CustomerEstimatorClient() {
           city: String(payload.city ?? "").trim(),
           pincode: String(payload.pincode ?? "").trim(),
           area: Number(payload.area ?? 0),
-          areaUnit: payload.areaUnit ?? "sqft",
-          propertyType: payload.propertyType ?? "apartment",
+          areaUnit: normalizeAreaUnit(payload.areaUnit),
+          propertyType: normalizePropertyType(payload.propertyType),
           bhk: String(payload.bhk ?? "2BHK"),
           interiorTier: String(payload.interiorTier ?? "standard"),
           material: String(payload.material ?? "laminate"),

@@ -19,6 +19,48 @@ async function requireAdmin() {
   return user;
 }
 
+type PromptKey = "estimator" | "visualization";
+
+async function ensureAiPromptAuditTable() {
+  await sql`
+    create table if not exists ai_prompt_audit_logs (
+      id uuid primary key,
+      settings_id uuid not null references admin_settings(id) on delete cascade,
+      admin_user_id uuid references users(id) on delete set null,
+      prompt_key text not null,
+      action text not null,
+      previous_value text,
+      new_value text,
+      created_at timestamptz not null default now()
+    )
+  `;
+}
+
+async function logAiPromptChange(input: {
+  settingsId: string;
+  adminUserId: string;
+  promptKey: PromptKey;
+  action: "updated" | "reset";
+  previousValue: string | null;
+  newValue: string | null;
+}) {
+  if ((input.previousValue ?? "") === (input.newValue ?? "")) return;
+  await ensureAiPromptAuditTable();
+  await sql`
+    insert into ai_prompt_audit_logs (
+      id, settings_id, admin_user_id, prompt_key, action, previous_value, new_value
+    ) values (
+      ${crypto.randomUUID()},
+      ${input.settingsId},
+      ${input.adminUserId},
+      ${input.promptKey},
+      ${input.action},
+      ${input.previousValue},
+      ${input.newValue}
+    )
+  `;
+}
+
 export async function updateSettingsAction(formData: FormData) {
   const admin = await requireAdmin();
   if (!admin) {
@@ -66,6 +108,135 @@ export async function updateSettingsAction(formData: FormData) {
         updated_at = now()
     where id = ${settings.id}
   `;
+
+  revalidatePath("/admin/settings");
+  return;
+}
+
+export async function updateAiPromptsAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) {
+    throw new Error("Unauthorized.");
+  }
+
+  let [settings] = await sql<{ id: string }>`select id from admin_settings limit 1`;
+  if (!settings) {
+    const id = crypto.randomUUID();
+    await sql`insert into admin_settings (id) values (${id})`;
+    settings = { id };
+  }
+
+  const estimatorPrompt = String(formData.get("estimatorPromptCustom") ?? "").trim();
+  const visualizationPrompt = String(formData.get("visualizationPromptCustom") ?? "").trim();
+
+  if (estimatorPrompt.length > 12000 || visualizationPrompt.length > 12000) {
+    throw new Error("Prompts are too long. Keep each prompt under 12,000 characters.");
+  }
+
+  await sql`alter table admin_settings add column if not exists estimator_prompt_custom text`;
+  await sql`alter table admin_settings add column if not exists visualization_prompt_custom text`;
+
+  const [current] = await sql<{
+    estimator_prompt_custom: string | null;
+    visualization_prompt_custom: string | null;
+  }>`
+    select estimator_prompt_custom, visualization_prompt_custom
+    from admin_settings
+    where id = ${settings.id}
+    limit 1
+  `;
+
+  await sql`
+    update admin_settings
+    set estimator_prompt_custom = ${estimatorPrompt || null},
+        visualization_prompt_custom = ${visualizationPrompt || null},
+        updated_at = now()
+    where id = ${settings.id}
+  `;
+
+  await logAiPromptChange({
+    settingsId: settings.id,
+    adminUserId: admin.id,
+    promptKey: "estimator",
+    action: "updated",
+    previousValue: current?.estimator_prompt_custom ?? null,
+    newValue: estimatorPrompt || null,
+  });
+  await logAiPromptChange({
+    settingsId: settings.id,
+    adminUserId: admin.id,
+    promptKey: "visualization",
+    action: "updated",
+    previousValue: current?.visualization_prompt_custom ?? null,
+    newValue: visualizationPrompt || null,
+  });
+
+  revalidatePath("/admin/settings");
+  return;
+}
+
+export async function resetAiPromptAction(formData: FormData) {
+  const admin = await requireAdmin();
+  if (!admin) {
+    throw new Error("Unauthorized.");
+  }
+
+  const promptKey = String(formData.get("promptKey") ?? "").trim() as PromptKey;
+  if (promptKey !== "estimator" && promptKey !== "visualization") {
+    throw new Error("Invalid prompt key.");
+  }
+
+  let [settings] = await sql<{ id: string }>`select id from admin_settings limit 1`;
+  if (!settings) {
+    const id = crypto.randomUUID();
+    await sql`insert into admin_settings (id) values (${id})`;
+    settings = { id };
+  }
+
+  await sql`alter table admin_settings add column if not exists estimator_prompt_custom text`;
+  await sql`alter table admin_settings add column if not exists visualization_prompt_custom text`;
+
+  const [current] = await sql<{
+    estimator_prompt_custom: string | null;
+    visualization_prompt_custom: string | null;
+  }>`
+    select estimator_prompt_custom, visualization_prompt_custom
+    from admin_settings
+    where id = ${settings.id}
+    limit 1
+  `;
+
+  if (promptKey === "estimator") {
+    await sql`
+      update admin_settings
+      set estimator_prompt_custom = null,
+          updated_at = now()
+      where id = ${settings.id}
+    `;
+    await logAiPromptChange({
+      settingsId: settings.id,
+      adminUserId: admin.id,
+      promptKey: "estimator",
+      action: "reset",
+      previousValue: current?.estimator_prompt_custom ?? null,
+      newValue: null,
+    });
+  } else {
+    await sql`
+      update admin_settings
+      set visualization_prompt_custom = null,
+          updated_at = now()
+      where id = ${settings.id}
+    `;
+    await logAiPromptChange({
+      settingsId: settings.id,
+      adminUserId: admin.id,
+      promptKey: "visualization",
+      action: "reset",
+      previousValue: current?.visualization_prompt_custom ?? null,
+      newValue: null,
+    });
+  }
 
   revalidatePath("/admin/settings");
   return;
