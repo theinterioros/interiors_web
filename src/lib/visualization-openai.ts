@@ -84,9 +84,9 @@ export async function generateVisualizationConcepts(input: VisualizationRequest)
   const settings = await getAdminSettings();
   const systemPrompt = buildVisualizationSystemPrompt(settings.visualizationPromptCustom);
   const llm = resolveLlmSettings({
-    llmProvider: settings.llmProvider,
-    llmModel: settings.llmModel,
-    llmImageModel: settings.llmImageModel,
+    llmProvider: settings.visualizationLlmProvider,
+    llmModel: settings.visualizationLlmModel,
+    llmImageModel: settings.visualizationImageModel,
   });
   const textClient = createTextLlmClient(llm.provider);
 

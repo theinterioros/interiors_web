@@ -41,6 +41,11 @@ async function main() {
   await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS llm_provider text NOT NULL DEFAULT 'OPENAI'`;
   await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS llm_model text`;
   await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS llm_image_model text`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS estimator_llm_provider text NOT NULL DEFAULT 'OPENAI'`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS estimator_llm_model text`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS visualization_llm_provider text NOT NULL DEFAULT 'OPENAI'`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS visualization_llm_model text`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS visualization_image_model text`;
   console.log("Migration applied: admin_settings contact_email, contact_phone, contact_address");
 
   await sql`

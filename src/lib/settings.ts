@@ -17,6 +17,11 @@ type AdminSettingsRow = {
   contact_address?: string | null;
   estimator_prompt_custom?: string | null;
   visualization_prompt_custom?: string | null;
+  estimator_llm_provider?: string | null;
+  estimator_llm_model?: string | null;
+  visualization_llm_provider?: string | null;
+  visualization_llm_model?: string | null;
+  visualization_image_model?: string | null;
   llm_provider?: string | null;
   llm_model?: string | null;
   llm_image_model?: string | null;
@@ -59,6 +64,11 @@ export async function getAdminSettings() {
         contactAddress: null,
         estimatorPromptCustom: null,
         visualizationPromptCustom: null,
+        estimatorLlmProvider: "OPENAI",
+        estimatorLlmModel: null,
+        visualizationLlmProvider: "OPENAI",
+        visualizationLlmModel: null,
+        visualizationImageModel: null,
         llmProvider: "OPENAI",
         llmModel: null,
         llmImageModel: null,
@@ -168,6 +178,11 @@ export async function getAdminSettings() {
     contactAddress: settings.contact_address ?? null,
     estimatorPromptCustom: settings.estimator_prompt_custom ?? null,
     visualizationPromptCustom: settings.visualization_prompt_custom ?? null,
+    estimatorLlmProvider: settings.estimator_llm_provider ?? settings.llm_provider ?? "OPENAI",
+    estimatorLlmModel: settings.estimator_llm_model ?? settings.llm_model ?? null,
+    visualizationLlmProvider: settings.visualization_llm_provider ?? settings.llm_provider ?? "OPENAI",
+    visualizationLlmModel: settings.visualization_llm_model ?? settings.llm_model ?? null,
+    visualizationImageModel: settings.visualization_image_model ?? settings.llm_image_model ?? null,
     llmProvider: settings.llm_provider ?? "OPENAI",
     llmModel: settings.llm_model ?? null,
     llmImageModel: settings.llm_image_model ?? null,

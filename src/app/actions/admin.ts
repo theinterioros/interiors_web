@@ -79,14 +79,6 @@ export async function updateSettingsAction(formData: FormData) {
     contactEmail: String(formData.get("contactEmail") ?? "").trim() || null,
     contactPhone: String(formData.get("contactPhone") ?? "").trim() || null,
     contactAddress: String(formData.get("contactAddress") ?? "").trim() || null,
-    llmProvider:
-      String(formData.get("llmProvider") ?? "OPENAI")
-        .trim()
-        .toUpperCase() === "GEMINI"
-        ? "GEMINI"
-        : "OPENAI",
-    llmModel: String(formData.get("llmModel") ?? "").trim() || null,
-    llmImageModel: String(formData.get("llmImageModel") ?? "").trim() || null,
   };
 
   if (!settings) {
@@ -109,9 +101,6 @@ export async function updateSettingsAction(formData: FormData) {
         contact_email = ${payload.contactEmail},
         contact_phone = ${payload.contactPhone},
         contact_address = ${payload.contactAddress},
-        llm_provider = ${payload.llmProvider},
-        llm_model = ${payload.llmModel},
-        llm_image_model = ${payload.llmImageModel},
         updated_at = now()
     where id = ${settings.id}
   `;
@@ -135,6 +124,21 @@ export async function updateAiPromptsAction(formData: FormData) {
 
   const estimatorPrompt = String(formData.get("estimatorPromptCustom") ?? "").trim();
   const visualizationPrompt = String(formData.get("visualizationPromptCustom") ?? "").trim();
+  const estimatorLlmProvider =
+    String(formData.get("estimatorLlmProvider") ?? "OPENAI")
+      .trim()
+      .toUpperCase() === "GEMINI"
+      ? "GEMINI"
+      : "OPENAI";
+  const estimatorLlmModel = String(formData.get("estimatorLlmModel") ?? "").trim() || null;
+  const visualizationLlmProvider =
+    String(formData.get("visualizationLlmProvider") ?? "OPENAI")
+      .trim()
+      .toUpperCase() === "GEMINI"
+      ? "GEMINI"
+      : "OPENAI";
+  const visualizationLlmModel = String(formData.get("visualizationLlmModel") ?? "").trim() || null;
+  const visualizationImageModel = String(formData.get("visualizationImageModel") ?? "").trim() || null;
 
   if (estimatorPrompt.length > 12000 || visualizationPrompt.length > 12000) {
     throw new Error("Prompts are too long. Keep each prompt under 12,000 characters.");
@@ -154,6 +158,11 @@ export async function updateAiPromptsAction(formData: FormData) {
     update admin_settings
     set estimator_prompt_custom = ${estimatorPrompt || null},
         visualization_prompt_custom = ${visualizationPrompt || null},
+        estimator_llm_provider = ${estimatorLlmProvider},
+        estimator_llm_model = ${estimatorLlmModel},
+        visualization_llm_provider = ${visualizationLlmProvider},
+        visualization_llm_model = ${visualizationLlmModel},
+        visualization_image_model = ${visualizationImageModel},
         updated_at = now()
     where id = ${settings.id}
   `;

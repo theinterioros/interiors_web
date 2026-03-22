@@ -74,8 +74,8 @@ export async function estimateInteriorWithOpenAI(
   const settings = await getAdminSettings();
   const systemPrompt = buildEstimatorSystemPrompt(settings.estimatorPromptCustom);
   const llm = resolveLlmSettings({
-    llmProvider: settings.llmProvider,
-    llmModel: settings.llmModel,
+    llmProvider: settings.estimatorLlmProvider,
+    llmModel: settings.estimatorLlmModel,
   });
   const client = createTextLlmClient(llm.provider);
   const completion = await client.chat.completions.create({
