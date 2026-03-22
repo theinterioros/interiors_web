@@ -78,8 +78,10 @@ export const VISUALIZATION_INPUT_CONTRACT = [
   "Input context (fixed):",
   "- user selected inputType",
   "- user selected interiorStyle",
+  "- optional customBrief from user",
   "- optional preferredRoomCount",
-  "- uploaded image (floorplan or room photo)",
+  "- uploaded file context (image or PDF rendered pages)",
+  "- optional extracted PDF text context",
 ].join("\n");
 
 export const VISUALIZATION_OUTPUT_CONTRACT = [

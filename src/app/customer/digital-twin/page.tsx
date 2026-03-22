@@ -1,24 +1,12 @@
-import Link from "next/link";
-import { Cuboid, Calendar, FolderOpen, ImageIcon, Upload, IndianRupee } from "lucide-react";
+import { Cuboid, FolderOpen, ImageIcon, Upload } from "lucide-react";
 import { requireCustomerPaid } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { uploadDigitalTwinFileAction } from "@/app/actions/digitalTwin";
-import { getAdminSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function DigitalTwinPage() {
   const user = await requireCustomerPaid();
-
-  const [subscription] = await sql<{ expires_at: Date }>`
-    select expires_at from digital_twin_subscriptions where customer_id = ${user.id} limit 1
-  `;
-  const settings = await getAdminSettings();
-  const twinFee = settings.digitalTwinYearlyFee ?? 1000;
-  const expiresAt = subscription ? new Date(subscription.expires_at) : null;
-  const isTwinActive = expiresAt ? expiresAt > new Date() : false;
-  const hasSubscription = !!subscription;
-  const isExpiringSoon = expiresAt && expiresAt > new Date() && expiresAt.getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
 
   const projects = await sql<{ id: string; title: string }>`
     select id, title
@@ -82,25 +70,8 @@ export default async function DigitalTwinPage() {
         </div>
         <h1 className="heading-lg mb-1">All project files</h1>
         <p className="text-sm text-[var(--text-muted)]">
-          For each project: view milestone photos and documents from your designer, and upload your own files with a name. Everything for that project in one place.
+          For each project: view milestone photos and documents from your designer, and upload your own files with a name. Everything for that project in one place, with no subscription charge.
         </p>
-        <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface-subtle)]/30 p-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-[var(--text-muted)]" />
-            <span className="text-sm font-medium text-[var(--foreground)]">
-              Digital Twin: {!hasSubscription ? "Subscribe to upload" : isTwinActive ? `Active until ${expiresAt?.toLocaleDateString()}` : "Expired"}
-            </span>
-          </div>
-          {(!hasSubscription || !isTwinActive || isExpiringSoon) && (
-            <Link href="/customer/renew" className="btn btn-primary text-sm inline-flex items-center gap-2">
-              <IndianRupee className="h-4 w-4" />
-              {!hasSubscription ? "Subscribe" : !isTwinActive ? "Renew subscription" : "Renew early"} (₹{twinFee.toLocaleString()}/year)
-            </Link>
-          )}
-          {isExpiringSoon && isTwinActive && (
-            <p className="text-xs text-[var(--accent-amber)] w-full">Expires in less than 30 days.</p>
-          )}
-        </div>
       </header>
 
       {projects.length === 0 && unassignedFiles.length === 0 ? (

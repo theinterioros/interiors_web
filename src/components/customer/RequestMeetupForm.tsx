@@ -2,19 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { requestProjectAction, checkProjectLimitAction } from "@/app/actions/project";
-import { payAdditionalProjectFeeAction } from "@/app/actions/auth";
-import PaymentCheckoutModal from "@/components/ui/PaymentCheckoutModal";
+import { requestProjectAction } from "@/app/actions/project";
 type Props = {
   firmId: string;
-  additionalProjectFeeAmount: number;
 };
 
-export default function RequestMeetupForm({ firmId, additionalProjectFeeAmount }: Props) {
+export default function RequestMeetupForm({ firmId }: Props) {
   const router = useRouter();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [pendingTitle, setPendingTitle] = useState("");
-  const [pendingDescription, setPendingDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -27,12 +21,6 @@ export default function RequestMeetupForm({ firmId, additionalProjectFeeAmount }
     const result = await requestProjectAction(formData);
     if (result.ok) {
       router.push(`/customer/projects/${result.projectId}`);
-      return;
-    }
-    if (result.error === "PROJECT_LIMIT_REACHED") {
-      setPendingTitle(title);
-      setPendingDescription(description);
-      setModalOpen(true);
       return;
     }
     setError(result.error);
@@ -50,21 +38,8 @@ export default function RequestMeetupForm({ firmId, additionalProjectFeeAmount }
       setSubmitting(false);
       return;
     }
-    const limit = await checkProjectLimitAction();
-    if (!limit.allowed) {
-      setPendingTitle(title);
-      setPendingDescription(description);
-      setModalOpen(true);
-      setSubmitting(false);
-      return;
-    }
     await submitRequest(title, description);
     setSubmitting(false);
-  }
-
-  async function afterAdditionalFeePaid() {
-    await submitRequest(pendingTitle, pendingDescription);
-    setModalOpen(false);
   }
 
   return (
@@ -90,16 +65,6 @@ export default function RequestMeetupForm({ firmId, additionalProjectFeeAmount }
           </button>
         </div>
       </form>
-      <PaymentCheckoutModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        amountRupees={additionalProjectFeeAmount}
-        title="New project fee"
-        subtitle="Your subscription includes one project. Pay to start another."
-        kind="ADDITIONAL_PROJECT"
-        mockPay={payAdditionalProjectFeeAction}
-        onPaid={afterAdditionalFeePaid}
-      />
     </>
   );
 }

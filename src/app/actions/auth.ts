@@ -346,21 +346,13 @@ export async function payCustomerSubscriptionAction(): Promise<PayCustomerSubscr
   return { redirect: "/customer/dashboard" };
 }
 
-/** Pay additional project fee (₹1000) to unlock one more project slot. No redirect. */
+/** Deprecated: customers are not charged to start projects. */
 export async function payAdditionalProjectFeeAction(): Promise<void> {
   const user = await getSessionUser();
   if (!user || user.role !== RoleValues.CUSTOMER) {
     throw new Error("Unauthorized.");
   }
-  const { ADDITIONAL_PROJECT_FEE_AMOUNT } = await import("@/lib/registrationPayments");
-  const id = crypto.randomUUID();
-  await sql`
-    insert into payment_ledger (id, type, status, amount, currency, customer_id)
-    values (${id}, 'ADDITIONAL_PROJECT_FEE', 'RELEASED', ${ADDITIONAL_PROJECT_FEE_AMOUNT}, 'INR', ${user.id})
-  `;
-  revalidatePath("/admin");
-  revalidatePath("/admin/payments");
-  revalidatePath("/customer/dashboard");
+  throw new Error("Starting projects is free for customers. No payment required.");
 }
 
 export async function logoutAction() {

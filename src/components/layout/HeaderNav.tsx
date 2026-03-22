@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useFormStatus } from "react-dom";
 import { createPortal } from "react-dom";
 import { Menu, X, LogOut, Loader2, HelpCircle } from "lucide-react";
@@ -77,7 +77,11 @@ export default function HeaderNav({ user, logoutAction }: HeaderNavProps) {
       )
     : false;
   const [open, setOpen] = useState(false);
-  const canPortal = typeof window !== "undefined";
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -158,7 +162,7 @@ export default function HeaderNav({ user, logoutAction }: HeaderNavProps) {
       </button>
 
       {/* Mobile drawer — portaled to body so it's not clipped by header overflow */}
-      {canPortal &&
+      {isClient &&
         createPortal(
           <div
             className="md:hidden fixed inset-0 z-[9999]"

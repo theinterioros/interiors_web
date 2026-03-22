@@ -2,17 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { requestProjectAction, checkProjectLimitAction } from "@/app/actions/project";
-import { payAdditionalProjectFeeAction } from "@/app/actions/auth";
+import { requestProjectAction } from "@/app/actions/project";
 import { Loader2 } from "lucide-react";
-import PaymentCheckoutModal from "@/components/ui/PaymentCheckoutModal";
 import PageBackLink from "@/components/ui/PageBackLink";
 
 type Props = {
   firmId: string;
   profileId: string;
   firmName: string;
-  additionalProjectFeeAmount: number;
 };
 
 const PROPERTY_TYPES = [
@@ -39,18 +36,8 @@ export default function RequestProjectForm({
   firmId,
   profileId,
   firmName,
-  additionalProjectFeeAmount,
 }: Props) {
   const router = useRouter();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [pendingData, setPendingData] = useState<{
-    title: string;
-    description: string;
-    property_type: string;
-    carpet_area: string;
-    rooms: string;
-    budget_range: string;
-  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -74,11 +61,6 @@ export default function RequestProjectForm({
     const result = await requestProjectAction(formData);
     if (result.ok) {
       router.push(`/customer/projects/${result.projectId}`);
-      return;
-    }
-    if (result.error === "PROJECT_LIMIT_REACHED") {
-      setPendingData(data);
-      setModalOpen(true);
       return;
     }
     setError(result.error);
@@ -108,22 +90,8 @@ export default function RequestProjectForm({
       setSubmitting(false);
       return;
     }
-    const limit = await checkProjectLimitAction();
-    if (!limit.allowed) {
-      setPendingData(data);
-      setModalOpen(true);
-      setSubmitting(false);
-      return;
-    }
     await submitRequest(data);
     setSubmitting(false);
-  }
-
-  async function afterAdditionalFeePaid() {
-    if (!pendingData) return;
-    await submitRequest(pendingData);
-    setModalOpen(false);
-    setPendingData(null);
   }
 
   return (
@@ -132,7 +100,7 @@ export default function RequestProjectForm({
       <div className="mb-6">
         <h1 className="heading-lg mb-1">Enter Project Details</h1>
         <p className="text-sm text-[var(--text-muted)]">
-          Describe your project for {firmName}. Your first project is included with your subscription; each additional project is ₹{additionalProjectFeeAmount.toLocaleString()}.
+          Describe your project for {firmName}. No upfront payment is required to start a project.
         </p>
       </div>
 
@@ -221,19 +189,6 @@ export default function RequestProjectForm({
         </div>
       </form>
 
-      <PaymentCheckoutModal
-        open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setPendingData(null);
-        }}
-        amountRupees={additionalProjectFeeAmount}
-        title="Additional project fee"
-        subtitle="Your subscription includes one project. Pay to start another project with this designer."
-        kind="ADDITIONAL_PROJECT"
-        mockPay={payAdditionalProjectFeeAction}
-        onPaid={afterAdditionalFeePaid}
-      />
     </>
   );
 }

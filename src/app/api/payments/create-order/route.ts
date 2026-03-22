@@ -5,10 +5,7 @@ import { sql } from "@/lib/db";
 import { createOrder, isRazorpayConfigured } from "@/lib/razorpay";
 import { env } from "@/lib/env";
 import { getAdminSettings } from "@/lib/settings";
-import {
-  ADDITIONAL_PROJECT_FEE_AMOUNT,
-  FIRM_REGISTRATION_AMOUNT,
-} from "@/lib/registrationPayments";
+import { FIRM_REGISTRATION_AMOUNT } from "@/lib/registrationPayments";
 import {
   PaymentStatusValues,
   PaymentTypeValues,
@@ -75,19 +72,15 @@ export async function POST(request: Request) {
       type = PaymentTypeValues.FIRM_REGISTRATION_FEE;
       firmId = user.id;
     } else if (kind === "ADDITIONAL_PROJECT") {
-      if (user.role !== RoleValues.CUSTOMER) {
-        return NextResponse.json({ error: "Invalid role." }, { status: 403 });
-      }
-      amountRupees = ADDITIONAL_PROJECT_FEE_AMOUNT;
-      type = PaymentTypeValues.ADDITIONAL_PROJECT_FEE;
-      customerId = user.id;
+      return NextResponse.json(
+        { error: "Starting a project is free for customers. No payment required." },
+        { status: 400 }
+      );
     } else if (kind === "DIGITAL_TWIN_RENEWAL") {
-      if (user.role !== RoleValues.CUSTOMER) {
-        return NextResponse.json({ error: "Invalid role." }, { status: 403 });
-      }
-      amountRupees = settings.digitalTwinYearlyFee ?? 1000;
-      type = PaymentTypeValues.DIGITAL_TWIN_RENEWAL;
-      customerId = user.id;
+      return NextResponse.json(
+        { error: "Digital Twin has no customer subscription payment currently." },
+        { status: 400 }
+      );
     } else if (kind === "MILESTONE") {
       if (user.role !== RoleValues.CUSTOMER) {
         return NextResponse.json({ error: "Invalid role." }, { status: 403 });

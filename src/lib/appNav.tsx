@@ -10,6 +10,7 @@ import {
   Building2,
   MessageSquare,
   Sparkles,
+  Cuboid,
   Layers,
   User,
   Palette,
@@ -46,6 +47,7 @@ const CUSTOMER_NAV: NavItem[] = [
   { href: "/customer/dashboard", label: "Dashboard", shortLabel: "Home", icon: LayoutDashboard },
   { href: "/designers", label: "Browse Designers", shortLabel: "Designers", icon: Palette },
   { href: "/customer/estimator", label: "AI Cost Estimator", shortLabel: "AI Estimate", icon: Sparkles },
+  { href: "/customer/visualization", label: "AI Visualization", shortLabel: "Visualize", icon: Cuboid },
   { href: "/customer/payments", label: "Payment History", shortLabel: "Payments", icon: CreditCard },
   { href: "/customer/digital-twin", label: "Digital Twin", shortLabel: "Twin", icon: Layers },
 ];

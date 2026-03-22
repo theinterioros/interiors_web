@@ -4,7 +4,6 @@ import { validateEmail, validatePhoneIndia, PHONE_ERROR, EMAIL_ERROR } from "@/l
 import { parseEstimatorRequestBody, roomsFromBhk } from "@/lib/estimator-api-validate";
 import { estimateInteriorFormula, estimateInteriorWithOpenAI } from "@/lib/estimator-openai";
 import type { EstimatorApiData } from "@/lib/estimator-types";
-import { env } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -44,12 +43,10 @@ export async function POST(request: Request) {
 
   let data: EstimatorApiData | null = null;
 
-  if (env.openaiApiKey) {
-    try {
-      data = await estimateInteriorWithOpenAI(input);
-    } catch (e) {
-      console.error("OpenAI estimator error:", e);
-    }
+  try {
+    data = await estimateInteriorWithOpenAI(input);
+  } catch (e) {
+    console.error("LLM estimator error:", e);
   }
 
   if (!data) {

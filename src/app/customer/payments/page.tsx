@@ -88,7 +88,7 @@ export default async function CustomerPaymentsPage({ searchParams }: PageProps) 
         </div>
         <h1 className="heading-lg mb-1">Payment history</h1>
         <p className="text-sm text-[var(--text-muted)] mb-2">
-          All your payments: registration, project fees, and milestones. Funds are held in escrow until released to your designer after you approve each milestone.
+          Milestone payments only. Funds are held in escrow until released to your designer after you approve each milestone.
         </p>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-subtle)]/50 p-4 flex items-start gap-3">
           <Info className="h-4 w-4 text-[var(--brand)] shrink-0 mt-0.5" />
@@ -137,7 +137,7 @@ export default async function CustomerPaymentsPage({ searchParams }: PageProps) 
               ? "No payments match your search. Try a different term or clear the search."
               : filterStatus
                 ? `No ${filterStatus === "HELD" ? "escrow" : "released"} payments.`
-                : "No payments yet. Registration and project fees appear here once paid; approved milestones show as In escrow until released to your designer."}
+                : "No milestone payments yet. Approved milestones will appear here as In escrow until released to your designer."}
           </div>
         ) : (
           <div className="table-wrap overflow-x-auto">

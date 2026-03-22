@@ -1,14 +1,17 @@
-import OpenAI from "openai";
-import { env } from "@/lib/env";
 import { buildVisualizationSystemPrompt } from "@/lib/ai-prompts";
 import { getAdminSettings } from "@/lib/settings";
+import { createOpenAiImageClient, createTextLlmClient, resolveLlmSettings } from "@/lib/llm";
 
 export type VisualizationInputType = "floorplan" | "room_photo";
 
 export type VisualizationRequest = {
-  imageDataUrl: string;
+  imageDataUrl?: string;
+  pdfPageImages?: string[];
+  pdfExtractedText?: string;
   inputType: VisualizationInputType;
   interiorStyle: string;
+  sourceFileType?: "image" | "pdf";
+  customBrief?: string;
   preferredRoomCount?: number | null;
 };
 
@@ -78,15 +81,56 @@ function parseAnalysisJson(raw: string, fallbackType: VisualizationInputType): V
 }
 
 export async function generateVisualizationConcepts(input: VisualizationRequest): Promise<VisualizationResult> {
-  if (!env.openaiApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured.");
-  }
   const settings = await getAdminSettings();
   const systemPrompt = buildVisualizationSystemPrompt(settings.visualizationPromptCustom);
-  const client = new OpenAI({ apiKey: env.openaiApiKey });
+  const llm = resolveLlmSettings({
+    llmProvider: settings.llmProvider,
+    llmModel: settings.llmModel,
+    llmImageModel: settings.llmImageModel,
+  });
+  const textClient = createTextLlmClient(llm.provider);
 
-  const analysis = await client.chat.completions.create({
-    model: env.openaiModel,
+  const userContent: Array<
+    | { type: "text"; text: string }
+    | { type: "image_url"; image_url: { url: string } }
+  > = [
+    {
+      type: "text",
+      text: [
+        `Input type selected by user: ${input.inputType}.`,
+        `Interior style selected by user: ${input.interiorStyle}.`,
+        `Original file format uploaded by user: ${input.sourceFileType ?? "image"}.`,
+        `Additional preferences from user: ${input.customBrief?.trim() || "none"}.`,
+        `Preferred room count: ${input.preferredRoomCount ?? "auto"}.`,
+        input.pdfExtractedText?.trim()
+          ? `Extracted PDF text context:\n${input.pdfExtractedText.trim().slice(0, 5000)}`
+          : "Extracted PDF text context: none.",
+        "Return JSON with this exact structure:",
+        "{",
+        '  "detectedImageType": "floorplan" | "room_photo",',
+        '  "summary": "short summary",',
+        '  "rooms": [',
+        '    {"name":"Living Room","rationale":"why this design","prompt":"high quality image prompt for generation"}',
+        "  ]",
+        "}",
+        "If original file format is PDF, treat the images as rendered pages from PDF and interpret room labels/lines accordingly.",
+        "For floorplan: infer likely major rooms and circulation. For room photo: infer one or more zones from image context.",
+        "Each prompt should be photoreal interior design render, detailed materials, lighting, camera angle, and Indian apartment/home context.",
+      ].join("\n"),
+    },
+  ];
+  for (const img of (input.pdfPageImages ?? []).filter(Boolean).slice(0, 3)) {
+    userContent.push({ type: "image_url", image_url: { url: img } });
+  }
+  if (input.imageDataUrl) {
+    userContent.push({ type: "image_url", image_url: { url: input.imageDataUrl } });
+  }
+  if (userContent.length === 1) {
+    throw new Error("No valid image context was provided for visualization.");
+  }
+
+  const analysis = await textClient.chat.completions.create({
+    model: llm.textModel,
     response_format: { type: "json_object" },
     temperature: 0.55,
     messages: [
@@ -94,33 +138,7 @@ export async function generateVisualizationConcepts(input: VisualizationRequest)
         role: "system",
         content: systemPrompt,
       },
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: [
-              `Input type selected by user: ${input.inputType}.`,
-              `Interior style selected by user: ${input.interiorStyle}.`,
-              `Preferred room count: ${input.preferredRoomCount ?? "auto"}.`,
-              "Return JSON with this exact structure:",
-              "{",
-              '  "detectedImageType": "floorplan" | "room_photo",',
-              '  "summary": "short summary",',
-              '  "rooms": [',
-              '    {"name":"Living Room","rationale":"why this design","prompt":"high quality image prompt for generation"}',
-              "  ]",
-              "}",
-              "For floorplan: infer likely major rooms and circulation. For room photo: infer one or more zones from image context.",
-              "Each prompt should be photoreal interior design render, detailed materials, lighting, camera angle, and Indian apartment/home context.",
-            ].join("\n"),
-          },
-          {
-            type: "image_url",
-            image_url: { url: input.imageDataUrl },
-          },
-        ],
-      },
+      { role: "user", content: userContent },
     ],
   });
 
@@ -130,27 +148,47 @@ export async function generateVisualizationConcepts(input: VisualizationRequest)
   }
   const parsed = parseAnalysisJson(raw, input.inputType);
 
-  const roomsToRender = parsed.rooms.slice(0, 5);
-  const renderedRooms: VisualizationRoomConcept[] = [];
-  for (const room of roomsToRender) {
-    try {
-      const imagePrompt = `${room.prompt}\nStyle: ${input.interiorStyle}. Keep output practical and buildable.`;
-      const image = await client.images.generate({
-        model: env.openaiImageModel,
-        prompt: imagePrompt,
-        size: "1024x1024",
-      });
-      const b64 = image.data?.[0]?.b64_json;
-      const renderImageUrl = b64 ? `data:image/png;base64,${b64}` : image.data?.[0]?.url;
-      renderedRooms.push({
-        ...room,
-        ...(renderImageUrl ? { renderImageUrl } : {}),
-      });
-    } catch (e) {
-      console.error("Visualization image generation failed for room:", room.name, e);
-      renderedRooms.push(room);
-    }
+  const requestedCount =
+    typeof input.preferredRoomCount === "number" && Number.isFinite(input.preferredRoomCount)
+      ? Math.min(5, Math.max(1, Math.round(input.preferredRoomCount)))
+      : 3;
+  const roomsToRender = parsed.rooms.slice(0, requestedCount);
+  const imageClient = createOpenAiImageClient();
+  if (!imageClient) {
+    return {
+      summary: parsed.summary,
+      detectedImageType: parsed.detectedImageType,
+      rooms: roomsToRender,
+    };
   }
+  const renderedRooms = await Promise.all(
+    roomsToRender.map(async (room) => {
+      try {
+        const imagePrompt = [
+          room.prompt,
+          `Style: ${input.interiorStyle}.`,
+          input.customBrief?.trim() ? `User preferences: ${input.customBrief.trim()}.` : "",
+          "Keep output practical and buildable.",
+        ]
+          .filter(Boolean)
+          .join("\n");
+        const image = await imageClient.images.generate({
+          model: llm.imageModel,
+          prompt: imagePrompt,
+          size: "1024x1024",
+        });
+        const b64 = image.data?.[0]?.b64_json;
+        const renderImageUrl = b64 ? `data:image/png;base64,${b64}` : image.data?.[0]?.url;
+        return {
+          ...room,
+          ...(renderImageUrl ? { renderImageUrl } : {}),
+        };
+      } catch (e) {
+        console.error("Visualization image generation failed for room:", room.name, e);
+        return room;
+      }
+    })
+  );
 
   return {
     summary: parsed.summary,

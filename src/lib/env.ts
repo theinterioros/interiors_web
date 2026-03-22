@@ -38,6 +38,8 @@ export const env = {
   openaiApiKey: envValue("OPENAI_API_KEY"),
   openaiModel: envValue("OPENAI_MODEL") || "gpt-4o-mini",
   openaiImageModel: envValue("OPENAI_IMAGE_MODEL") || "gpt-image-1",
+  geminiApiKey: envValue("GEMINI_API_KEY"),
+  geminiModel: envValue("GEMINI_MODEL") || "gemini-2.0-flash",
   razorpayKeyId: envValue("RAZORPAY_KEY_ID"),
   razorpayKeySecret: envValue("RAZORPAY_KEY_SECRET"),
   razorpayWebhookSecret: envValue("RAZORPAY_WEBHOOK_SECRET"),

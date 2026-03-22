@@ -33,6 +33,16 @@ export async function POST(request: Request) {
 
   const imageDataUrl = String(body.imageDataUrl ?? "").trim();
   const interiorStyle = String(body.interiorStyle ?? "").trim();
+  const sourceFileTypeRaw = String(body.sourceFileType ?? "").trim().toLowerCase();
+  const sourceFileType = sourceFileTypeRaw === "pdf" ? "pdf" : "image";
+  const pdfPageImages = Array.isArray(body.pdfPageImages)
+    ? body.pdfPageImages
+        .map((v) => String(v ?? "").trim())
+        .filter((v) => isDataImageUrl(v))
+        .slice(0, 3)
+    : [];
+  const pdfExtractedText = String(body.pdfExtractedText ?? "").slice(0, 6000);
+  const customBrief = String(body.customBrief ?? "").trim().slice(0, 500);
   const inputTypeRaw = String(body.inputType ?? "").trim();
   const inputType: VisualizationInputType =
     inputTypeRaw === "floorplan" ? "floorplan" : inputTypeRaw === "room_photo" ? "room_photo" : "room_photo";
@@ -41,8 +51,11 @@ export async function POST(request: Request) {
     ? Math.min(8, Math.max(1, Math.round(preferredRoomCountRaw)))
     : null;
 
-  if (!isDataImageUrl(imageDataUrl)) {
+  if (sourceFileType === "image" && !isDataImageUrl(imageDataUrl)) {
     return NextResponse.json({ error: "Please upload a valid image (PNG/JPG/WEBP)." }, { status: 400 });
+  }
+  if (sourceFileType === "pdf" && pdfPageImages.length === 0) {
+    return NextResponse.json({ error: "Please upload a valid PDF. We could not read any page preview." }, { status: 400 });
   }
   if (!ALLOWED_STYLES.includes(interiorStyle as (typeof ALLOWED_STYLES)[number])) {
     return NextResponse.json({ error: "Please select a valid interior style." }, { status: 400 });
@@ -53,6 +66,10 @@ export async function POST(request: Request) {
       imageDataUrl,
       inputType,
       interiorStyle,
+      sourceFileType,
+      ...(pdfPageImages.length ? { pdfPageImages } : {}),
+      ...(pdfExtractedText ? { pdfExtractedText } : {}),
+      ...(customBrief ? { customBrief } : {}),
       ...(preferredRoomCount ? { preferredRoomCount } : {}),
     });
     return NextResponse.json(result);

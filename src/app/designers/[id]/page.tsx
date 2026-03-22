@@ -211,7 +211,7 @@ export default async function DesignerProfilePage({
                 Proceed with this designer
               </Link>
               <p className="text-xs text-[var(--text-muted)] mt-2">
-                You will enter project details and pay ₹1,000 for each additional project (first project included with subscription).
+                You will enter project details and submit a project request. No upfront platform payment is required.
               </p>
             </div>
           ) : canRequest && !isVerifiedAndAccepted ? (

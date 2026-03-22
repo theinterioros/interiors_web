@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import MobileBottomNav from "./MobileBottomNav";
@@ -22,6 +22,7 @@ function NavList({
       {items.filter((item) => !item.isMore).map(({ href, label, icon: Icon }) => {
         const active =
           pathname === href || (pathname.startsWith(href + "/") && href !== pathname);
+        const isVisualization = href === "/customer/visualization";
         return (
           <li key={href}>
             <Link
@@ -29,12 +30,21 @@ function NavList({
               onClick={onLinkClick}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 active
-                  ? "bg-[var(--surface-subtle)] text-[var(--foreground)]"
-                  : "text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)]"
+                  ? isVisualization
+                    ? "bg-[var(--brand-light)] text-[var(--brand)] ring-1 ring-[var(--brand)]/40"
+                    : "bg-[var(--surface-subtle)] text-[var(--foreground)]"
+                  : isVisualization
+                    ? "text-[var(--brand)] bg-[var(--brand-light)]/60 hover:bg-[var(--brand-light)]"
+                    : "text-[var(--text-muted)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)]"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0 opacity-80" />
-              {label}
+              <span className="truncate">{label}</span>
+              {isVisualization ? (
+                <span className="ml-auto rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--brand)]">
+                  AI
+                </span>
+              ) : null}
             </Link>
           </li>
         );
@@ -47,7 +57,11 @@ export default function AppSidebar({ role }: { role: AppRole }) {
   const pathname = usePathname();
   const items = APP_NAV[role];
   const [mobileOpen, setMobileOpen] = useState(false);
-  const canPortal = typeof window !== "undefined";
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   useEffect(() => {
     if (!mobileOpen) return;
     document.body.style.overflow = "hidden";
@@ -73,7 +87,7 @@ export default function AppSidebar({ role }: { role: AppRole }) {
       </aside>
 
       {/* Mobile drawer */}
-      {canPortal &&
+      {isClient &&
         createPortal(
           <div
             className="md:hidden fixed inset-0 z-[100]"

@@ -17,6 +17,9 @@ type AdminSettingsRow = {
   contact_address?: string | null;
   estimator_prompt_custom?: string | null;
   visualization_prompt_custom?: string | null;
+  llm_provider?: string | null;
+  llm_model?: string | null;
+  llm_image_model?: string | null;
   created_at: Date;
   updated_at: Date;
 };
@@ -56,6 +59,9 @@ export async function getAdminSettings() {
         contactAddress: null,
         estimatorPromptCustom: null,
         visualizationPromptCustom: null,
+        llmProvider: "OPENAI",
+        llmModel: null,
+        llmImageModel: null,
         createdAt: new Date(0),
         updatedAt: new Date(0),
         socialLinks: [],
@@ -162,6 +168,9 @@ export async function getAdminSettings() {
     contactAddress: settings.contact_address ?? null,
     estimatorPromptCustom: settings.estimator_prompt_custom ?? null,
     visualizationPromptCustom: settings.visualization_prompt_custom ?? null,
+    llmProvider: settings.llm_provider ?? "OPENAI",
+    llmModel: settings.llm_model ?? null,
+    llmImageModel: settings.llm_image_model ?? null,
     createdAt: settings.created_at,
     updatedAt: settings.updated_at,
     socialLinks: socialLinks.map((link) => ({

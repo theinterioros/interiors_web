@@ -83,7 +83,7 @@ export default async function Home() {
         }))
       : [
           { label: "Designers", url: "/designers", showInHeader: false, showInFooter: true, showInLanding: true },
-          { label: "AI Visualization (coming soon)", url: "#", showInHeader: false, showInFooter: true, showInLanding: false },
+          { label: "AI Visualization", url: "/login?redirect=/customer/visualization", showInHeader: false, showInFooter: true, showInLanding: false },
           { label: "Login", url: "/login", showInHeader: false, showInFooter: true, showInLanding: false },
         ];
   const footerLinks = marketingLinks.filter((link) => link.showInFooter);
@@ -141,7 +141,7 @@ export default async function Home() {
                       { icon: TrendingUp, label: "Project Tracking" },
                       { icon: Lock, label: "Escrow Payments" },
                       { icon: Box, label: "Digital Twin" },
-                      { icon: Sparkles, label: "AI-assisted layouts", soon: true },
+                      { icon: Sparkles, label: "AI Visualization", soon: false },
                     ].map(({ icon: Icon, label, soon }) => (
                       <span
                         key={label}
@@ -149,7 +149,7 @@ export default async function Home() {
                       >
                         <Icon className="h-4 w-4 shrink-0 text-[var(--brand)]" />
                         {label}
-                        {soon && <em className="text-[10px] font-semibold uppercase not-italic text-[var(--brand)]">Soon</em>}
+                        {soon && <em className="text-[10px] font-semibold uppercase not-italic text-[var(--brand)]">Live</em>}
                       </span>
                     ))}
                   </div>
@@ -219,9 +219,9 @@ export default async function Home() {
                               <div className="relative z-10 mb-3 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[var(--text-muted)] bg-[var(--surface-subtle)] text-[var(--text-muted)]">
                                 <Sparkles className="h-5 w-5" />
                               </div>
-                              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--brand)]">Coming soon</span>
-                              <h3 className="mb-0.5 text-xs sm:text-sm font-semibold text-[var(--foreground)]">AI-Assisted Layouts</h3>
-                              <p className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-snug">Visualize before build</p>
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--brand)]">Live now</span>
+                              <h3 className="mb-0.5 text-xs sm:text-sm font-semibold text-[var(--foreground)]">AI Visualization</h3>
+                              <p className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-snug">Upload and generate room concepts</p>
                             </FadeInItem>
                           </div>
                         )}
@@ -248,9 +248,9 @@ export default async function Home() {
                       <div className="relative z-10 mb-3 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[var(--text-muted)] bg-[var(--surface-subtle)] text-[var(--text-muted)]">
                         <Sparkles className="h-5 w-5" />
                       </div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--brand)]">Coming soon</span>
-                      <h3 className="mb-0.5 text-xs sm:text-sm font-semibold text-[var(--foreground)]">AI-Assisted Layouts</h3>
-                      <p className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-snug">Visualize before build</p>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--brand)]">Live now</span>
+                      <h3 className="mb-0.5 text-xs sm:text-sm font-semibold text-[var(--foreground)]">AI Visualization</h3>
+                      <p className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-snug">Upload and generate room concepts</p>
                     </FadeInItem>
                     {steps.slice(2).map((item) => (
                       <FadeInItem key={item.step} className="flex flex-col items-center text-center min-w-0">
@@ -287,9 +287,9 @@ export default async function Home() {
                       <div className="my-1 h-6 w-0.5 flex-shrink-0 bg-[var(--border)]" aria-hidden />
                     </div>
                     <FadeInItem className="flex-1 min-w-0 pb-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--brand)]">Coming soon</span>
-                      <h3 className="text-sm font-semibold text-[var(--foreground)]">AI-Assisted Layouts</h3>
-                      <p className="text-xs text-[var(--text-muted)]">Visualize before build</p>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--brand)]">Live now</span>
+                      <h3 className="text-sm font-semibold text-[var(--foreground)]">AI Visualization</h3>
+                      <p className="text-xs text-[var(--text-muted)]">Upload and generate room concepts</p>
                     </FadeInItem>
                   </div>
                   {steps.slice(2).map((item, stepIndex) => (
@@ -314,14 +314,14 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Coming soon — Visualize your space */}
+        {/* AI Visualization — Visualize your space */}
         <section className="section section-compact section-bg-pattern-light section-bg-gradient-light text-center">
           <div className="page-inner section-tight min-w-0">
             <FadeIn className="mx-auto max-w-2xl text-center">
-              <p className="eyebrow mb-3 text-[var(--accent-amber)]">Coming Soon</p>
+              <p className="eyebrow mb-3 text-[var(--accent-amber)]">AI Visualization</p>
               <h2 className="heading-lg mb-4"><span className="text-[var(--brand)]">Visualize</span> your space before it&apos;s built</h2>
               <p className="text-[var(--text-muted)] mb-8 max-w-xl mx-auto leading-relaxed">
-                AI-assisted layouts and styles from your floor plan — decide faster.
+                Upload a floorplan or room photo, choose your style, and generate room-wise concepts instantly.
               </p>
               <div className="rounded-2xl border border-[var(--border)] bg-white/80 p-6 sm:p-8 shadow-sm mb-6">
                 <VisualizeIllustration />
@@ -329,9 +329,9 @@ export default async function Home() {
               <p className="text-xs text-[var(--text-subtle)] mb-6 max-w-md mx-auto">
                 Upload your plan → choose styles → see how your room could look.
               </p>
-              <button disabled className="btn btn-secondary rounded-xl opacity-60 cursor-not-allowed">
-                Coming Soon
-              </button>
+              <Link href="/login?redirect=/customer/visualization" className="btn btn-secondary rounded-xl">
+                Try AI Visualization
+              </Link>
             </FadeIn>
           </div>
         </section>
@@ -633,7 +633,7 @@ export default async function Home() {
                       <Sparkles className="h-7 w-7" />
                     </div>
                     <h3 className="text-sm font-semibold text-white mb-1.5">AI Visualizations</h3>
-                    <p className="text-xs text-slate-400 leading-snug">Coming soon — visualize your space.</p>
+                    <p className="text-xs text-slate-400 leading-snug">Live now — upload and generate design concepts.</p>
                   </div>
                   <div className="trust-item flex flex-col items-center rounded-2xl bg-white/[0.08] p-5 sm:p-6 text-center backdrop-blur-sm border border-white/15 transition-all hover:bg-white/[0.12] hover:border-white/25 hover:scale-[1.02]">
                     <div className="mb-4 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-[var(--brand-light)]">

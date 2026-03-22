@@ -1,10 +1,9 @@
-import OpenAI from "openai";
-import { env } from "@/lib/env";
 import type { EstimatorApiData, EstimatorClientPayload } from "@/lib/estimator-types";
 import { estimateCost } from "@/lib/estimator";
 import { roomsFromBhk } from "@/lib/estimator-api-validate";
 import { buildEstimatorSystemPrompt } from "@/lib/ai-prompts";
 import { getAdminSettings } from "@/lib/settings";
+import { createTextLlmClient, resolveLlmSettings } from "@/lib/llm";
 
 function num(v: unknown, fallback = 0): number {
   if (typeof v === "number") return Number.isFinite(v) ? Math.round(v) : fallback;
@@ -72,14 +71,15 @@ export function parseOpenAiEstimateJson(
 export async function estimateInteriorWithOpenAI(
   input: EstimatorClientPayload
 ): Promise<EstimatorApiData | null> {
-  if (!env.openaiApiKey) return null;
-
   const settings = await getAdminSettings();
   const systemPrompt = buildEstimatorSystemPrompt(settings.estimatorPromptCustom);
-
-  const client = new OpenAI({ apiKey: env.openaiApiKey });
+  const llm = resolveLlmSettings({
+    llmProvider: settings.llmProvider,
+    llmModel: settings.llmModel,
+  });
+  const client = createTextLlmClient(llm.provider);
   const completion = await client.chat.completions.create({
-    model: env.openaiModel,
+    model: llm.textModel,
     response_format: { type: "json_object" },
     temperature: 0.35,
     messages: [

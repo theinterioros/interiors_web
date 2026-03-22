@@ -2,16 +2,10 @@
 
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
-import {
-  RoleValues,
-  PaymentStatusValues,
-  PaymentTypeValues,
-  SubscriptionStatusValues,
-} from "@/lib/types";
+import { RoleValues } from "@/lib/types";
 import { getCurrentUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { uploadBlob } from "@/lib/blob";
-import { getAdminSettings } from "@/lib/settings";
 
 export async function uploadDigitalTwinFileAction(formData: FormData) {
   const user = await getCurrentUser();
@@ -40,58 +34,6 @@ export async function uploadDigitalTwinFileAction(formData: FormData) {
     if (!project) {
       throw new Error("Project not found.");
     }
-  }
-
-  const [subscription] = await sql<{
-    id: string;
-    expires_at: Date;
-  }>`
-    select id, expires_at
-    from digital_twin_subscriptions
-    where customer_id = ${user.id}
-    limit 1
-  `;
-
-  if (!subscription) {
-    const expiresAt = new Date();
-    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-    await sql`
-      insert into digital_twin_subscriptions (
-        id, customer_id, status, started_at, expires_at
-      )
-      values (
-        ${crypto.randomUUID()},
-        ${user.id},
-        ${SubscriptionStatusValues.ACTIVE},
-        ${new Date()},
-        ${expiresAt}
-      )
-    `;
-  } else if (new Date(subscription.expires_at) < new Date()) {
-    const settings = await getAdminSettings();
-    await sql`
-      insert into payment_ledger (
-        id, type, status, amount, customer_id
-      )
-      values (
-        ${crypto.randomUUID()},
-        ${PaymentTypeValues.DIGITAL_TWIN_RENEWAL},
-        ${PaymentStatusValues.HELD},
-        ${settings.digitalTwinYearlyFee},
-        ${user.id}
-      )
-    `;
-
-    const newExpiry = new Date();
-    newExpiry.setFullYear(newExpiry.getFullYear() + 1);
-
-    await sql`
-      update digital_twin_subscriptions
-      set status = ${SubscriptionStatusValues.ACTIVE},
-          expires_at = ${newExpiry},
-          last_charged_at = ${new Date()}
-      where id = ${subscription.id}
-    `;
   }
 
   const blobUrl = await uploadBlob(file, `digital-twin/${user.id}`);
@@ -123,43 +65,12 @@ export async function uploadDigitalTwinFileAction(formData: FormData) {
   return;
 }
 
-/** Renew digital twin subscription (extends by 1 year). */
+/** Legacy no-op: digital twin renewal is not charged for customers. */
 export async function payDigitalTwinRenewalAction(): Promise<{ redirect?: string; error?: string }> {
   const user = await getCurrentUser();
   if (!user || user.role !== RoleValues.CUSTOMER) {
     return { error: "Unauthorized." };
   }
-
-  const settings = await getAdminSettings();
-  const amount = settings.digitalTwinYearlyFee ?? 1000;
-
-  const [subscription] = await sql<{ id: string; expires_at: Date }>`
-    select id, expires_at from digital_twin_subscriptions where customer_id = ${user.id} limit 1
-  `;
-
-  const now = new Date();
-  const currentExpiry = subscription ? new Date(subscription.expires_at) : null;
-  const newExpiry = new Date(currentExpiry && currentExpiry > now ? currentExpiry : now);
-  newExpiry.setFullYear(newExpiry.getFullYear() + 1);
-
-  await sql`
-    insert into payment_ledger (id, type, status, amount, currency, customer_id)
-    values (${crypto.randomUUID()}, ${PaymentTypeValues.DIGITAL_TWIN_RENEWAL}, ${PaymentStatusValues.RELEASED}, ${amount}, 'INR', ${user.id})
-  `;
-
-  if (subscription) {
-    await sql`
-      update digital_twin_subscriptions
-      set status = ${SubscriptionStatusValues.ACTIVE}, expires_at = ${newExpiry}, last_charged_at = ${now}
-      where id = ${subscription.id}
-    `;
-  } else {
-    await sql`
-      insert into digital_twin_subscriptions (id, customer_id, status, started_at, expires_at, last_charged_at)
-      values (${crypto.randomUUID()}, ${user.id}, ${SubscriptionStatusValues.ACTIVE}, ${now}, ${newExpiry}, ${now})
-    `;
-  }
-
   revalidatePath("/customer/digital-twin");
   revalidatePath("/customer/dashboard");
   return { redirect: "/customer/digital-twin" };

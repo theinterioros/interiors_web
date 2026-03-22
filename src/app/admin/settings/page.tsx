@@ -2,7 +2,8 @@ import {
   addMarketingLinkAction,
   addSocialLinkAction,
   deleteLinkAction,
-  resetAiPromptAction,
+  resetEstimatorPromptAction,
+  resetVisualizationPromptAction,
   updateAiPromptsAction,
   updateSettingsAction,
 } from "@/app/actions/admin";
@@ -82,6 +83,37 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
+          <div className="grid gap-4 md:grid-cols-3 pt-4 border-t border-[var(--border)]">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">LLM Provider</label>
+              <select name="llmProvider" defaultValue={settings.llmProvider ?? "OPENAI"} className="input">
+                <option value="OPENAI">OpenAI</option>
+                <option value="GEMINI">Gemini</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">LLM Text Model</label>
+              <input
+                name="llmModel"
+                defaultValue={settings.llmModel ?? ""}
+                className="input"
+                placeholder="e.g. gpt-4o-mini or gemini-2.0-flash"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">Image Model (OpenAI)</label>
+              <input
+                name="llmImageModel"
+                defaultValue={settings.llmImageModel ?? ""}
+                className="input"
+                placeholder="e.g. gpt-image-1"
+              />
+            </div>
+          </div>
+          <p className="-mt-1 text-xs text-[var(--text-muted)]">
+            Gemini uses OpenAI-compatible API mode. You can set any custom model string (for example: nano banana).
+          </p>
+
           <div className="space-y-2 pt-4 border-t border-[var(--border)]">
             <h3 className="text-sm font-semibold text-[var(--foreground)]">Contact Info (Get in Touch)</h3>
             <p className="text-xs text-[var(--text-muted)]">Shown beside the contact form and in Reach us.</p>
@@ -131,6 +163,9 @@ export default async function AdminSettingsPage() {
               <p className="text-sm text-[var(--text-muted)]">
                 Edit only the instruction layer. Input and output contracts stay fixed in code to protect UX.
               </p>
+              <p className="text-xs text-[var(--text-muted)]">
+                Last settings update: {new Date(settings.updatedAt).toLocaleString()}
+              </p>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
@@ -139,9 +174,7 @@ export default async function AdminSettingsPage() {
                   <label className="text-sm font-medium text-[var(--foreground)]">AI Cost Estimator Prompt (editable)</label>
                   <button
                     type="submit"
-                    formAction={resetAiPromptAction}
-                    name="promptKey"
-                    value="estimator"
+                    formAction={resetEstimatorPromptAction}
                     className="btn btn-secondary text-xs"
                   >
                     Reset to default
@@ -163,9 +196,7 @@ export default async function AdminSettingsPage() {
                   <label className="text-sm font-medium text-[var(--foreground)]">AI Visualization Prompt (editable)</label>
                   <button
                     type="submit"
-                    formAction={resetAiPromptAction}
-                    name="promptKey"
-                    value="visualization"
+                    formAction={resetVisualizationPromptAction}
                     className="btn btn-secondary text-xs"
                   >
                     Reset to default
@@ -257,33 +288,35 @@ export default async function AdminSettingsPage() {
 
         <div className="grid gap-6 md:grid-cols-2 mt-8">
           <FadeIn delay={0.3}>
-            <form action={addSocialLinkAction} className="card space-y-4">
+            <div className="card space-y-4">
               <h2 className="heading-md mb-4">Social links</h2>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--foreground)]">Platform</label>
-                <input name="platform" placeholder="Instagram" className="input" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--foreground)]">URL</label>
-                <input name="url" placeholder="https://instagram.com/interior-os" className="input" />
-              </div>
-              <div className="flex flex-wrap gap-4 text-xs text-[var(--text-muted)]">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="showInHeader" defaultChecked />
-                  Header
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="showInFooter" defaultChecked />
-                  Footer
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="showInLanding" defaultChecked />
-                  Landing
-                </label>
-              </div>
-              <button type="submit" className="btn btn-primary">
-                Add social link
-              </button>
+              <form action={addSocialLinkAction} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[var(--foreground)]">Platform</label>
+                  <input name="platform" placeholder="Instagram" className="input" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[var(--foreground)]">URL</label>
+                  <input name="url" placeholder="https://instagram.com/interior-os" className="input" />
+                </div>
+                <div className="flex flex-wrap gap-4 text-xs text-[var(--text-muted)]">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" name="showInHeader" defaultChecked />
+                    Header
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" name="showInFooter" defaultChecked />
+                    Footer
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" name="showInLanding" defaultChecked />
+                    Landing
+                  </label>
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Add social link
+                </button>
+              </form>
               <div className="space-y-2 text-sm">
                 {settings.socialLinks.map((link) => (
                   <div key={link.id} className="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0">
@@ -298,37 +331,39 @@ export default async function AdminSettingsPage() {
                   </div>
                 ))}
               </div>
-            </form>
+            </div>
           </FadeIn>
 
           <FadeIn delay={0.4}>
-            <form action={addMarketingLinkAction} className="card space-y-4">
+            <div className="card space-y-4">
               <h2 className="heading-md mb-4">Header/Footer links</h2>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--foreground)]">Label</label>
-                <input name="label" placeholder="Firms" className="input" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--foreground)]">URL</label>
-                <input name="url" placeholder="/designers" className="input" />
-              </div>
-              <div className="flex flex-wrap gap-4 text-xs text-[var(--text-muted)]">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="showInHeader" defaultChecked />
-                  Header
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="showInFooter" defaultChecked />
-                  Footer
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="showInLanding" defaultChecked />
-                  Landing
-                </label>
-              </div>
-              <button type="submit" className="btn btn-primary">
-                Add link
-              </button>
+              <form action={addMarketingLinkAction} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[var(--foreground)]">Label</label>
+                  <input name="label" placeholder="Firms" className="input" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-[var(--foreground)]">URL</label>
+                  <input name="url" placeholder="/designers" className="input" />
+                </div>
+                <div className="flex flex-wrap gap-4 text-xs text-[var(--text-muted)]">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" name="showInHeader" defaultChecked />
+                    Header
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" name="showInFooter" defaultChecked />
+                    Footer
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" name="showInLanding" defaultChecked />
+                    Landing
+                  </label>
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Add link
+                </button>
+              </form>
               <div className="space-y-2 text-sm">
                 {settings.marketingLinks.map((link) => (
                   <div key={link.id} className="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0">
@@ -343,7 +378,7 @@ export default async function AdminSettingsPage() {
                   </div>
                 ))}
               </div>
-            </form>
+            </div>
           </FadeIn>
         </div>
 

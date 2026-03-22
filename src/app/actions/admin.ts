@@ -22,18 +22,7 @@ async function requireAdmin() {
 type PromptKey = "estimator" | "visualization";
 
 async function ensureAiPromptAuditTable() {
-  await sql`
-    create table if not exists ai_prompt_audit_logs (
-      id uuid primary key,
-      settings_id uuid not null references admin_settings(id) on delete cascade,
-      admin_user_id uuid references users(id) on delete set null,
-      prompt_key text not null,
-      action text not null,
-      previous_value text,
-      new_value text,
-      created_at timestamptz not null default now()
-    )
-  `;
+  // Keep this as a no-op in request path. Table creation belongs to migrations.
 }
 
 async function logAiPromptChange(input: {
@@ -46,19 +35,26 @@ async function logAiPromptChange(input: {
 }) {
   if ((input.previousValue ?? "") === (input.newValue ?? "")) return;
   await ensureAiPromptAuditTable();
-  await sql`
-    insert into ai_prompt_audit_logs (
-      id, settings_id, admin_user_id, prompt_key, action, previous_value, new_value
-    ) values (
-      ${crypto.randomUUID()},
-      ${input.settingsId},
-      ${input.adminUserId},
-      ${input.promptKey},
-      ${input.action},
-      ${input.previousValue},
-      ${input.newValue}
-    )
-  `;
+  try {
+    await sql`
+      insert into ai_prompt_audit_logs (
+        id, settings_id, admin_user_id, prompt_key, action, previous_value, new_value
+      ) values (
+        ${crypto.randomUUID()},
+        ${input.settingsId},
+        ${input.adminUserId},
+        ${input.promptKey},
+        ${input.action},
+        ${input.previousValue},
+        ${input.newValue}
+      )
+    `;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.includes('relation "ai_prompt_audit_logs" does not exist')) {
+      throw err;
+    }
+  }
 }
 
 export async function updateSettingsAction(formData: FormData) {
@@ -83,6 +79,14 @@ export async function updateSettingsAction(formData: FormData) {
     contactEmail: String(formData.get("contactEmail") ?? "").trim() || null,
     contactPhone: String(formData.get("contactPhone") ?? "").trim() || null,
     contactAddress: String(formData.get("contactAddress") ?? "").trim() || null,
+    llmProvider:
+      String(formData.get("llmProvider") ?? "OPENAI")
+        .trim()
+        .toUpperCase() === "GEMINI"
+        ? "GEMINI"
+        : "OPENAI",
+    llmModel: String(formData.get("llmModel") ?? "").trim() || null,
+    llmImageModel: String(formData.get("llmImageModel") ?? "").trim() || null,
   };
 
   if (!settings) {
@@ -105,6 +109,9 @@ export async function updateSettingsAction(formData: FormData) {
         contact_email = ${payload.contactEmail},
         contact_phone = ${payload.contactPhone},
         contact_address = ${payload.contactAddress},
+        llm_provider = ${payload.llmProvider},
+        llm_model = ${payload.llmModel},
+        llm_image_model = ${payload.llmImageModel},
         updated_at = now()
     where id = ${settings.id}
   `;
@@ -132,9 +139,6 @@ export async function updateAiPromptsAction(formData: FormData) {
   if (estimatorPrompt.length > 12000 || visualizationPrompt.length > 12000) {
     throw new Error("Prompts are too long. Keep each prompt under 12,000 characters.");
   }
-
-  await sql`alter table admin_settings add column if not exists estimator_prompt_custom text`;
-  await sql`alter table admin_settings add column if not exists visualization_prompt_custom text`;
 
   const [current] = await sql<{
     estimator_prompt_custom: string | null;
@@ -193,9 +197,6 @@ export async function resetAiPromptAction(formData: FormData) {
     settings = { id };
   }
 
-  await sql`alter table admin_settings add column if not exists estimator_prompt_custom text`;
-  await sql`alter table admin_settings add column if not exists visualization_prompt_custom text`;
-
   const [current] = await sql<{
     estimator_prompt_custom: string | null;
     visualization_prompt_custom: string | null;
@@ -240,6 +241,18 @@ export async function resetAiPromptAction(formData: FormData) {
 
   revalidatePath("/admin/settings");
   return;
+}
+
+export async function resetEstimatorPromptAction() {
+  const fd = new FormData();
+  fd.set("promptKey", "estimator");
+  return resetAiPromptAction(fd);
+}
+
+export async function resetVisualizationPromptAction() {
+  const fd = new FormData();
+  fd.set("promptKey", "visualization");
+  return resetAiPromptAction(fd);
 }
 
 const DEFAULT_CITY = "DEFAULT";

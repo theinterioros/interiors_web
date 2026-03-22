@@ -24,6 +24,7 @@ export default function MobileBottomNav({
           const active =
             !item.isMore &&
             (pathname === item.href || pathname.startsWith(item.href + "/"));
+          const isVisualization = item.href === "/customer/visualization";
           const Icon = item.icon;
           const label = item.shortLabel ?? item.label;
 
@@ -47,7 +48,11 @@ export default function MobileBottomNav({
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 touch-manipulation ${
-                active ? "text-[var(--brand)]" : "text-[var(--text-muted)]"
+                active
+                  ? "text-[var(--brand)]"
+                  : isVisualization
+                    ? "text-[var(--brand)]"
+                    : "text-[var(--text-muted)]"
               }`}
             >
               <Icon className="h-5 w-5 shrink-0" />

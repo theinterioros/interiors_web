@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { sql } from "@/lib/db";
 import { requireCustomerPaid } from "@/lib/auth";
 import RequestProjectForm from "@/components/customer/RequestProjectForm";
-import { ADDITIONAL_PROJECT_FEE_AMOUNT } from "@/lib/registrationPayments";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +11,7 @@ export default async function DesignerRequestPage({
   params: Promise<{ id: string }>;
 }) {
   const { id: profileId } = await params;
-  const user = await requireCustomerPaid();
+  await requireCustomerPaid();
 
   const [firm] = await sql<{
     user_id: string;
@@ -42,7 +41,6 @@ export default async function DesignerRequestPage({
           firmId={firm.user_id}
           profileId={profileId}
           firmName={firmName}
-          additionalProjectFeeAmount={ADDITIONAL_PROJECT_FEE_AMOUNT}
         />
       </div>
     </div>

@@ -36,7 +36,27 @@ async function main() {
   await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS contact_email text`;
   await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS contact_phone text`;
   await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS contact_address text`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS estimator_prompt_custom text`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS visualization_prompt_custom text`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS llm_provider text NOT NULL DEFAULT 'OPENAI'`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS llm_model text`;
+  await sql`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS llm_image_model text`;
   console.log("Migration applied: admin_settings contact_email, contact_phone, contact_address");
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS ai_prompt_audit_logs (
+      id uuid primary key default gen_random_uuid(),
+      settings_id uuid not null references admin_settings(id) on delete cascade,
+      admin_user_id uuid references users(id) on delete set null,
+      prompt_key text not null,
+      action text not null,
+      previous_value text,
+      new_value text,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS ai_prompt_audit_settings_idx ON ai_prompt_audit_logs(settings_id, created_at desc)`;
+  console.log("Migration applied: admin_settings prompt columns + ai_prompt_audit_logs");
 
   // Contact form submissions as leads for admin
   await sql`
